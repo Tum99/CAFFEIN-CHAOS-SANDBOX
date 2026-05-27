@@ -1,0 +1,31 @@
+<div class="listings-grid">
+    {% if listings %}
+        {% for item in listings %}
+            <div class="listing-card">
+                <div class="listing-card-img">☕</div>
+                <div class="listing-varietal">{{ item.varietal }} • {{ item.process }}</div>
+                <div class="listing-name">{{ item.product.name }}</div>
+                <div class="listing-details">
+                    <span class="listing-pill">{{ item.roast_level }}</span>
+                    <span class="listing-pill">{{ item.harvest_date.strftime('%b %Y') if item.harvest_date else 'N/A' }}</span>
+                </div>
+                <div class="listing-footer">
+                    <div>
+                        <div class="listing-price">KES {{ "{:,.0f}".format(item.price_per_kg) }}/kg</div>
+                        <div class="listing-stock">{{ item.quantity_kg }} kg remaining</div>
+                    </div>
+                    <span class="listing-status status-active">Active</span>
+                </div>
+                <div class="listing-actions">
+                    <button class="listing-btn">Edit</button>
+                    <button class="listing-btn primary">View Orders</button>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="zero-state-msg">
+            <p>You haven't listed any coffee yet.</p>
+            <button class="form-submit" onclick="showSection('new-listing')">Create Your First Listing</button>
+        </div>
+    {% endif %}
+</div>

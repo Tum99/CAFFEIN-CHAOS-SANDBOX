@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="profile">
+    <h2>My Buyer Profile</h2>
+
+    <p><strong>Email:</strong> {{ current_user.email }}</p>
+
+    {% if buyer %}
+        <p><strong>Name:</strong> {{ buyer.full_name }}</p>
+        <p><strong>Location:</strong> {{ buyer.location }}</p>
+    {% else %}
+        <p>You have not completed your buyer profile yet.</p>
+    {% endif %}
+
+    <a href="#" class="btn">Edit Profile</a>
+</section>
+{% endblock %}

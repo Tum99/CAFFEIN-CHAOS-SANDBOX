@@ -1,0 +1,866 @@
+{% extends "base.html" %} 
+{% block title %}Seller Dashboard | Caffein & Chaos{% endblock %} 
+{% block content %}
+<div class="cursor-seller" id="cursor"></div>
+<div class="cursor-seller-ring" id="cursorRing"></div>
+
+{% block extra_css %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='new_seller.css') }}"
+/>
+{% endblock %}
+<body
+  class="page-setup"
+  data-step2-done="{{ 'true' if listings|length > 0 else 'false' }}"
+>
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <div class="dash-layout">
+    <!-- ══ SIDEBAR ══ -->
+    <aside class="dash-sidebar">
+      <!-- Setup progress -->
+      <div style="padding: 1.5rem 1.5rem 0">
+        <div class="sidebar-progress">
+          <div class="sidebar-progress-label">
+            Setup Progress
+            <span id="progressPct">{{ (total_steps / 3 * 100)|round }}%</span>
+          </div>
+          <div class="progress-bar-track">
+            {% set step1_done = farm is not none %} {% set step2_done =
+            listings|length > 0 %} {% set total_steps = 0 %} {% if step1_done %}
+            {% set total_steps = total_steps + 1 %} {% endif %} {% if step2_done
+            %} {% set total_steps = total_steps + 1 %} {% endif %}
+            <div
+              class="progress-bar-fill"
+              id="progressBar"
+              data-db-steps="{{ total_steps }}"
+            ></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section-label">Overview</div>
+      <a
+        href="#"
+        class="sidebar-link active"
+        onclick="showSection('overview', event)"
+      >
+        <span class="sidebar-icon">🏠</span>
+        <span class="sidebar-link-text">Dashboard</span>
+      </a>
+
+      <div class="sidebar-section-label">My Farm</div>
+      <a
+        href="#"
+        class="sidebar-link"
+        onclick="showSection('farm-profile', event)"
+      >
+        <span class="sidebar-icon">🌿</span>
+        <span class="sidebar-link-text">Farm Profile</span>
+        <span class="sidebar-badge" id="farmBadge" style="display: none"
+          >✓</span
+        >
+      </a>
+      <a
+        href="#"
+        class="sidebar-link locked"
+        id="listingsLink"
+        onclick="showSection('listings', event)"
+      >
+        <span class="sidebar-icon">☕</span>
+        <span class="sidebar-link-text">My Listings</span>
+        <span class="sidebar-lock">🔒</span>
+      </a>
+      <a href="#" class="sidebar-link locked" id="newListingLink">
+        <span class="sidebar-icon">＋</span>
+        <span class="sidebar-link-text">Add Listing</span>
+        <span class="sidebar-lock">🔒</span>
+      </a>
+
+      <div class="sidebar-section-label">Business</div>
+      <!-- <a
+        href="{{ url_for('main.marketplace') }}"
+        class="sidebar-link locked"
+        id="marketplaceLink"
+        onclick="showSection('marketplace', event)"
+      >
+        <span class="sidebar-icon">☕</span>
+        <span class="sidebar-link-text">The Marketplace</span>
+        <span class="sidebar-lock">🔒</span>
+      </a> -->
+      <a href="#" class="sidebar-link locked" id="ordersLink">
+        <span class="sidebar-icon">📋</span>
+        <span class="sidebar-link-text">Orders Received</span>
+        <span class="sidebar-lock">🔒</span>
+      </a>
+      <a href="#" class="sidebar-link locked" id="earningsLink">
+        <span class="sidebar-icon">💰</span>
+        <span class="sidebar-link-text">Earnings</span>
+        <span class="sidebar-lock">🔒</span>
+      </a>
+
+      <div class="sidebar-section-label">Communication</div>
+      <a href="#" class="sidebar-link" onclick="showSection('messages', event)">
+        <span class="sidebar-icon">💬</span>
+        <span class="sidebar-link-text">Messages</span>
+      </a>
+
+      <div class="sidebar-section-label">Account</div>
+      <a href="#" class="sidebar-link" onclick="showSection('settings', event)">
+        <span class="sidebar-icon">⚙️</span>
+        <span class="sidebar-link-text">Account Settings</span>
+      </a>
+
+      <div class="sidebar-divider"></div>
+      <button class="sidebar-logout" onclick="openLogout()">← Logout</button>
+    </aside>
+
+    <!-- ══ MAIN ══ -->
+    <main class="dash-main">
+      <!-- ══════════════ OVERVIEW ══════════════ -->
+      <div id="sec-overview">
+        <!-- Welcome hero -->
+        {% if not farm %}
+        <div class="welcome-hero">
+          <div class="welcome-eyebrow">Welcome to Caffeine & Chaos</div>
+          <h1 class="welcome-title">
+            Hello, <em>{{ current_user.first_name }}</em><br />Let's get your
+            farm set up.
+          </h1>
+          <p class="welcome-desc">
+            You're just a few steps away from listing your coffee and connecting
+            with buyers across Kenya. Complete your farm profile to unlock your
+            full dashboard.
+          </p>
+          <div class="welcome-actions">
+            <a
+              class="btn-green-lg"
+              onclick="showSection('farm-profile', event)"
+            >
+              Set Up My Farm Profile →
+            </a>
+            <a href="#" class="btn-outline-lg">Browse the Marketplace</a>
+          </div>
+          <div class="welcome-hero-num">0</div>
+        </div>
+        {% elif farm and listings|length == 0 %}
+        <div class="setup-summary-bar">
+          <div class="summary-steps">
+            <div class="step-pill done">✓ Farm Profile</div>
+            <div class="step-pill active">2. Add Listing</div>
+            <div class="step-pill locked">3. Go Live</div>
+          </div>
+
+          <div class="summary-action-card">
+            <div class="action-icon">✅</div>
+            <div class="action-text">
+              <h3>Farm Profile Created!</h3>
+              <p>
+                Your farm profile is live. Now add your first coffee lot to
+                start selling.
+              </p>
+            </div>
+            <button
+              class="btn-success-large"
+              onclick="showSection('new-listing')"
+            >
+              ADD FIRST LISTING →
+            </button>
+          </div>
+        </div>
+        {% else %}
+        <div class="setup-summary-bar">
+          <div class="summary-steps">
+            <div class="step-pill done">✓ Farm Profile</div>
+            <div class="step-pill done">✓ First Listing</div>
+            <div class="step-pill active">3. Go Live</div>
+          </div>
+          <div class="summary-action-card ready-state">
+            <div class="action-icon">🚀</div>
+            <div class="action-text">
+              <h3>You are ready to launch!</h3>
+              <p>
+                Your profile and listings are prepared. Ready to open your shop
+                to buyers?
+              </p>
+            </div>
+            <div class="step-actions" style="margin-top: 2rem; text-align: center;">
+              <button class="btn-launch" onclick="showSection('go-live', event)">
+                GO LIVE NOW →
+              </button>
+
+              <div style="margin-top: 1.5rem;">
+                  <form action="{{ url_for('seller.skip_onboarding') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit" class="skip-link-btn">
+                          Skip for now & go to dashboard
+                      </button>
+                  </form>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Zero stats -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total Earnings</div>
+            <div class="stat-value">KES 0</div>
+            <div class="stat-hint">Complete setup to start earning</div>
+            <div class="stat-icon">💰</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Active Listings</div>
+            <div class="stat-value">0</div>
+            <div class="stat-hint">Add your first coffee lot</div>
+            <div class="stat-icon">☕</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Orders Received</div>
+            <div class="stat-value">0</div>
+            <div class="stat-hint">Orders appear after listing</div>
+            <div class="stat-icon">📋</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Buyers Connected</div>
+            <div class="stat-value">0</div>
+            <div class="stat-hint">Start messaging to connect</div>
+            <div class="stat-icon">🤝</div>
+          </div>
+        </div>
+
+        <!-- Tips strip -->
+        <div class="tips-strip">
+          <div class="tips-label">💡 Tips</div>
+          <div class="tips-list">
+            <div class="tip-item">
+              <div class="tip-dot"></div>
+              Add your altitude — buyers pay more for high-altitude coffee
+            </div>
+            <div class="tip-item">
+              <div class="tip-dot"></div>
+              Include tasting notes to attract specialty buyers
+            </div>
+            <div class="tip-item">
+              <div class="tip-dot"></div>
+              Upload a farm photo to build buyer trust
+            </div>
+            <div class="tip-item">
+              <div class="tip-dot"></div>
+              Verified farms get 3× more enquiries
+            </div>
+          </div>
+        </div>
+
+        <!-- Setup steps -->
+        <div class="setup-section">
+          <div class="setup-header">
+            <div class="setup-header-left">
+              <div class="setup-eyebrow">Getting Started</div>
+              <div class="setup-title">Your <em>Setup</em> Checklist</div>
+            </div>
+          </div>
+          <div class="setup-progress-text">
+            <strong id="stepsCount">0</strong> of 3 steps complete
+          </div>
+        </div>
+
+        <div class="setup-steps">
+          <!-- STEP 1 — Farm Profile -->
+          <div class="setup-step active-step" id="step1">
+            <div class="step-check">✓</div>
+            <div class="step-num">01</div>
+            <span class="step-status next" id="step1Status">→ Start Here</span>
+            <span class="step-icon">🌿</span>
+            <div class="step-name">Create Farm Profile</div>
+            <div class="step-desc">
+              Tell buyers about your farm — location, altitude, certifications,
+              and your story. This is what builds trust.
+            </div>
+            <button
+              class="step-cta green"
+              onclick="showSection('farm-profile', event)"
+              id="step1Btn"
+            >
+              Set Up Profile →
+            </button>
+          </div>
+
+          <!-- STEP 2 — First Listing -->
+          <div class="setup-step locked-step" id="step2">
+            <div class="step-check">✓</div>
+            <div class="step-num">02</div>
+            <span class="step-status locked" id="step2Status"> 🔒 Locked </span>
+            <span class="step-icon">☕</span>
+            <div class="step-name">Add Your First Listing</div>
+            <div class="step-desc">
+              List a coffee lot with varietal, process, roast level, quantity
+              available, and price per kg.
+            </div>
+            <button
+              class="step-cta locked-btn"
+              id="step2Btn"
+              onclick="showSection('new-listing', event)"
+            >
+              Complete Step 1 First
+            </button>
+          </div>
+
+          <!-- STEP 3 — Go Live -->
+          <div class="setup-step locked-step" id="step3">
+            <div class="step-check">✓</div>
+            <div class="step-num">03</div>
+            <span class="step-status locked" id="step3Status">🔒 Locked</span>
+            <span class="step-icon">🚀</span>
+            <div class="step-name">Go Live on Marketplace</div>
+            <div class="step-desc">
+              Your listing is published on the C&C marketplace. Buyers can find
+              you, message you, and place orders.
+            </div>
+            <button class="step-cta locked-btn" id="step3Btn">
+              Complete Steps 1 & 2
+            </button>
+          </div>
+        </div>
+
+        <!-- Zero state panels -->
+        <div class="zero-grid">
+          <div class="zero-panel dashed">
+            <div class="zero-panel-icon">☕</div>
+            <div class="zero-panel-title">No listings yet</div>
+            <div class="zero-panel-desc">
+              Your coffee lots will appear here once you complete your farm
+              profile and add a listing.
+            </div>
+            <div class="zero-panel-hint">Complete Step 1 to unlock →</div>
+          </div>
+          <div class="zero-panel dashed">
+            <div class="zero-panel-icon">📋</div>
+            <div class="zero-panel-title">No orders yet</div>
+            <div class="zero-panel-desc">
+              Orders from buyers will appear here once your first listing is
+              live on the marketplace.
+            </div>
+            <div class="zero-panel-hint">Complete Step 2 to unlock →</div>
+          </div>
+        </div>
+      </div>
+      <!-- end overview -->
+
+      <!-- ══════════════ FARM PROFILE SETUP ══════════════ -->
+      <div id="sec-farm-profile" style="display: none">
+        {% if farm %}
+            <div class="dash-header">
+                <div>
+                    <div class="dash-greeting">Step 1</div>
+                    <div class="dash-title">Farm <em>Profile</em></div>
+                </div>
+            </div>
+            <div class="farm-profile-grid">
+              <div class="farm-profile-card">
+                  <div class="farm-img-area">
+                      {% if farm.farm_image %}
+                          <img src="{{ url_for('static', filename='uploads/' + farm.farm_image) }}" style="width:100%; height:100%; object-fit:cover;">
+                      {% else %}
+                          🌿 
+                      {% endif %}
+                  </div>
+                  <div class="farm-verified">
+                      {% if farm.is_verified %}✓ Verified Farm{% else %}⌛ Verification Pending{% endif %}
+                  </div>
+                  <div class="farm-name">{{ farm.farm_name | default('Unnamed Farm') }}</div>
+                  <div class="farm-location">📍 {{ farm.location }}, {{ farm.county }} County</div>
+                  <div class="farm-specs">
+                      <div><div class="farm-spec-label">Farm Size</div><div class="farm-spec-value">{{ farm.farm_size_acres | default('0') }} acres</div></div>
+                      <div><div class="farm-spec-label">Altitude</div><div class="farm-spec-value">{{ farm.altitude_masl | default('0') }} masl</div></div>
+                      <div><div class="farm-spec-label">Certifications</div><div class="farm-spec-value">{{ farm.certifications | default('None') }}</div></div>
+                      <div><div class="farm-spec-label">Member Since</div><div class="farm-spec-value">{{ current_user.created_at.year if current_user.created_at else '2026' }}</div></div>
+                  </div>
+                  
+                  <button class="panel-action" onclick="showSection('sec-listings')" style="width:100%; margin-top:2rem; background:var(--green); color:var(--espresso); border:none; padding:1rem; cursor:pointer; font-weight:600; letter-spacing:0.1em; text-transform:uppercase;">
+                      Continue to Step 2 →
+                  </button>
+              </div>
+            
+
+              <div class="farm-edit-form">
+                  <div class="farm-edit-title">Edit Details</div>
+                  <form action="{{ url_for('seller.seller_setup') }}" method="POST" enctype="multipart/form-data">
+                      <div class="form-field"><label>Farm Name</label><input type="text" name="farm_name" value="{{ farm.farm_name }}"/></div>
+                      <div class="form-field"><label>Location</label><input type="text" name="location" value="{{ farm.location }}"/></div>
+                      <div class="form-field"><label>Bio</label><textarea name="bio">{{ farm.bio }}</textarea></div>
+                      <button type="submit" class="form-submit" style="background:transparent; border:1px solid var(--green); color:var(--green);">Save Changes</button>
+                  </form>
+              </div>
+            </div>
+        
+        {% else %}
+
+        <div style="margin-bottom: 2rem">
+          <div class="setup-eyebrow">Step 1 of 3</div>
+          <div
+            class="welcome-title"
+            style="font-size: 2rem; margin-bottom: 0.5rem"
+          >
+            Set Up Your <em>Farm Profile</em>
+          </div>
+          <p
+            style="
+              font-size: 0.85rem;
+              color: rgba(245, 236, 215, 0.45);
+              line-height: 1.8;
+              max-width: 520px;
+            "
+          >
+            This is what buyers see when they discover your coffee. Take a few
+            minutes to fill it in properly — it directly affects how many
+            enquiries you get.
+          </p>
+        </div>
+
+        <div class="farm-form-grid">
+          <form
+            action="{{ url_for('seller.seller_setup') }}"
+            method="POST"
+            enctype="multipart/form-data"
+          >
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <div class="form-section">
+              <div class="form-section-title">Farm Details</div>
+              <div class="form-field">
+                <label>Farm Name *</label>
+                <input
+                  type="text"
+                  name="farm_name"
+                  placeholder="e.g. Kinyua Family Farm"
+                />
+              </div>
+
+              <div class="form-row">
+                <div class="form-field">
+                  <label>County *</label>
+                  <select name="county">
+                    <option value="">Select county</option>
+                    <option>Uasingishu</option>
+                    <option>Kirinyaga</option>
+                    <option>Nyeri</option>
+                    <option>Murang'a</option>
+                    <option>Meru</option>
+                    <option>Embu</option>
+                    <option>Kiambu</option>
+                    <option>Nandi</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label>Town / Area *</label>
+                  <input type="text" name="location" placeholder="e.g. Ziwa" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-field">
+                  <label>Farm Size (acres)</label>
+                  <input
+                    type="number"
+                    name="farm_size"
+                    placeholder="e.g. 12.5"
+                  />
+                </div>
+                <div class="form-field">
+                  <label>Altitude (masl)</label>
+                  <input
+                    type="number"
+                    name="altitude"
+                    placeholder="e.g. 1850"
+                  />
+                </div>
+              </div>
+              <div class="form-field">
+                <label>Certifications</label>
+                <input
+                  type="text"
+                  name="certifications"
+                  placeholder="e.g. Organic, Fair Trade (optional)"
+                />
+              </div>
+              <div class="form-field">
+                <label>Your Story / Bio</label>
+                <textarea
+                  name="bio"
+                  placeholder="Tell buyers about your farm, how long you've been growing, what makes your coffee special..."
+                ></textarea>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <div class="form-section-title">Contact & Verification</div>
+              <div class="form-field">
+                <label>Phone Number *</label>
+                <input type="tel" name="phone" placeholder="07XX XXX XXX" />
+              </div>
+              <div class="form-field">
+                <label>WhatsApp Number</label>
+                <input
+                  type="tel"
+                  name="whatsapp"
+                  placeholder="Same as above or different"
+                />
+              </div>
+              <div class="form-field">
+                <label>Farm Photo</label>
+                <input
+                  type="file"
+                  name="farm_photo"
+                  style="font-size: 0.78rem; color: rgba(245, 236, 215, 0.4)"
+                />
+              </div>
+
+              <div
+                style="
+                  margin-top: 1.5rem;
+                  padding: 1.2rem;
+                  background: rgba(122, 182, 72, 0.06);
+                  border: 1px solid rgba(122, 182, 72, 0.12);
+                "
+              >
+                <div
+                  style="
+                    font-size: 0.6rem;
+                    letter-spacing: 0.2em;
+                    text-transform: uppercase;
+                    color: var(--green);
+                    margin-bottom: 0.6rem;
+                  "
+                >
+                  Verification
+                </div>
+                <p
+                  style="
+                    font-size: 0.75rem;
+                    color: rgba(245, 236, 215, 0.4);
+                    line-height: 1.7;
+                    margin-bottom: 0.8rem;
+                  "
+                >
+                  Verified farms show a ✓ badge on the marketplace and get
+                  significantly more buyer trust. Our team will review your
+                  profile within 24–48 hours after submission.
+                </p>
+                <div style="font-size: 0.68rem; color: rgba(122, 182, 72, 0.5)">
+                  ✓ Submitted automatically on save
+                </div>
+              </div>
+            </div>
+
+            <div
+              style="
+                margin-top: 2rem;
+                padding-top: 1.5rem;
+                border-top: 1px solid rgba(122, 182, 72, 0.08);
+              "
+            >
+              <button type="submit" class="form-submit">
+                Save Farm Profile →
+              </button>
+              <a
+                href="#"
+                class="form-skip"
+                onclick="showSection('overview', null)"
+                >Skip for now</a
+              >
+              <p
+                style="
+                  font-size: 0.68rem;
+                  color: rgba(245, 236, 215, 0.2);
+                  margin-top: 0.8rem;
+                  line-height: 1.6;
+                "
+              >
+                You can edit this at any time from your dashboard.
+              </p>
+            </div>
+          </form>
+        </div>
+       {% endif %}  
+      </div>
+
+      <!-- ── MY LISTINGS ── -->
+      <div class="content-section" id="sec-listings">
+        <div class="dash-header">
+          <div>
+            <div class="dash-greeting">My Farm</div>
+            <div class="dash-title">My <em>Listings</em></div>
+          </div>
+          <button
+            class="panel-action"
+            onclick="showSection('new-listing')"
+            style="
+              font-size: 0.78rem;
+              background: var(--green);
+              color: var(--espresso);
+              padding: 0.6rem 1.4rem;
+              border: none;
+              letter-spacing: 0.14em;
+              text-transform: uppercase;
+              font-weight: 500;
+              cursor: none;
+            "
+          >
+            + New Listing
+          </button>
+        </div>
+        <div class="listings-grid">
+          {% if listings %} {% for item in listings %}
+          <div class="listing-card">
+            <div class="listing-card-img">☕</div>
+            <div class="listing-varietal">
+              {{ item.varietal }} • {{ item.process }}
+            </div>
+            <div class="listing-name">{{ item.product.name }}</div>
+            <div class="listing-details">
+              <span class="listing-pill">{{ item.roast_level }}</span
+              ><span class="listing-pill"
+                >{{ item.harvest_date.strftime('%b %Y') if item.harvest_date
+                else 'N/A' }}</span
+              >
+            </div>
+            <div class="listing-footer">
+              <div>
+                <div class="listing-price">
+                  KES {{ "{:,.0f}".format(item.price_per_kg) }}/kg
+                </div>
+                <div class="listing-stock">
+                  {{ item.quantity_kg }} kg remaining
+                </div>
+              </div>
+              <span class="listing-status status-active">Active</span>
+            </div>
+            <div class="listing-actions">
+              <button class="listing-btn">Edit</button
+              ><button class="listing-btn primary">View Orders</button>
+            </div>
+          </div>
+          {% endfor %} {% else %}
+          <div
+            class="zero-state-msg"
+            style="
+              grid-column: 1/-1;
+              text-align: center;
+              padding: 4rem;
+              border: 1px dashed rgba(122, 182, 72, 0.3);
+            "
+          >
+            <p>You haven't listed any coffee yet.</p>
+            <button
+              class="form-submit"
+              onclick="showSection('new-listing')"
+              style="width: auto; padding: 0.8rem 2rem; margin-top: 1rem"
+            >
+              Create Your First Listing
+            </button>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- ── NEW LISTING ── -->
+      <div class="content-section" id="sec-new-listing" style="display: none">
+        <div class="dash-header">
+          <div>
+            <div class="dash-greeting">My Farm</div>
+            <div class="dash-title">Add New <em>Listing</em></div>
+          </div>
+        </div>
+        <div class="new-listing-form">
+          <form action="{{ url_for('seller.add_listing') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <div class="form-panel">
+              <div class="form-panel-title">Product Details</div>
+              <div class="form-field">
+                <label>Product Name</label
+                ><input
+                  type="text"
+                  name="name"
+                  placeholder="e.g. Arabica Batian — 500g"
+                />
+              </div>
+              <div class="form-field">
+                <label>Price per kg (KES)</label
+                ><input type="number" name="price" placeholder="e.g. 2800" />
+              </div>
+              <div class="form-field">
+                <label>Total stock available (kg)</label
+                ><input type="number" name="stock" placeholder="e.g. 50" />
+              </div>
+              <div class="form-field">
+                <label>Minimum order (kg)</label
+                ><input type="number" name="min_order" placeholder="e.g. 1" />
+              </div>
+              <div class="form-field">
+                <label>Description</label
+                ><textarea placeholder="Describe your coffee..."></textarea>
+              </div>
+            </div>
+            <div class="form-panel">
+              <div class="form-panel-title">Coffee Specifications</div>
+              <div class="form-field">
+                <label>Varietal</label>
+                <select>
+                  <option>Batian</option>
+                  <option>SL28</option>
+                  <option>SL34</option>
+                  <option>Ruiru 11</option>
+                  <option>K7</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label>Process</label>
+                <select>
+                  <option>Washed</option>
+                  <option>Natural</option>
+                  <option>Honey</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label>Roast Level</label>
+                <select>
+                  <option>Light</option>
+                  <option>Medium</option>
+                  <option>Dark</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label>Harvest Date</label
+                ><input type="date" name="harvest_date" />
+              </div>
+              <div class="form-field">
+                <label>Tasting Notes (comma separated)</label
+                ><input
+                  type="text"
+                  name="notes"
+                  placeholder="e.g. Citrus, Molasses, Berry"
+                />
+              </div>
+              <button class="form-submit" type="submit">
+                Publish Listing →
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- ══════════════ MESSAGES (empty) ══════════════ -->
+      <div id="sec-messages" style="display: none">
+        <div style="margin-bottom: 2rem">
+          <div class="setup-eyebrow">Communication</div>
+          <div class="welcome-title" style="font-size: 2rem">
+            My <em>Messages</em>
+          </div>
+        </div>
+        <div
+          style="
+            background: var(--roast);
+            border: 1px dashed rgba(122, 182, 72, 0.12);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            text-align: center;
+            padding: 3rem;
+          "
+        >
+          <div style="font-size: 3.5rem; opacity: 0.1; margin-bottom: 1.5rem">
+            💬
+          </div>
+          <div
+            style="
+              font-family: &quot;Cormorant Garamond&quot;, serif;
+              font-size: 1.4rem;
+              color: rgba(245, 236, 215, 0.4);
+              margin-bottom: 0.6rem;
+            "
+          >
+            No messages yet
+          </div>
+          <div
+            style="
+              font-size: 0.78rem;
+              color: rgba(245, 236, 215, 0.25);
+              line-height: 1.7;
+              max-width: 300px;
+            "
+          >
+            Once buyers discover your listings and reach out, their messages
+            will appear here.
+          </div>
+          <div
+            style="
+              margin-top: 1.5rem;
+              font-size: 0.65rem;
+              letter-spacing: 0.18em;
+              text-transform: uppercase;
+              color: rgba(122, 182, 72, 0.3);
+            "
+          >
+            Complete your profile to get discovered →
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════ SETTINGS ══════════════ -->
+      <div id="sec-settings" style="display: none">
+        <div style="margin-bottom: 2rem">
+          <div class="setup-eyebrow">Account</div>
+          <div class="welcome-title" style="font-size: 2rem">
+            Account <em>Settings</em>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5px">
+          <div class="form-section">
+            <div class="form-section-title">Personal Information</div>
+            <div class="form-field">
+              <label>First Name</label><input type="text" value="{{ current_user.first_name or '' }}" />
+            </div>
+            <div class="form-field">
+              <label>Last Name</label><input type="text" value="{{ current_user.last_name or '' }}" />
+            </div>
+            <div class="form-field">
+              <label>Email</label
+              ><input type="email" value="{{ current_user.email }}" />
+            </div>
+            <div class="form-field">
+              <label>Phone (M-Pesa)</label
+              ><input type="tel" value="{{ current_user.phone }}" />
+            </div>
+            <button class="form-submit">Save Changes</button>
+          </div>
+          <div class="form-section">
+            <div class="form-section-title">Change Password</div>
+            <div class="form-field">
+              <label>Current Password</label
+              ><input type="password" placeholder="••••••••" />
+            </div>
+            <div class="form-field">
+              <label>New Password</label
+              ><input type="password" placeholder="Min. 8 characters" />
+            </div>
+            <div class="form-field">
+              <label>Confirm Password</label
+              ><input type="password" placeholder="••••••••" />
+            </div>
+            <button class="form-submit">Update Password</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+{% endblock %} 
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/new_seller.js') }}"></script>
+<script src="{{ url_for('static', filename='js/logout_base.js') }}"></script>
+{% endblock %}

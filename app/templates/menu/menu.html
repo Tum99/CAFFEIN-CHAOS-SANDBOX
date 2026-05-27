@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Menu{% endblock %}
+
+{% block content %}
+
+<div class="menu-page">
+    <div class="cursor" id="cursor"></div>
+    <div class="cursor-ring" id="cursorRing"></div>
+
+    <aside class="menu-sidebar">
+        <h2>Our Menu</h2>
+
+        <div class="sidebar-heading">Browse Menu</div>
+        <div class="sidebar-search">
+            <span class="sidebar-search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="Search items..." autocomplete="off"/>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        {% for category in categories %}  
+            <a href="#{{ category.name | lower | replace(' ', '-') }}"
+                class="cat-link {% if loop.first %}active{% endif %}"
+                data-cat="{{ category.name | lower | replace(' ', '-') }}">
+                <span class="cat-link-name">{{ category.name }}</span>
+                <span class="cat-count">{{ category.products | length }}</span>
+            </a>
+        {% endfor %}
+
+        <!-- Mini cart -->
+        <div class="sidebar-order">
+            <div class="sidebar-order-label">Your Order</div>
+            <div class="sidebar-order-total">KES <span id="cartTotal">0</span></div>
+            <div class="sidebar-order-items"><span id="cartCount">0</span> items selected</div>
+            <a href="#" class="sidebar-checkout">Checkout →</a>
+        </div>
+    </aside>
+
+
+    
+    <main class="main-content" id="mainContent">
+        <div class="menu-page-hero">
+            <div>
+                <div class="menu-page-eyebrow">Caffeine & Chaos</div>
+                <h1 class="menu-page-title">Our <em>Menu</em></h1>
+            </div>
+            <div class="menu-page-meta">
+                <div class="menu-page-meta-num">72</div>
+                <div class="menu-page-meta-label">Items across 13 categories</div>
+            </div>
+        </div>
+
+        {% for category in categories %}     
+        <section class="cat-section" id="{{ category.name | lower | replace(' ', '-') }}">
+            <div class="cat-header">
+                <div class="cat-title-wrap">
+                    <h2 class="cat-title">{{ category.name }}</h2>
+                </div>
+                <span class="cat-item-count">
+                    {{ category.products | length }} products
+                </span>
+            </div>
+
+            <div class="item-grid">
+                {% if category in categories %}
+                    {% for product in category.products %}
+                        <div class="item-card">
+                            <div class="item-image">
+
+                                {% if product.images %}
+                                    <img src="{{ url_for('static', filename='images/Product-images/' + product.images[0].image_path) }}" 
+                                    alt="{{ product.name }}">
+                                {% else %}
+                                    <img src="{{ url_for('static', filename='images/cup2.jpg') }}" alt="Default">
+                                {% endif %}
+
+                                <div class="item-img-overlay"></div>
+                                <div class="item-add">+</div>
+
+                            </div>
+                            <div class="item-info">
+                                <div class="item-name">{{ product.name }}</div>
+                                <div class="item-description">{{ product.description }}</div>
+                                <div class="item-price">KES {{ product.price }}</div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    {% else %}
+                    <p style="color: var(--muted); font-size: 0.85rem;">Coming soon.</p>
+                {% endif %}
+            </div>
+        </section>
+        {% endfor %}
+    </main>
+
+    <div class="scroll-top" id="scrollTop">↑</div>
+    
+
+
+{% endblock %}
+
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/menu.js') }}"></script>
+{% endblock %}

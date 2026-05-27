@@ -1,0 +1,562 @@
+{% extends "base.html" %} 
+{% block title %}The Marketplace{% endblock %} 
+
+{%block content %}
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='marketplace.css') }}"/>
+{% endblock %}
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal-box" id="modalBox">
+    <div class="modal-img" id="modalImg">
+      <button class="modal-close" onclick="closeModalBtn()">✕</button>
+      <div class="modal-img-ph" id="modalImgPh">☕</div>
+      <div class="modal-img-overlay"></div>
+    </div>
+
+    <div class="modal-info">
+      <div class="modal-farm-tag">
+        <span id="modalFarmName">Farm Name</span>
+        <span class="modal-verified">✓ Verified</span>
+      </div>
+      <div class="modal-title" id="modalTitle">Listing Name</div>
+
+      <div class="modal-specs">
+        <div>
+          <div class="modal-spec-lbl">Varietal</div>
+          <div class="modal-spec-val" id="mVarietal">—</div>
+        </div>
+        <div>
+          <div class="modal-spec-lbl">Process</div>
+          <div class="modal-spec-val" id="mProcess">—</div>
+        </div>
+        <div>
+          <div class="modal-spec-lbl">Roast</div>
+          <div class="modal-spec-val" id="mRoast">—</div>
+        </div>
+        <div>
+          <div class="modal-spec-lbl">Harvest</div>
+          <div class="modal-spec-val" id="mHarvest">—</div>
+        </div>
+        <div>
+          <div class="modal-spec-lbl">Available</div>
+          <div class="modal-spec-val" id="mStock">—</div>
+        </div>
+        <div>
+          <div class="modal-spec-lbl">Min. Order</div>
+          <div class="modal-spec-val" id="mMin">—</div>
+        </div>
+        <div>
+          <div class="modal-spec-lbl">Farm Location</div>
+          <div class="modal-spec-val" id="mLocation">—</div>
+        </div>
+        <div>
+          <div class="modal-spec-lbl">Altitude</div>
+          <div class="modal-spec-val" id="mAltitude">—</div>
+        </div>
+      </div>
+      <div>
+        <div class="modal-notes-title">Tasting Notes</div>
+        <div class="modal-notes" id="mNotes"></div>
+      </div>
+
+      <!-- ORDER BOX — shown when logged in as buyer -->
+      <div class="modal-order-box" id="modalOrderBox">
+        <div class="modal-order-title">Place Your Order</div>
+        <div class="modal-qty-row">
+          <span class="modal-qty-label">Quantity (kg)</span>
+          <input
+            class="modal-qty-input"
+            type="number"
+            id="modalQty"
+            value="1"
+            min="1"
+            oninput="updateModalTotal()"
+          />
+        </div>
+        <div class="modal-total-row">
+          <span class="modal-total-label">Total</span>
+          <span class="modal-total-price" id="modalTotal">KES 0</span>
+        </div>
+        <button class="modal-order-btn" onclick="handleOrder()">
+          Pay via M-Pesa →
+        </button>
+        <button class="modal-msg-btn" onclick="handleMessage()">
+          💬 Message Grower First
+        </button>
+        <div class="modal-mpesa">
+          <div class="mpesa-dot"></div>
+          Secure M-Pesa STK Push
+        </div>
+      </div>
+
+      <!-- LOGIN PROMPT — shown when not logged in -->
+      <div
+        class="modal-login-prompt"
+        id="modalLoginPrompt"
+        style="display: none"
+      >
+        <p>
+          Create a free buyer account to place orders and message growers
+          directly.
+        </p>
+        <a href="#" class="modal-login-link">Login or Sign Up →</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE HERO ══ -->
+<div class="page-hero">
+  <div>
+    <div class="hero-eyebrow">Direct from the Farm</div>
+    <h1 class="hero-title">Coffee<br /><em>Marketplace</em></h1>
+    <p class="hero-desc">
+      Buy directly from verified Kenyan coffee growers. No middlemen, full
+      traceability, exceptional quality. Secure payments via M-Pesa.
+    </p>
+  </div>
+  <div class="hero-right">
+    <div class="hero-stats">
+      <div>
+        <div class="hero-stat-num">12</div>
+        <div class="hero-stat-lbl">Active Farms</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">34</div>
+        <div class="hero-stat-lbl">Coffee Lots</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">8</div>
+        <div class="hero-stat-lbl">Counties</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TICKER ══ -->
+<div class="ticker">
+  <div class="ticker-track">
+    <span class="ticker-item"
+      >Batian Washed <span class="ticker-sep">✦</span></span
+    >
+    <span class="ticker-item"
+      >SL28 Natural <span class="ticker-sep">✦</span></span
+    >
+    <span class="ticker-item"
+      >Ruiru 11 Dark Roast <span class="ticker-sep">✦</span></span
+    >
+    <span class="ticker-item"
+      >Uasingishu Highlands <span class="ticker-sep">✦</span></span
+    >
+    <span class="ticker-item"
+      >1,850m Altitude <span class="ticker-sep">✦</span></span
+    >
+    <span class="ticker-item"
+      >Kirinyaga AA <span class="ticker-sep">✦</span></span
+    >
+    <span class="ticker-item"
+      >Farm Direct <span class="ticker-sep">✦</span></span
+    >
+    <span class="ticker-item"
+      >M-Pesa Payments <span class="ticker-sep">✦</span></span
+    >
+    <span class="ticker-item"
+      >Batian Washed <span class="ticker-sep">✦</span></span
+    >
+    <span class="ticker-item"
+      >SL28 Natural <span class="ticker-sep">✦</span></span
+    >
+    <span class="ticker-item"
+      >Ruiru 11 Dark Roast <span class="ticker-sep">✦</span></span
+    >
+    <span class="ticker-item"
+      >Uasingishu Highlands <span class="ticker-sep">✦</span></span
+    >
+    <span class="ticker-item"
+      >1,850m Altitude <span class="ticker-sep">✦</span></span
+    >
+    <span class="ticker-item"
+      >Kirinyaga AA <span class="ticker-sep">✦</span></span
+    >
+    <span class="ticker-item"
+      >Farm Direct <span class="ticker-sep">✦</span></span
+    >
+    <span class="ticker-item"
+      >M-Pesa Payments <span class="ticker-sep">✦</span></span
+    >
+  </div>
+</div>
+
+<!-- ══ MAIN LAYOUT ══ -->
+<div class="page-wrap">
+  <!-- ══ FILTER SIDEBAR ══ -->
+  <aside class="filter-sidebar">
+    <div class="filter-search">
+      <span class="filter-search-icon">🔍</span>
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Search farms or varietals..."
+        oninput="filterListings()"
+      />
+    </div>
+
+    <div class="filter-div"></div>
+    <!-- Varietal -->
+    <div class="filter-group">
+      <div class="filter-group-title">
+        Varietal
+        <span class="filter-clear-link" onclick="clearFilter('varietal')"
+          >clear</span
+        >
+      </div>
+      <div class="filter-option">
+        <input
+          type="checkbox"
+          id="v-batian"
+          value="Batian"
+          onchange="filterListings()"
+        /><label for="v-batian"
+          >Batian <span class="filter-count">8</span></label
+        >
+      </div>
+      <div class="filter-option">
+        <input
+          type="checkbox"
+          id="v-sl28"
+          value="SL28"
+          onchange="filterListings()"
+        /><label for="v-sl28">SL28 <span class="filter-count">6</span></label>
+      </div>
+      <div class="filter-option">
+        <input
+          type="checkbox"
+          id="v-sl34"
+          value="SL34"
+          onchange="filterListings()"
+        /><label for="v-sl34">SL34 <span class="filter-count">4</span></label>
+      </div>
+      <div class="filter-option">
+        <input
+          type="checkbox"
+          id="v-ruiru"
+          value="Ruiru 11"
+          onchange="filterListings()"
+        /><label for="v-ruiru"
+          >Ruiru 11 <span class="filter-count">5</span></label
+        >
+      </div>
+      <div class="filter-option">
+        <input
+          type="checkbox"
+          id="v-k7"
+          value="K7"
+          onchange="filterListings()"
+        /><label for="v-k7">K7 <span class="filter-count">3</span></label>
+      </div>
+
+      <div class="filter-div"></div>
+    </div>
+
+    <!-- Process -->
+    <div class="filter-group">
+      <div class="filter-group-title">
+        Process
+        <span class="filter-clear-link" onclick="clearFilter('process')"
+          >clear</span
+        >
+      </div>
+      <div class="filter-option">
+        <input
+          type="checkbox"
+          id="p-washed"
+          value="Washed"
+          onchange="filterListings()"
+        /><label for="p-washed"
+          >Washed <span class="filter-count">18</span></label
+        >
+      </div>
+      <div class="filter-option">
+        <input
+          type="checkbox"
+          id="p-natural"
+          value="Natural"
+          onchange="filterListings()"
+        /><label for="p-natural"
+          >Natural <span class="filter-count">9</span></label
+        >
+      </div>
+      <div class="filter-option">
+        <input
+          type="checkbox"
+          id="p-honey"
+          value="Honey"
+          onchange="filterListings()"
+        /><label for="p-honey">Honey <span class="filter-count">5</span></label>
+      </div>
+    </div>
+
+    <div class="filter-div"></div>
+
+    <!-- Roast -->
+    <div class="filter-group">
+      <div class="filter-group-title">
+        Roast Level
+        <span class="filter-clear-link" onclick="clearFilter('roast')"
+          >clear</span
+        >
+      </div>
+      <div class="filter-option">
+        <input
+          type="checkbox"
+          id="r-light"
+          value="Light"
+          onchange="filterListings()"
+        /><label for="r-light"
+          >Light <span class="filter-count">10</span></label
+        >
+      </div>
+      <div class="filter-option">
+        <input
+          type="checkbox"
+          id="r-medium"
+          value="Medium"
+          onchange="filterListings()"
+        /><label for="r-medium"
+          >Medium <span class="filter-count">16</span></label
+        >
+      </div>
+      <div class="filter-option">
+        <input
+          type="checkbox"
+          id="r-dark"
+          value="Dark"
+          onchange="filterListings()"
+        /><label for="r-dark">Dark <span class="filter-count">8</span></label>
+      </div>
+    </div>
+
+    <div class="filter-div"></div>
+
+    <!-- County -->
+    <div class="filter-group">
+      <div class="filter-group-title">
+        County
+        <span class="filter-clear-link" onclick="clearFilter('county')"
+          >clear</span
+        >
+      </div>
+      <div class="filter-option">
+        <input
+          type="checkbox"
+          id="c-uasin"
+          value="Uasingishu"
+          onchange="filterListings()"
+        /><label for="c-uasin"
+          >Uasingishu <span class="filter-count">8</span></label
+        >
+      </div>
+      <div class="filter-option">
+        <input
+          type="checkbox"
+          id="c-kiri"
+          value="Kirinyaga"
+          onchange="filterListings()"
+        /><label for="c-kiri"
+          >Kirinyaga <span class="filter-count">6</span></label
+        >
+      </div>
+      <div class="filter-option">
+        <input
+          type="checkbox"
+          id="c-nyeri"
+          value="Nyeri"
+          onchange="filterListings()"
+        /><label for="c-nyeri">Nyeri <span class="filter-count">5</span></label>
+      </div>
+      <div class="filter-option">
+        <input
+          type="checkbox"
+          id="c-muranga"
+          value="Murang'a"
+          onchange="filterListings()"
+        /><label for="c-muranga"
+          >Murang'a <span class="filter-count">4</span></label
+        >
+      </div>
+      <div class="filter-option">
+        <input
+          type="checkbox"
+          id="c-meru"
+          value="Meru"
+          onchange="filterListings()"
+        /><label for="c-meru">Meru <span class="filter-count">3</span></label>
+      </div>
+    </div>
+
+    <div class="filter-div"></div>
+
+    <!-- Price Range -->
+    <div class="filter-group">
+      <div class="filter-group-title">Price per kg (KES)</div>
+      <div class="price-range">
+        <input
+          class="price-input"
+          type="number"
+          id="priceMin"
+          placeholder="Min"
+          oninput="filterListings()"
+        />
+        <span class="price-sep">–</span>
+        <input
+          class="price-input"
+          type="number"
+          id="priceMax"
+          placeholder="Max"
+          oninput="filterListings()"
+        />
+      </div>
+    </div>
+
+    <button class="filter-apply" onclick="filterListings()">
+      Apply Filters
+    </button>
+    <button class="filter-reset" onclick="resetFilters()">Reset All</button>
+  </aside>
+
+  <!-- ══ MARKET MAIN ══ -->
+  <div class="market-main">
+    <div class="results-bar">
+      <div style="display: flex; align-items: center; gap: 1.5rem">
+        <div class="results-count">
+          <strong id="resultsCount">8</strong> listings found
+        </div>
+        <div class="active-filters" id="activeFilters"></div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.8rem">
+        <select class="sort-select" id="sortSelect" onchange="sortListings()">
+          <option value="default">Sort: Default</option>
+          <option value="price-asc">Price: Low to High</option>
+          <option value="price-desc">Price: High to Low</option>
+          <option value="stock">Most Available</option>
+          <option value="newest">Newest First</option>
+        </select>
+        <div class="view-toggles">
+          <button
+            class="view-btn active"
+            id="gridViewBtn"
+            onclick="setView('grid')"
+          >
+            ⊞
+          </button>
+          <button class="view-btn" id="listViewBtn" onclick="setView('list')">
+            ☰
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ FEATURED STRIP ══ -->
+    <div class="featured-strip">
+      <div class="featured-card" onclick="openModal(listings[0])">
+        <div class="featured-card-bg"></div>
+        <div class="featured-card-overlay"></div>
+        <span class="featured-badge">⭐ Featured Farm</span>
+        <span class="featured-verified">✓ Verified</span>
+        <div class="featured-content">
+          <div class="featured-farm">
+            🌿 Jepng'etich Farm — Uasingishu, 1,850m
+          </div>
+          <div class="featured-name">
+            Arabica
+            <em style="font-style: italic; color: var(--green)">Batian</em> —
+            1kg Lot
+          </div>
+          <div class="featured-pills">
+            <span class="feat-pill">Batian</span>
+            <span class="feat-pill">Washed</span>
+            <span class="feat-pill">Medium Roast</span>
+            <span class="feat-pill">100 kg available</span>
+          </div>
+          <div class="featured-footer">
+            <div>
+              <div class="featured-price">KES 2,800 <small>/kg</small></div>
+              <div
+                style="
+                  font-size: 0.62rem;
+                  color: rgba(245, 236, 215, 0.28);
+                  margin-top: 0.15rem;
+                "
+              >
+                Min. 1 kg order
+              </div>
+            </div>
+            <button
+              class="featured-cta"
+              onclick="
+                event.stopPropagation();
+                openModal(listings[0]);
+              "
+            >
+              View Listing →
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="featured-side">
+        <div class="featured-sm" onclick="openModal(listings[1])">
+          <div class="featured-sm-bg c1"></div>
+          <div class="featured-sm-overlay"></div>
+          <div class="featured-sm-content">
+            <div class="featured-sm-tag">☕ SL28 Natural — Kirinyaga Farm</div>
+            <div class="featured-sm-name">SL28 Natural Process</div>
+            <div class="featured-sm-price">KES 3,800/kg</div>
+          </div>
+        </div>
+        <div class="featured-sm" onclick="openModal(listings[2])">
+          <div class="featured-sm-bg c2"></div>
+          <div class="featured-sm-overlay"></div>
+          <div class="featured-sm-content">
+            <div class="featured-sm-tag">🫘 Ruiru 11 — Nyeri Highlands</div>
+            <div class="featured-sm-name">Ruiru 11 Dark Roast</div>
+            <div class="featured-sm-price">KES 2,500/kg</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+
+    <!-- ══ LISTINGS GRID ══ -->
+    <div class="listings-section">
+        <div class="section-head">
+        <div class="section-head-title">All <em>Listings</em></div>
+        <div class="view-toggles" style="display: none"></div>
+        </div>
+        <div class="listings-grid" id="listingsGrid">
+        <!-- Populated by JS -->
+        </div>
+        <div class="empty-state" id="emptyState" style="display: none">
+        <div class="empty-icon">🔍</div>
+        <div class="empty-title">No listings match your filters</div>
+        <div class="empty-desc">
+            Try adjusting or resetting your filters to see more results.
+        </div>
+        </div>
+    </div>
+  </div>
+</div>
+
+<div class="scroll-top" id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</div>
+
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/marketplace.js') }}"></script>
+<script src="{{ url_for('static', filename='js/logout_base.js') }}"></script>
+{% endblock %}

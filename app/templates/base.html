@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+  <head>
+    <title>{% block title %}Caffein & Chaos{% endblock %}</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='menu.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='auth.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='products_services.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='seller_dashboard.css') }}"
+    />
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/remixicon@4.9.0/fonts/remixicon.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Jost:wght@200;300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  </head>
+  <body class="{{ body_class | default('') }}">
+    <nav id="navbar">
+      <a href="#" class="nav-logo">
+        <div class="nav-logo-icon">
+          <img src="/static/images/Logo2.jpeg" alt="company-logo" />
+        </div>
+        <div class="nav-logo-text">Caffeine<br /><span>& Chaos</span></div>
+      </a>
+      <ul class="nav-links">
+        <li>
+          <a
+            href="{{ url_for('main.home') }}"
+            class="{{ 'active' if active_page == 'home' }}"
+            >Home</a
+          >
+        </li>
+
+        <!-- <li>
+          <a
+            href="{{ url_for('menu.main_menu') }}"
+            class="{{ 'active' if active_page == 'menu' }}"
+            >Menu</a
+          >
+        </li> -->
+
+        <li>
+          <a
+            href="{{ url_for('products.list_products') }}"
+            class="{{ 'active' if active_page == 'products' }}"
+            >Products</a
+          >
+        </li>
+
+        {% if current_user.is_authenticated %} {% if current_user.role %}
+        <li>
+          <a href="{{ url_for(current_user.role + '.dashboard') }}">
+            Marketplace ({{ current_user.role | capitalize }})
+          </a>
+        </li>
+        {% endif %}
+        <li><button class="btn-ghost" onclick="openLogout()">Logout</button></li>
+      </ul>
+
+      {% else %}
+      <!-- <div class="nav-cta">
+        <a href="{{ url_for('auth.login') }}" class="btn-filled">Login</a>
+      </div> -->
+      {% endif %}
+    </nav>
+
+    <!-- ── LOGOUT CONFIRMATION OVERLAY ── -->
+    <div class="logout-overlay" id="logoutOverlay">
+      <div class="logout-box">
+        <div class="logout-icon">☕</div>
+
+        <div class="logout-title">Leaving so soon?</div>
+        <div class="logout-subtitle">
+          You'll be signed out of your account.<br />
+          Your session will be ended.
+        </div>
+
+        <div class="logout-actions">
+          <button class="logout-cancel" onclick="closeLogout()">
+            Stay Logged In
+          </button>
+          <a href="{{ url_for('auth.logout') }}" class="logout-confirm">
+            Yes, Log Out
+          </a>
+        </div>
+
+        <div class="logout-user">
+          Signed in as <strong>{{ current_user.email }}</strong>
+          <span class="logout-role">{{ current_user.role | capitalize }}</span>
+        </div>
+      </div>
+    </div>
+    {% block content %}{% endblock %} {% block scripts %}
+    <script src="{{ url_for('static', filename='js/logout_base.js') }}"></script>
+    {% endblock %}
+  </body>
+</html>

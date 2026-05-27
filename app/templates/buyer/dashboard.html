@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+
+{% block title %}Buyer Dashboard | Caffein & Chaos{% endblock %}
+
+{% block content %}
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='buyer_dashboard.css') }}"/>
+{% endblock %}
+
+<!-- ══ LAYOUT ══ -->
+<div class="dash-layout">
+    <!-- SIDEBAR -->
+  <aside class="dash-sidebar">
+    <div class="sidebar-section-label">Overview</div>
+    <a href="#" class="sidebar-link active" onclick="showSection('overview')">
+      <span class="sidebar-icon">🏠</span>
+      <span class="sidebar-link-text">Dashboard</span>
+    </a>
+
+    <div class="sidebar-section-label">Shopping</div>
+    <a href="#" class="sidebar-link" onclick="showSection('orders', event)">
+      <span class="sidebar-icon">📦</span>
+      <span class="sidebar-link-text">My Orders</span>
+      <span class="sidebar-badge">3</span>
+    </a>
+    <a href="#" class="sidebar-link" onclick="showSection('saved', event)">
+      <span class="sidebar-icon">🔖</span>
+      <span class="sidebar-link-text">Saved Items</span>
+      <span class="sidebar-badge">5</span>
+    </a>
+    <a href="#" class="sidebar-link" onclick="showSection('history', event)">
+      <span class="sidebar-icon">🕐</span>
+      <span class="sidebar-link-text">Browsing History</span>
+    </a>
+
+    <div class="sidebar-section-label">Communication</div>
+    <a href="#" class="sidebar-link" onclick="showSection('messages', event)">
+      <span class="sidebar-icon">💬</span>
+      <span class="sidebar-link-text">Messages</span>
+      <span class="sidebar-badge red">2</span>
+    </a>
+    <a href="#" class="sidebar-link" onclick="showSection('support', event)">
+      <span class="sidebar-icon">🎧</span>
+      <span class="sidebar-link-text">Support</span>
+    </a>
+
+    <div class="sidebar-section-label">Account</div>
+    <a href="#" class="sidebar-link" onclick="showSection('settings', event)">
+      <span class="sidebar-icon">⚙️</span>
+      <span class="sidebar-link-text">Account Settings</span>
+    </a>
+
+    <div class="sidebar-divider"></div>
+    <button class="sidebar-logout" onclick="openLogout()">← Logout</button>
+
+  </aside>
+
+
+  <!-- MAIN CONTENT -->
+  <main class="dash-main">
+    <div class="content-section active" id="sec-overview">
+        <div class="dash-header">
+            <div>
+            <div class="dash-greeting">Good morning</div>
+            <div class="dash-title">Welcome back, <em>Faith</em></div>
+            </div>
+            <div class="dash-date">Wednesday, 15 April 2026</div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Orders</div>
+                <div class="stat-value">12</div>
+                <div class="stat-sub">3 in progress</div>
+                <div class="stat-icon">📦</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Spent</div>
+                <div class="stat-value">KES 28,400</div>
+                <div class="stat-sub">This year</div>
+                <div class="stat-icon">💳</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Saved Items</div>
+                <div class="stat-value">5</div>
+                <div class="stat-sub">2 back in stock</div>
+                <div class="stat-icon">🔖</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Unread Messages</div>
+                <div class="stat-value">2</div>
+                <div class="stat-sub">From growers</div>
+                <div class="stat-icon">💬</div>
+            </div>
+        </div>
+
+        <!-- Recent orders preview -->
+        <div class="panel">
+            <div class="panel-head">
+                <div class="panel-title">Recent Orders</div>
+                <a href="#" class="panel-action" onclick="showSection('orders')">View All →</a>
+            </div>
+            <div class="panel-body">
+                <table class="orders-table">
+                    <thead><tr><th>Order</th><th>Items</th><th>Total</th><th>Date</th><th>Status</th></tr></thead>
+                    <tbody>
+                        <tr><td>#CC-0041</td><td>Bold Starter Pack</td><td>KES 7,500</td><td>12 Apr 2026</td><td><span class="order-status status-processing">Processing</span></td></tr>
+                        <tr><td>#CC-0038</td><td>Arabica 1kg + C&C Tee</td><td>KES 3,500</td><td>5 Apr 2026</td><td><span class="order-status status-delivered">Delivered</span></td></tr>
+                        <tr><td>#CC-0031</td><td>C&C Classic Hamper</td><td>KES 3,500</td><td>28 Mar 2026</td><td><span class="order-status status-delivered">Delivered</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── ORDERS ── -->
+    <div class="content-section" id="sec-orders">
+        <div class="dash-header"><div><div class="dash-greeting">Shopping</div><div class="dash-title">My <em>Orders</em></div></div></div>
+        <div class="panel">
+            <div class="panel-head"><div class="panel-title">All Orders</div></div>
+            <div class="panel-body">
+                <table class="orders-table" >
+                    <thead><tr><th>Order ID</th><th>Items</th><th>Total</th><th>Date</th><th>Payment</th><th>Status</th></tr></thead>
+                    <tbody>
+                        <tr><td>#CC-0041</td><td>Bold Starter Pack</td><td>KES 7,500</td><td>12 Apr 2026</td><td>M-Pesa</td><td><span class="order-status status-processing">Processing</span></td></tr>
+                        <tr><td>#CC-0039</td><td>Arabica Batian 3kg</td><td>KES 6,500</td><td>8 Apr 2026</td><td>M-Pesa</td><td><span class="order-status status-pending">Pending</span></td></tr>
+                        <tr><td>#CC-0038</td><td>Arabica 1kg + C&C Tee</td><td>KES 3,500</td><td>5 Apr 2026</td><td>M-Pesa</td><td><span class="order-status status-delivered">Delivered</span></td></tr>
+                        <tr><td>#CC-0031</td><td>C&C Classic Hamper</td><td>KES 3,500</td><td>28 Mar 2026</td><td>M-Pesa</td><td><span class="order-status status-delivered">Delivered</span></td></tr>
+                        <tr><td>#CC-0025</td><td>Take a Step Varsity Jacket</td><td>KES 7,500</td><td>14 Mar 2026</td><td>M-Pesa</td><td><span class="order-status status-delivered">Delivered</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── SAVED ITEMS ── -->
+    <div class="content-section" id="sec-saved">
+        <div class="dash-header"><div><div class="dash-greeting">Shopping</div><div class="dash-title"><em>Saved</em> Items</div></div></div>
+        <div class="panel">
+            <div class="panel-head"><div class="panel-title">Your Wishlist</div><a class="panel-action" href="#">Add all to cart</a></div>
+            <div class="panel-body">
+                <div class="saved-grid">
+                    <div class="saved-item"><div class="saved-item-img">☕</div><div><div class="saved-item-name">Arabica Batian 1kg</div><div class="saved-item-price">KES 2,500</div></div><button class="saved-item-remove">✕</button></div>
+                    <div class="saved-item"><div class="saved-item-img">🧥</div><div><div class="saved-item-name">Varsity Jacket</div><div class="saved-item-price">KES 7,500</div></div><button class="saved-item-remove">✕</button></div>
+                    <div class="saved-item"><div class="saved-item-img">🎁</div><div><div class="saved-item-name">Gold Hamper</div><div class="saved-item-price">KES 6,500</div></div><button class="saved-item-remove">✕</button></div>
+                    <div class="saved-item"><div class="saved-item-img">🥤</div><div><div class="saved-item-name">C&C Tumbler</div><div class="saved-item-price">KES 1,800</div></div><button class="saved-item-remove">✕</button></div>
+                    <div class="saved-item"><div class="saved-item-img">👕</div><div><div class="saved-item-name">Olive Green Tee</div><div class="saved-item-price">KES 1,000</div></div><button class="saved-item-remove">✕</button></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── HISTORY ── -->
+    <div class="content-section" id="sec-history">
+        <div class="dash-header"><div><div class="dash-greeting">Shopping</div><div class="dash-title">Browsing <em>History</em></div></div></div>
+        <div class="panel">
+            <div class="panel-head"><div class="panel-title">Recently Viewed</div><a class="panel-action" href="#">Clear history</a></div>
+            <div class="panel-body">
+                <div class="history-list">
+                    <div class="history-item"><div class="history-icon">📦</div><div><div class="history-name">Bold Starter Pack</div><div class="history-time">Today, 10:32am</div></div><div class="history-price">KES 7,500</div></div>
+                    <div class="history-item"><div class="history-icon">☕</div><div><div class="history-name">SL28 Natural Process 250g</div><div class="history-time">Today, 10:28am</div></div><div class="history-price">KES 950</div></div>
+                    <div class="history-item"><div class="history-icon">🌱</div><div><div class="history-name">Jepng'etich Farm — Batian Listing</div><div class="history-time">Yesterday, 4:15pm</div></div><div class="history-price">KES 2,800/kg</div></div>
+                    <div class="history-item"><div class="history-icon">🎁</div><div><div class="history-name">Corporate Hamper</div><div class="history-time">Yesterday, 3:42pm</div></div><div class="history-price">KES 8,500</div></div>
+                    <div class="history-item"><div class="history-icon">🧥</div><div><div class="history-name">Take a Step Varsity Jacket</div><div class="history-time">12 Apr, 9:20am</div></div><div class="history-price">KES 7,500</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── MESSAGES ── -->
+    <div class="content-section" id="sec-messages">
+        <div class="dash-header"><div><div class="dash-greeting">Communication</div><div class="dash-title">My <em>Messages</em></div></div></div>
+        <div class="panel">
+            <div class="panel-head"><div class="panel-title">Inbox</div></div>
+            <div class="panel-body" style="padding:0">
+                <div class="message-layout">
+                    <div class="message-threads">
+                        <div class="thread-item active-thread">
+                            <div class="thread-avatar green">JF</div>
+                            <div class="thread-info"><div class="thread-name">Jepng'etich Farm</div><div class="thread-preview">Yes, the 5kg lot is available...</div></div>
+                            <div class="thread-meta"><div class="thread-time">2m</div><div class="thread-unread">2</div></div>
+                        </div>
+                        <div class="thread-item">
+                            <div class="thread-avatar">CC</div>
+                            <div class="thread-info"><div class="thread-name">C&C Support</div><div class="thread-preview">Your order #CC-0041 is being...</div></div>
+                            <div class="thread-meta"><div class="thread-time">1h</div></div>
+                        </div>
+                        <div class="thread-item">
+                            <div class="thread-avatar green">KF</div>
+                            <div class="thread-info"><div class="thread-name">Kirinyaga Farm</div><div class="thread-preview">We have a new SL34 lot ready</div></div>
+                            <div class="thread-meta"><div class="thread-time">2d</div></div>
+                        </div>
+                    </div>
+
+                    <div class="message-chat">
+                        <div class="chat-head">
+                            <div class="chat-head-avatar">JF</div>
+                            <div><div class="chat-head-name">Jepng'etich Farm</div><div class="chat-head-status">● Online</div></div>
+                        </div>
+                        <div class="chat-messages">
+                            <div class="msg received"><div class="msg-bubble">Hello! I saw you were interested in our Batian 1kg listing.</div><div class="msg-time">10:15am</div></div>
+                            <div class="msg sent"><div class="msg-bubble">Yes! I'd like to order 5kg. Is the lot still available?</div><div class="msg-time">10:18am</div></div>
+                            <div class="msg received"><div class="msg-bubble">Yes, the 5kg lot is available. We can do KES 2,800/kg. Harvest was October 2025 — very fresh batch.</div><div class="msg-time">10:20am</div></div>
+                            <div class="msg sent"><div class="msg-bubble">That works for me. How do I proceed with the M-Pesa payment?</div><div class="msg-time">10:22am</div></div>
+                            <div class="msg received"><div class="msg-bubble">Click "Order Now" on the listing and the M-Pesa STK push will come to your number automatically. Let me know if you need help!</div><div class="msg-time">10:24am</div></div>
+                        </div>
+                         <div class="chat-input-area">
+                            <input class="chat-input" placeholder="Type a message..."/>
+                            <button class="chat-send">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── SUPPORT ── -->
+    <div class="content-section" id="sec-support">
+        <div class="dash-header"><div><div class="dash-greeting">Help</div><div class="dash-title">Support <em>Centre</em></div></div></div>
+        <div class="support-grid">
+            <div class="support-card"><div class="support-card-icon">💬</div><div class="support-card-title">Live Chat</div><div class="support-card-desc">Chat with our support team in real time. Available Mon–Sat, 8am–8pm EAT.</div><button class="support-btn">Start Chat →</button></div>
+            <div class="support-card"><div class="support-card-icon">📧</div><div class="support-card-title">Email Support</div><div class="support-card-desc">Send us a detailed message and we'll respond within 24 hours.</div><button class="support-btn">Send Email →</button></div>
+            <div class="support-card"><div class="support-card-icon">📋</div><div class="support-card-title">Raise a Ticket</div><div class="support-card-desc">For order issues, payment disputes, or account problems. Track your ticket status here.</div><button class="support-btn">New Ticket →</button></div>
+            <div class="support-card"><div class="support-card-icon">📖</div><div class="support-card-title">Help & FAQs</div><div class="support-card-desc">Browse common questions about ordering, M-Pesa payments, and the grower marketplace.</div><button class="support-btn">Browse FAQs →</button></div>
+        </div>
+        </div>
+
+    </div>
+
+    <!-- ── SETTINGS ── -->
+    <div class="content-section" id="sec-settings">
+        <div class="dash-header"><div><div class="dash-greeting">Account</div><div class="dash-title">Account <em>Settings</em></div></div></div>
+        <div class="settings-grid">
+            <div class="settings-panel">
+                <div class="settings-panel-title">Personal Information</div>
+                <div class="settings-field"><label>First Name</label><input type="text" value="Faith"/></div>
+                <div class="settings-field"><label>Last Name</label><input type="text" value="Njeri"/></div>
+                <div class="settings-field"><label>Email</label><input type="email" value="faith@example.com"/></div>
+                <div class="settings-field"><label>Phone (M-Pesa)</label><input type="tel" value="0712 345 678"/></div>
+                <button class="settings-save">Save Changes</button>
+            </div>
+            <div class="settings-panel">
+                <div class="settings-panel-title">Delivery Address</div>
+                <div class="settings-field"><label>Town / City</label><input type="text" value="Nairobi"/></div>
+                <div class="settings-field"><label>Area</label><input type="text" value="Westlands"/></div>
+                <div class="settings-field"><label>Delivery Notes</label><input type="text" placeholder="e.g. Gate 3, Blue door"/></div>
+                <button class="settings-save">Save Address</button>
+            </div>
+            <div class="settings-panel">
+                <div class="settings-panel-title">Change Password</div>
+                <div class="settings-field"><label>Current Password</label><input type="password" placeholder="••••••••"/></div>
+                <div class="settings-field"><label>New Password</label><input type="password" placeholder="Min. 8 characters"/></div>
+                <div class="settings-field"><label>Confirm New Password</label><input type="password" placeholder="••••••••"/></div>
+                <button class="settings-save">Update Password</button>
+            </div>
+            <div class="settings-panel">
+                <div class="settings-panel-title">Notifications</div>
+                <div class="settings-field"><label>Order Updates</label><select><option>Email + SMS</option><option>Email only</option><option>SMS only</option></select></div>
+                <div class="settings-field"><label>New Farm Listings</label><select><option>Email</option><option>Off</option></select></div>
+                <div class="settings-field"><label>Promotions & Events</label><select><option>On</option><option>Off</option></select></div>
+                <button class="settings-save">Save Preferences</button>
+            </div>
+        </div>
+
+    </div>
+
+  </main>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/buyer_dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/logout_base.js') }}"></script>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

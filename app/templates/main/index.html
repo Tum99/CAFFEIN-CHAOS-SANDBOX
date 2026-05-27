@@ -1,0 +1,423 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main id="home">
+  <!-- HERO SECTION -->
+ 
+<section class="hero">
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+  <!-- <div class="hero-img-block">
+    
+    <div class="hero-img-overlay">
+      <img
+        src="{{ url_for('static', filename='images/Step.jpeg') }}"  
+        alt="Hand holding Caffeine & Chaos cup"
+        class="hero-photo-img"          
+      />
+    </div>
+  </div> -->
+  <div class="hero-bg"></div>
+  <div class="hero-cup-visual"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">Kenyan Specialty Coffee</div>
+    <h1 class="hero-title">Caffeine<br><em>&amp; Chaos</em></h1>
+    <p class="hero-sub">From the highlands of Kenya to your cup — we connect growers, inspire buyers, and brew the extraordinary.</p>
+    <!-- <div class="hero-actions">
+      <a href="#" class="btn-primary">Explore the Menu</a>
+      <a href="#" class="btn-outline">Take a Step →</a>
+    </div> -->
+  </div>
+  <div class="hero-scroll">
+    <div class="hero-scroll-line"></div>
+    <span>Scroll</span>
+  </div>
+</section>
+
+
+<!-- ── TICKER ── -->
+<div class="ticker">
+  <div class="ticker-track">
+    <span class="ticker-item">Arabica Premium Citrus <span class="ticker-dot">✦</span></span>
+    <span class="ticker-item">Farm to Cup <span class="ticker-dot">✦</span></span>
+    <span class="ticker-item">Batian Varietal <span class="ticker-dot">✦</span></span>
+    <span class="ticker-item">Made in Kenya <span class="ticker-dot">✦</span></span>
+    <span class="ticker-item">Take a Step <span class="ticker-dot">✦</span></span>
+    <span class="ticker-item">Connect. Brew. Grow. <span class="ticker-dot">✦</span></span>
+    <span class="ticker-item">Arabica Premium Citrus <span class="ticker-dot">✦</span></span>
+    <span class="ticker-item">Farm to Cup <span class="ticker-dot">✦</span></span>
+    <span class="ticker-item">Batian Varietal <span class="ticker-dot">✦</span></span>
+    <span class="ticker-item">Made in Kenya <span class="ticker-dot">✦</span></span>
+    <span class="ticker-item">Take a Step <span class="ticker-dot">✦</span></span>
+    <span class="ticker-item">Connect. Brew. Grow. <span class="ticker-dot">✦</span></span>
+  </div>
+</div>
+
+
+<!-- ── STORY SECTION ── -->
+<section>
+  <div class="story">
+    <div class="story-img">
+      <div class="story-img-inner">
+        <img
+          src="{{ url_for('static', filename='images/Man-outside.jpeg') }}"
+          alt="Man drinking coffee outdoors with C&C products"
+          class="story-photo-img"
+        />
+      </div>
+      <div class="story-img-tag">"Brewed in the wild."</div>
+    </div>
+
+    <div class="story-text">
+      <div class="section-label">Our Story</div>
+      <h2 class="section-title">Where the farm<br>meets the <em>future</em></h2>
+      <p>Caffeine & Chaos was born from the belief that Kenya's finest coffee deserved a stage worthy of its complexity. While our roots remain deeply connected to the dedicated growers of Uasin Gishu, 
+        our mission has evolved into bringing the complete coffee experience directly to you.</p>
+      <p>We curate and sell premium specialty coffee bags and essential brewing gear, designed for those who treat coffee as more than just a morning routine. 
+        We're not just a brand. We're a movement. A community. A culture built around the ritual of the cup and the stories behind every bean.</p>
+      <div class="story-stats">
+        <div><div class="stat-num">3+</div><div class="stat-lbl">Coffee Varietals</div></div>
+        <div><div class="stat-num">100%</div><div class="stat-lbl">Kenyan Origin</div></div>
+        <div><div class="stat-num">∞</div><div class="stat-lbl">Connections Made</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── MENU PREVIEW ── -->
+<section class="menu-preview">
+  <div class="menu-inner">
+    <div class="menu-header">
+      <div>
+        <div class="section-label">What We Brew</div>
+        <h2 class="section-title">The <em>Menu</em></h2>
+      </div>
+      <!-- <a href="#" class="btn-outline">View Full Menu →</a> -->
+       <p class="btn-outline">Full Menu Coming Soon →</p>
+    </div>
+    <div class="menu-grid">
+      <div class="menu-card">
+        <div class="menu-card-bg bg-warm" style="height:100%;">
+          <img
+            src="{{ url_for('static', filename='images/Product-images/Romana.jpg') }}"
+            alt="Citrus cold brew cocktail"
+            class="menu-card-img"
+          />
+        </div>
+        <div class="menu-card-overlay"></div>
+        <div class="menu-card-content">
+          <span class="menu-tag">Black Coffee</span>
+          <div class="menu-card-name">Romana</div>
+          <div class="menu-card-price">From KES 200</div>
+        </div>
+      </div>
+      <div class="menu-card">
+        <div class="menu-card-bg bg-mid" style="height:100%;">
+            <img
+                src="{{ url_for('static', filename='images/Product-images/Iced-Latte.png') }}"
+                alt="Citrus cold brew cocktail"
+                class="menu-card-img"
+            />        
+        </div>
+        <div class="menu-card-overlay"></div>
+        <div class="menu-card-content">
+          <span class="menu-tag">Cold Coffee</span>
+          <div class="menu-card-name">Iced-Latte</div>
+          <div class="menu-card-price">From KES 500</div>
+        </div>
+      </div>
+      <div class="menu-card">
+        <div class="menu-card-bg bg-cool" style="height:100%;">
+            <img
+                src="{{ url_for('static', filename='images/Product-images/Nutty-Milano.png') }}"
+                alt="Citrus cold brew cocktail"
+                class="menu-card-img"
+            />      
+        </div>
+      <div class="menu-card-overlay"></div>
+        <div class="menu-card-content">
+          <span class="menu-tag">Flavoured Coffee</span>
+          <div class="menu-card-name">Nutty<br>Milano</div>
+          <div class="menu-card-price">From KES 600</div>
+        </div>
+      </div>
+      <div class="menu-card">
+        <div class="menu-card-bg bg-warm" style="height:100%;">
+            <img
+                src="{{ url_for('static', filename='images/Product-images/Ristretto.png') }}"
+                alt="Citrus cold brew cocktail"
+                class="menu-card-img"
+            />        
+        </div>
+        <div class="menu-card-overlay"></div>
+        <div class="menu-card-content">
+          <span class="menu-tag">Speciality of Espresso</span>
+          <div class="menu-card-name">Ristretto</div>
+          <div class="menu-card-price">From KES 250</div>
+        </div>
+      </div>
+    </div>
+    <!-- <div class="menu-cta"><a href="#" class="btn-primary">Order Now</a></div> -->
+     <div class="menu-cta"><p class="btn-primary">Available for order soon</p></div>
+  </div>
+</section>
+
+ <!-- ── COMMUNITY ── -->
+<section>
+  <div class="community">
+    <div class="community-header">
+      <div>
+        <div class="section-label">The Culture</div>
+        <h2 class="section-title">More than coffee.<br>It's a <em>community.</em></h2>
+      </div>
+      <p class="community-desc">Caffeine & Chaos is more than a destination; it’s where a shared passion for the craft 
+      comes to life. We believe that every cup is an invitation to connect, and every gathering is an opportunity to celebrate the artistry behind the brew.
+      We provide the essentials for a culture that values quality and conversation. Whether you’re a seasoned barista or a home enthusiast, you aren't just buying coffee—you're joining a collective of rebels and dreamers who
+      find beauty in the chaos and clarity in the cup. Every sip starts a story; every memory starts here.</p>
+    </div>
+    <div class="community-grid">
+      <div class="com-card tall">
+        <div class="com-card-bg-inner" style="height:100%;background:linear-gradient(160deg,#1C1208,#0A0604);">
+          <img
+              src="{{ url_for('static', filename='images/Community1.jpeg') }}"
+              alt="Citrus cold brew cocktail"
+              class="com-img"
+          />        
+        </div>
+        <div class="com-label">Community Events</div>
+      </div>
+      <div class="com-card">
+        <div class="com-card-bg-inner" style="height:100%;background:linear-gradient(160deg,#2E1A0E,#0A0604);">
+          <img
+            src="{{ url_for('static', filename='images/Community2.jpeg') }}"
+            alt="Citrus cold brew cocktail"
+            class="com-img"
+          />        
+        </div>
+        <div class="com-label">Good Vibes Only</div>
+      </div>
+      <div class="com-card">
+        <div class="com-card-bg-inner" style="height:100%;background:linear-gradient(160deg,#1A2E0E,#040A04);">
+          <img
+            src="{{ url_for('static', filename='images/Community3.jpeg') }}"
+            alt="Citrus cold brew cocktail"
+            class="com-img"
+          />        
+        </div>
+        <div class="com-label">Craft in Action</div>
+      </div>
+      <div class="com-card">
+        <div class="com-card-bg-inner" style="height:100%;background:linear-gradient(160deg,#2E200E,#0A0804);">
+          <img
+            src="{{ url_for('static', filename='images/Bag1.jpeg') }}"
+            alt="Citrus cold brew cocktail"
+            class="com-img"
+          />         
+        </div>
+        <div class="com-label">In the Wild</div>
+      </div>
+      <div class="com-card">
+        <div class="com-card-bg-inner" style="height:100%;background:linear-gradient(160deg,#201A2E,#04040A);">
+          <img
+            src="{{ url_for('static', filename='images/Table-Items.jpeg') }}"
+            alt="Citrus cold brew cocktail"
+            class="com-img"
+          />         
+        </div>
+        <div class="com-label">Artisan Brews</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── GROWER / BUYER CTA ── -->
+<div class="connect-section">
+  <div class="connect-inner">
+    <div class="connect-card grower">
+      <span class="connect-icon">🌱</span>
+      <div class="connect-label">For Growers</div>
+      <h3 class="connect-title">Sell your harvest.<br>Reach the world.</h3>
+      <p class="connect-desc">List your farm's coffee directly on our platform. Connect with verified buyers, negotiate fair prices, and grow your business — all without leaving your farm.</p>
+      <!-- <a href="#" class="connect-btn">Join as a Grower</a> -->
+       <p class="connect-btn">Coming Soon</p>
+    </div>
+    <div class="connect-card buyer">
+      <span class="connect-icon">☕</span>
+      <div class="connect-label">For Buyers</div>
+      <h3 class="connect-title">Source directly.<br>Taste the <em>origin.</em></h3>
+      <p class="connect-desc">Browse farm profiles, verify quality, and purchase directly from Kenyan growers. No middlemen. Full traceability. Exceptional coffee.</p>
+      <!-- <a href="#" class="connect-btn">Join as a Buyer</a> -->
+       <p class="connect-btn">Coming Soon</p>
+    </div>
+  </div>
+</div>
+
+
+
+  <!-- ── PRODUCTS STRIP ── -->
+<section class="products-strip">
+  <div class="products-inner">
+    <div class="products-header">
+      <div>
+        <div class="section-label">The Store</div>
+        <h2 class="section-title">Shop <em>C&amp;C</em></h2>
+      </div>
+      <!-- <a href="#" class="btn-outline">All Products →</a> -->
+      <a href="{{url_for('products.list_products')}}" class="btn-outline">View Products →</a>
+    </div>
+    <div class="products-scroll">
+      <div class="product-card">
+        <div class="product-card-img product-bg-1">
+          <img
+            src="{{ url_for('static', filename='images/Bag1.jpeg') }}"
+            alt="Arabica Premium Citrus 250g coffee bag"
+            class="product-img"
+          />        
+        </div>
+        <div class="product-info">
+          <div class="product-cat">Coffee</div>
+          <div class="product-name">Arabica Premium Citrus — 250g</div>
+          <div class="product-price">KES 850</div>
+        </div>
+        <!-- <div class="product-add">+</div> -->
+      </div>
+      <div class="product-card">
+        <div class="product-card-img product-bg-2">
+          <img
+            src="{{ url_for('static', filename='images/Product3.jpeg') }}"
+            alt="Arabica Premium Citrus 250g coffee bag"
+            class="product-img"
+          />        
+        </div>
+        <div class="product-info">
+          <div class="product-cat">Apparel</div>
+          <div class="product-name">Take a Step Tee — Brown</div>
+          <div class="product-price">KES 2,500</div>
+        </div>
+        <!-- <div class="product-add">+</div> -->
+      </div>
+      <div class="product-card">
+        <div class="product-card-img product-bg-3">
+          <img
+            src="{{ url_for('static', filename='images/Product1.jpeg') }}"
+            alt="Arabica Premium Citrus 250g coffee bag"
+            class="product-img"
+          />        
+        </div>
+        <div class="product-info">
+          <div class="product-cat">Apparel</div>
+          <div class="product-name">Take a Step Tee — Beige</div>
+          <div class="product-price">KES 2,500</div>
+        </div>
+        <!-- <div class="product-add">+</div> -->
+      </div>
+      <div class="product-card">
+        <div class="product-card-img product-bg-4">
+          <img
+            src="{{ url_for('static', filename='images/Apron1.jpeg') }}"
+            alt="Arabica Premium Citrus 250g coffee bag"
+            class="product-img"
+          />        
+        </div>
+        <div class="product-info">
+          <div class="product-cat">Barista Gear</div>
+          <div class="product-name">Caffeine & Chaos Apron</div>
+          <div class="product-price">KES 3,200</div>
+        </div>
+        <!-- <div class="product-add">+</div> -->
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-top">
+    <div>
+      <div class="footer-brand-name">Caffeine<br><span>& Chaos</span></div>
+      <div class="footer-tagline">Take a Step</div>
+      <p class="footer-desc">Brewing culture, one cup at a time. Connecting Kenya's finest coffee growers with passionate buyers.</p>
+    </div>
+    <div>
+      <div class="footer-col-title">Navigate</div>
+      <ul class="footer-links">
+        <li><a href="#">Home</a></li>
+        <!-- <li><a href="#">Menu</a></li> -->
+        <li><a href="{{ url_for('products.list_products') }}">Products</a></li>
+      </ul>
+    </div>
+    <!-- <div>
+      <div class="footer-col-title">Platform</div>
+      <ul class="footer-links">
+        <li><a href="#">Grower Portal</a></li>
+        <li><a href="#">Buyer Portal</a></li>
+        <li><a href="#">Messaging</a></li>
+        <li><a href="#">Create Account</a></li>
+      </ul>
+    </div> -->
+    <div>
+      <div class="footer-col-title">Contact</div>
+      <ul class="footer-links">
+        <li><a href="https://www.instagram.com/caffeineandchaos.shop" target="_blank" class="footer-link">
+          Instagram</a>
+        </li>
+        <li><a href="https://wa.me/254726142809">WhatsApp</a></li>
+        <li><a href="mailto:caffein.chaos@yahoo.com">Email Us</a></li>
+        <li><a href="#">Eldoret, Kenya</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2026 Caffeine & Chaos. All rights reserved.</div>
+    <!-- <div class="footer-mpesa"><div class="mpesa-dot"></div>Secure payments via M-Pesa</div> -->
+  </div>
+</footer>
+<div class="scroll-top" id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</div>
+
+
+<script>
+  const cursor = document.getElementById('cursor');
+  const ring   = document.getElementById('cursorRing');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    cursor.style.left = mx + 'px';
+    cursor.style.top  = my + 'px';
+  });
+  function animRing() {
+    rx += (mx - rx) * 0.12;
+    ry += (my - ry) * 0.12;
+    ring.style.left = rx + 'px';
+    ring.style.top  = ry + 'px';
+    requestAnimationFrame(animRing);
+  }
+  animRing();
+
+  /* scroll top */
+  const st = document.getElementById('scrollTop');
+  window.addEventListener('scroll', () => st.classList.toggle('visible', window.scrollY > 400));
+
+  const nav = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 60);
+  });
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.story, .menu-card, .com-card, .connect-card, .product-card').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(30px)';
+    el.style.transition = 'opacity 0.8s ease, transform 0.8s cubic-bezier(0.22,1,0.36,1)';
+    observer.observe(el);
+  });
+</script>
+
+</main>
+{% endblock %}
