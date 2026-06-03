@@ -1,41 +1,66 @@
 from flask import Blueprint, render_template, request, redirect, url_for
 from flask_login import login_required, current_user
-from app.models import Message, User, db
+from app.models import User, MessageThread, DirectMessage ,db
 
-messages = Blueprint('messages', __name__)
+messaging = Blueprint('messaging', __name__)
 
-@messages.route('/messages')
+@messaging.route('/messages')
 @login_required
 def inbox():
-    inbox_messages = Message.query.filter_by(receiver_id=current_user.id).all()
-    return render_template('messages/inbox.html', messages=inbox_messages)
+    threads = MessageThread.query.filter(
+        (MessageThread.buyer_id == current_user.id) | 
+        (MessageThread.seller_id == current_user.id)
+    ).order_by(MessageThread.updated_at.desc()).all()
 
+    return render_template('seller/dashboard.html', threads=threads, active_page='messages')
 
-@messages.route('/messages/<int:user_id>')
+@messaging.route('/api/messages/<int:thread_id>')
 @login_required
-def chat(user_id):
-    other_user = User.query.get_or_404(user_id)
+def get_thread_messages(thread_id):
+    thread = MessageThread.query.get_or_404(thread_id)
+    
+    # Security: Ensure current user belongs to this thread
+    if current_user.id not in [thread.buyer_id, thread.seller_id]:
+        return jsonify({"error": "Unauthorized"}), 403
+        
+    messages = []
+    for msg in thread.messages:
+        # Format sender initials
+        other_user = thread.seller if current_user.id == thread.buyer_id else thread.buyer
+        messages.append({
+            "id": msg.id,
+            "body": msg.body,
+            "sender_id": msg.sender_id,
+            "is_mine": msg.sender_id == current_user.id,
+            "time": msg.created_at.strftime("%I:%M%p").lower()
+        })
+    
+    return jsonify({
+        "other_user_name": other_user.username, # or name attribute
+        "messages": messages
+    })
 
-    msgs = Message.query.filter(
-        (Message.sender_id == current_user.id) & (Message.receiver_id == user_id) |
-        (Message.sender_id == user_id) & (Message.receiver_id == current_user.id)
-    ).order_by(Message.timestamp.asc()).all()
-
-    return render_template('messages/chat.html', messages=msgs, other=other_user)
-
-
-@messages.route('/messages/send/<int:user_id>', methods=['POST'])
+@messaging.route('/api/messages/<int:thread_id>/send', methods=['POST'])
 @login_required
-def send_message(user_id):
-    content = request.form['content']
+def send_message(thread_id):
+    thread = MessageThread.query.get_or_404(thread_id)
+    data = request.get_json()
+    
+    if not data or not data.get('body'):
+        return jsonify({"error": "Empty message"}), 400
 
-    msg = Message(
+    new_msg = DirectMessage(
+        thread_id=thread.id,
         sender_id=current_user.id,
-        receiver_id=user_id,
-        content=content
+        body=data.get('body')
     )
-
-    db.session.add(msg)
+    db.session.add(new_msg)
     db.session.commit()
 
-    return redirect(url_for('messages.chat', user_id=user_id))
+    return jsonify({
+        "status": "success",
+        "message": {
+            "body": new_msg.body,
+            "time": new_msg.created_at.strftime("%I:%M%p").lower()
+        }
+    })

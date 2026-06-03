@@ -65,6 +65,7 @@ def create_app():
     from app.products.routes import products
     from app.menu.routes import menu
     from app.admin.routes import admin
+    from app.messaging.routes import messaging
     
 
     app.register_blueprint(main)
@@ -76,6 +77,7 @@ def create_app():
     app.register_blueprint(products)
     app.register_blueprint(menu)
     app.register_blueprint(admin)
+    app.register_blueprint(messaging)
     
 
     @app.route('/test-products')
