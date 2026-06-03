@@ -7,12 +7,7 @@ document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; if
 /* ══════════════ SECTION SWITCHING ══════════════ */
 // 1. Define your available sections (Ensure these match your HTML IDs: sec-overview, etc.)
 const sections = ['overview', 'farm-profile', 'messages', 'settings', 'new-listing', 'listings', 'orders', 'earnings'];
-
-/**
- * Main function to toggle dashboard views
- * @param {string} name - The name of the section to show
- * @param {Event} e - Optional event object to handle defaults
- */
+ 
 function showSection(name, e) {
     if (e) e.preventDefault();
 
@@ -81,6 +76,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const hash = window.location.hash.replace('#', '');
     if (sections.includes(hash)) {
         showSection(hash);
+    } else if (hash === "") {
+    showSection('overview'); // Default to overview if no valid hash exists
     }
 });
 
@@ -133,7 +130,7 @@ function applyStep1CompletionUI() {
     }
 
     // 3. Show the farm badge in sidebar
-    const badge = document.getElementById('farmBadge');
+    const badge = document.getElementById('Badge');
     if (badge) badge.style.display = 'flex';
 
     // 4. Unlock listings in sidebar
@@ -189,9 +186,17 @@ function applyStep2CompletionUI() {
         }
     }
 
-    // 3. Unlock step 3
-    const s3 = document.getElementById('step3');
-    const s3Btn = document.getElementById('step3Btn'); // FIXED: Defined the variable
+    // 3. 🚀 FORCE BOTH SIDEBAR BADGES TO BE VISIBLE AT THE SAME TIME
+    const badge1 = document.getElementById('farmBadge');
+    if (badge1) {
+        badge1.style.setProperty('display', 'flex', 'important');
+    }
+
+    const badge2 = document.getElementById('listingsBadge');
+    if (badge2) {
+        badge2.style.setProperty('display', 'flex', 'important');
+    }
+    
     
     if (s3 && s3Btn) {
         s3.classList.remove('locked-step');
@@ -207,6 +212,7 @@ function applyStep2CompletionUI() {
         s3Btn.textContent = 'Go live now →';
         s3Btn.setAttribute('onclick', "showSection('new-marketplace', event)");
     }
+
 }
 
 // 4. Trigger logic after redirect
@@ -250,3 +256,44 @@ document.querySelectorAll('.setup-step, .stat-card, .zero-panel').forEach((el, i
     el.style.transition = `opacity 0.5s ease ${i * 0.07}s, transform 0.5s cubic-bezier(0.22,1,0.36,1) ${i * 0.07}s`;
     obs.observe(el);
 });
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    if (urlParams.get('published') === 'true') {
+        // 1. Make the Marketplace sidebar link glow for 5 seconds
+        const marketplaceLink = document.getElementById('marketplaceLink'); // Ensure your Marketplace <a> tag has this ID
+        if (marketplaceLink) {
+            marketplaceLink.classList.add('glow-active');
+            setTimeout(() => {
+                marketplaceLink.classList.remove('glow-active');
+            }, 5000); // 5000ms = 5 seconds
+        }
+
+        // 2. Inject and show the custom confirmation popup modal
+        showPublishSuccessModal();
+    }
+});
+
+function showPublishSuccessModal() {
+    // Create the modal HTML template dynamically
+    const modal = document.createElement('div');
+    modal.className = 'custom-modal-backdrop';
+    modal.innerHTML = `
+        <div class="custom-modal-content">
+            <div class="modal-icon">🎉</div>
+            <h3>Successfully Published!</h3>
+            <p>Your premium coffee listing is now live on the marketplace framework.</p>
+            <div class="modal-actions">
+                <a href="/marketplace" class="modal-btn primary">Check My Active Listing</a>
+                <button class="modal-btn secondary" onclick="closePublishModal(this)">Stay on Dashboard</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function closePublishModal(buttonEl) {
+    buttonEl.closest('.custom-modal-backdrop').remove();
+}

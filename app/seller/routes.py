@@ -1,6 +1,7 @@
 from flask import flash, Blueprint, render_template, request, redirect, url_for, current_app
 from flask_login import login_required, current_user
-from app.models import SellerProfile, DirectMessage, FarmProfile, Product, FarmProductListing, GrowerBuyerTransaction
+from app.models import SellerProfile, DirectMessage, FarmProfile, Product, FarmProductListing, GrowerBuyerTransaction as transactions
+from werkzeug.security import generate_password_hash, check_password_hash
 from app.utils.decorators import seller_required
 from datetime import datetime
 from app import db
@@ -112,32 +113,41 @@ def dashboard():
     if not farm or not farm.is_setup_complete:
         return redirect(url_for('seller.seller_setup'))
 
-    elif farm:
-        orders = GrowerBuyerTransaction.query.filter_by(grower_id=current_user.id).all()
-    else:
-        orders = []
+    orders = transactions.query.join(FarmProductListing).filter(FarmProductListing.grower_id == current_user.id).all()
+
+    listings = FarmProductListing.query.filter_by(farm_id=farm.id).all()
 
     # 1. Get all completed/paid transactions
     completed_orders = [o for o in orders if o.status in ['paid', 'completed']]
+    pending_orders = [o for o in orders if o.status == 'pending']
 
     # 2. Calculate earnings per product
     product_earnings = {}
+    this_month_gross = 0.0
+
+    current_month = datetime.utcnow().month
+    current_year = datetime.utcnow().year
+
     for order in completed_orders:
-        name = order.product.name
-        product_earnings[name] = product_earnings.get(name, 0) + order.total_amount
+        listing = order.farm_product_listing 
+
+        if listing:
+            display_name = f"{listing.varietal} ({listing.process})"
+        else:
+            display_name = "Unknown Coffee Batch"   
+
+        product_earnings[display_name] = product_earnings.get(display_name, 0) + order.total_amount
+
+        # Check if the transaction happened within the current calendar month
+        if order.created_at.month == current_month and order.created_at.year == current_year:
+            this_month_gross += order.total_amount
 
     # 3. Calculate Commission (5%)
     total_gross = sum(product_earnings.values())
+    pending_payout = sum(o.total_amount for o in pending_orders)
     commission = total_gross * 0.05
     net_earnings = total_gross - commission
-
-    listings = []
-    if farm:
-        listings = FarmProductListing.query.filter_by(farm_id=farm.id).all()
-
-    orders = GrowerBuyerTransaction.query.filter_by(
-        grower_id=current_user.id
-    ).order_by(GrowerBuyerTransaction.created_at.desc()).all()
+        
 
     earnings = sum(
         t.total_amount for t in orders
@@ -150,10 +160,12 @@ def dashboard():
         farm=farm,
         listings=listings,
         orders=orders,
-        earnings=earnings,
-        total_gross=total_gross,
-        commission=commission,
-        net_earnings=net_earnings,
+        this_month_earnings=f"{this_month_gross:,.0f}",
+        total_gross=f"{total_gross:,.0f}",
+        pending_payout=f"{pending_payout:,.0f}",
+        commission=f"{commission:,.0f}",
+        net_earnings=f"{net_earnings:,.0f}",
+        product_earnings=product_earnings,
         is_new_seller=(farm is None),  # ← True if brand new
         has_listings=len(listings) > 0,
         has_orders=len(orders) > 0
@@ -218,6 +230,7 @@ def add_listing():
     farm_listing = FarmProductListing(
         product_id=master_product.id, # Link it to the Product we just made
         farm_id=farm.id,
+        grower_id=current_user.id,
         varietal=request.form.get('varietal'),
         process=request.form.get('process'),
         roast_level=request.form.get('roast'),
@@ -262,6 +275,43 @@ def listings():
                            total_steps=steps_done) # <--- Pass total_steps here!
 
 
+@seller.route('/setup/go-live', methods=['POST'])
+@login_required
+@seller_required
+def go_live():
+    farm = FarmProfile.query.filter_by(user_id=current_user.id).first()
+    
+    # 1. can't go live without a farm profile
+    if not farm:
+        flash('Please complete your farm profile first.', 'error')
+        return redirect(url_for('seller.dashboard')) # Updated blueprint namespace
+
+    # 2. Get all this seller's products of type 'farm'
+    listings = Product.query.filter_by(
+        seller_id=current_user.id,
+        product_type='farm'
+    ).all()
+
+    # 3. can't go live without at least one listing
+    if not listings:
+        flash('Please add at least one listing first.', 'error')
+        return redirect(url_for('seller.dashboard')) 
+
+    # 4. Publish all their listings
+    for listing in listings:
+        # Since 'listing' is a Product object, 'listing.farm_listing' works perfectly via backref!
+        if listing.farm_listing:
+            listing.farm_listing.status = 'available'
+        
+        listing.is_available = True
+
+    # Save all changes permanently to your database
+    db.session.commit()
+    
+    flash('Your farm is now live on the marketplace!', 'success')
+    return redirect(url_for('marketplace.list_view'))
+    
+
 @seller.route('/toggle-live', methods=['POST'])
 @login_required
 @seller_required
@@ -282,3 +332,63 @@ def toggle_live():
     status = "now live!" if farm.is_live else "now hidden from the marketplace."
     flash(f"Your farm is {status}", "success")
     return redirect(url_for('seller.dashboard'))
+
+
+@seller.route('/settings/profile', methods=['POST'])
+@login_required
+@seller_required
+def update_profile():
+    current_user.first_name = request.form.get('first_name').strip()
+    current_user.last_name = request.form.get('last_name').strip()
+    current_user.email = request.form.get('email').strip()
+    current_user.phone = request.form.get('phone').strip()
+    
+    db.session.commit()
+    flash('Personal information updated successfully!', 'success')
+    return redirect(url_for('seller.dashboard', _anchor='sec-settings'))
+
+
+@seller.route('/settings/payout', methods=['POST'])
+@login_required
+@seller_required
+def update_payout():
+    # If your model tracking schema has attributes for these fields:
+    if hasattr(current_user, 'payout_phone'):
+        current_user.payout_phone = request.form.get('payout_phone').strip()
+        current_user.payout_frequency = request.form.get('payout_frequency')
+        db.session.commit()
+        flash('Payout options updated successfully.', 'success')
+    else:
+        flash('Payout custom parameters are not compiled in current schema.', 'error')
+        
+    return redirect(url_for('seller.dashboard', _anchor='sec-settings'))
+
+
+@seller.route('/settings/password', methods=['POST'])
+@login_required
+@seller_required
+def update_password():
+    current_pass = request.form.get('current_password')
+    new_pass = request.form.get('new_password')
+    confirm_pass = request.form.get('confirm_password')
+    
+    # 1. Verify old password matches database entry hash signature
+    if not check_password_hash(current_user.password_hash, current_pass):
+        flash('Incorrect current password confirmation.', 'error')
+        return redirect(url_for('seller.dashboard', _anchor='sec-settings'))
+        
+    # 2. Verify confirmation compliance
+    if new_pass != confirm_pass:
+        flash('New password mismatch error.', 'error')
+        return redirect(url_for('seller.dashboard', _anchor='sec-settings'))
+        
+    if len(new_pass) < 8:
+        flash('Password must contain at least 8 elements.', 'error')
+        return redirect(url_for('seller.dashboard', _anchor='sec-settings'))
+
+    # 3. Apply secure hash change
+    current_user.password_hash = generate_password_hash(new_pass)
+    db.session.commit()
+    
+    flash('Account security password modified smoothly.', 'success')
+    return redirect(url_for('seller.dashboard', _anchor='sec-settings'))

@@ -53,15 +53,13 @@
 
       <div class="sidebar-section-label">My Farm</div>
       <a
-        href="#"
         class="sidebar-link"
         onclick="showSection('farm-profile', event)"
       >
         <span class="sidebar-icon">🌿</span>
         <span class="sidebar-link-text">Farm Profile</span>
         <span class="sidebar-badge" id="farmBadge" style="display: none"
-          >✓</span
-        >
+          >✓</span>
       </a>
       <a
         href="#"
@@ -71,7 +69,9 @@
       >
         <span class="sidebar-icon">☕</span>
         <span class="sidebar-link-text">My Listings</span>
-        <span class="sidebar-lock">🔒</span>
+        <span class="sidebar-lock" id="farmBadge">🔒</span>
+        <span class="sidebar-badge" id="listingsBadge" style="display: none"
+          >✓</span>
       </a>
       <a href="#" class="sidebar-link locked" id="newListingLink">
         <span class="sidebar-icon">＋</span>
@@ -80,7 +80,7 @@
       </a>
 
       <div class="sidebar-section-label">Business</div>
-      <!-- <a
+      <a
         href="{{ url_for('main.marketplace') }}"
         class="sidebar-link locked"
         id="marketplaceLink"
@@ -89,7 +89,7 @@
         <span class="sidebar-icon">☕</span>
         <span class="sidebar-link-text">The Marketplace</span>
         <span class="sidebar-lock">🔒</span>
-      </a> -->
+      </a>
       <a href="#" class="sidebar-link locked" id="ordersLink">
         <span class="sidebar-icon">📋</span>
         <span class="sidebar-link-text">Orders Received</span>
@@ -135,7 +135,7 @@
             full dashboard.
           </p>
           <div class="welcome-actions">
-            <a
+            <a        
               class="btn-green-lg"
               onclick="showSection('farm-profile', event)"
             >
@@ -143,7 +143,7 @@
             </a>
             <a href="#" class="btn-outline-lg">Browse the Marketplace</a>
           </div>
-          <div class="welcome-hero-num">0</div>
+          <!-- <div class="welcome-hero-num">0</div> -->
         </div>
         {% elif farm and listings|length == 0 %}
         <div class="setup-summary-bar">
@@ -154,16 +154,16 @@
           </div>
 
           <div class="summary-action-card">
-            <div class="action-icon">✅</div>
+            <div class="step2-eyebrow" style="color:var(--green)">Step 2 of 3 — First Listing</div>
             <div class="action-text">
-              <h3>Farm Profile Created!</h3>
-              <p>
-                Your farm profile is live. Now add your first coffee lot to
+              <h1 style="font-family:'Cormorant Garamond', serif;">Farm Profile <em>Created!</em></h1>
+              <p class="step2-desc">
+                Your farm profile is ready. Now add your first coffee lot to
                 start selling.
               </p>
             </div>
             <button
-              class="btn-success-large"
+              class="btn-add-listing"
               onclick="showSection('new-listing')"
             >
               ADD FIRST LISTING →
@@ -178,59 +178,52 @@
             <div class="step-pill active">3. Go Live</div>
           </div>
           <div class="summary-action-card ready-state">
-            <div class="action-icon">🚀</div>
+            <div class="go-live-eyebrow" style="color:var(--green)">Step 3 of 3 — Final Step</div>
             <div class="action-text">
-              <h3>You are ready to launch!</h3>
-              <p>
-                Your profile and listings are prepared. Ready to open your shop
-                to buyers?
+              <h1 style="font-family:'Cormorant Garamond', serif;">You are ready to go <em>Live!</em> Review and publish<br></h1>
+              <p class="go-live-desc">
+                Once you publish, your listing will appear on the Caffeine & Chaos
+                marketplace. Buyers can find you, message you, and place orders.
               </p>
             </div>
             <div class="step-actions" style="margin-top: 2rem; text-align: center;">
-              <button class="btn-launch" onclick="showSection('go-live', event)">
-                GO LIVE NOW →
-              </button>
+              <form method="POST" action="{{ url_for('seller.go_live') }}" id="goLiveForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token is defined else '' }}"/>
+                <!-- Checkbox — seller confirms details are correct -->
+                <div style="margin-bottom:1.5rem; display:flex; align-items:flex-start; gap:0.8rem;">
+                  <input type="checkbox" name="checkbox" id="confirmDetails" required
+                        style="margin-top:0.2rem; accent-color:var(--green); cursor:none;"/>
+                  <label for="confirmDetails"
+                        style="font-size:0.8rem; color:rgba(245,236,215,0.5); line-height:1.7; cursor:none;">
+                    I confirm that my farm profile and listing details are accurate.
+                    I understand that buyers will be able to find and contact me through
+                    the Caffeine & Chaos marketplace.
+                  </label>
+                </div>
 
-              <div style="margin-top: 1.5rem;">
-                  <form action="{{ url_for('seller.skip_onboarding') }}" method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                    <button type="submit" class="skip-link-btn">
-                          Skip for now & go to dashboard
-                      </button>
-                  </form>
-              </div>
+                <div class="step3-actions">
+                  <a href="{{ url_for('seller.dashboard', published='true')}}" class="btn-g btn-g-lg" >
+                    Publish to Marketplace
+                  </a>
+
+                  <button type="button" class="btn-outline-sl"
+                          onclick="showSection('new-listing', event)">
+                    ← Edit Listing
+                  </button>
+
+                </div>        
+                
+              </form>    
+            </div>
+            
+            <div class="skip_onboarding">
+                <a href="{{ url_for('seller.skip_onboarding') }}" class="skip-link-btn">
+                    Skip for now & go to dashboard →
+                </a>
             </div>
           </div>
         </div>
         {% endif %}
-
-        <!-- Zero stats -->
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-label">Total Earnings</div>
-            <div class="stat-value">KES 0</div>
-            <div class="stat-hint">Complete setup to start earning</div>
-            <div class="stat-icon">💰</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Active Listings</div>
-            <div class="stat-value">0</div>
-            <div class="stat-hint">Add your first coffee lot</div>
-            <div class="stat-icon">☕</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Orders Received</div>
-            <div class="stat-value">0</div>
-            <div class="stat-hint">Orders appear after listing</div>
-            <div class="stat-icon">📋</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Buyers Connected</div>
-            <div class="stat-value">0</div>
-            <div class="stat-hint">Start messaging to connect</div>
-            <div class="stat-icon">🤝</div>
-          </div>
-        </div>
 
         <!-- Tips strip -->
         <div class="tips-strip">
@@ -325,31 +318,11 @@
             </button>
           </div>
         </div>
+      
+      </div> 
 
-        <!-- Zero state panels -->
-        <div class="zero-grid">
-          <div class="zero-panel dashed">
-            <div class="zero-panel-icon">☕</div>
-            <div class="zero-panel-title">No listings yet</div>
-            <div class="zero-panel-desc">
-              Your coffee lots will appear here once you complete your farm
-              profile and add a listing.
-            </div>
-            <div class="zero-panel-hint">Complete Step 1 to unlock →</div>
-          </div>
-          <div class="zero-panel dashed">
-            <div class="zero-panel-icon">📋</div>
-            <div class="zero-panel-title">No orders yet</div>
-            <div class="zero-panel-desc">
-              Orders from buyers will appear here once your first listing is
-              live on the marketplace.
-            </div>
-            <div class="zero-panel-hint">Complete Step 2 to unlock →</div>
-          </div>
-        </div>
-      </div>
-      <!-- end overview -->
-
+      <!--end overview-->
+        
       <!-- ══════════════ FARM PROFILE SETUP ══════════════ -->
       <div id="sec-farm-profile" style="display: none">
         {% if farm %}
@@ -380,7 +353,7 @@
                       <div><div class="farm-spec-label">Member Since</div><div class="farm-spec-value">{{ current_user.created_at.year if current_user.created_at else '2026' }}</div></div>
                   </div>
                   
-                  <button class="panel-action" onclick="showSection('sec-listings')" style="width:100%; margin-top:2rem; background:var(--green); color:var(--espresso); border:none; padding:1rem; cursor:pointer; font-weight:600; letter-spacing:0.1em; text-transform:uppercase;">
+                  <button class="panel-action" onclick="showSection('listings')" style="width:100%; margin-top:2rem; background:var(--green); color:var(--espresso); border:none; padding:1rem; cursor:pointer; font-weight:600; letter-spacing:0.1em; text-transform:uppercase;">
                       Continue to Step 2 →
                   </button>
               </div>
@@ -704,11 +677,12 @@
                 ><textarea placeholder="Describe your coffee..."></textarea>
               </div>
             </div>
+
             <div class="form-panel">
               <div class="form-panel-title">Coffee Specifications</div>
               <div class="form-field">
                 <label>Varietal</label>
-                <select>
+                <select name="varietal">
                   <option>Batian</option>
                   <option>SL28</option>
                   <option>SL34</option>
@@ -718,7 +692,7 @@
               </div>
               <div class="form-field">
                 <label>Process</label>
-                <select>
+                <select name="process">
                   <option>Washed</option>
                   <option>Natural</option>
                   <option>Honey</option>
@@ -726,7 +700,7 @@
               </div>
               <div class="form-field">
                 <label>Roast Level</label>
-                <select>
+                <select name="roast">
                   <option>Light</option>
                   <option>Medium</option>
                   <option>Dark</option>

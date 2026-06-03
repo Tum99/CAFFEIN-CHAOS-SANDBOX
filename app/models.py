@@ -237,6 +237,12 @@ class FarmProductListing(db.Model):
         nullable=False
     )
 
+    grower_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id"),
+        nullable=False
+    )
+
     # coffee-specific details
     varietal = db.Column(db.String(100))          # e.g. Batian, SL28, Ruiru 11
     process = db.Column(db.String(50))            # Washed, Natural, Honey
@@ -296,7 +302,11 @@ class GrowerBuyerTransaction(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # relationships
-    listing = db.relationship("FarmProductListing", backref="transactions")
+    listing = db.relationship(
+        "FarmProductListing", 
+        backref="transactions"
+    )
+
     buyer = db.relationship(
         "User",
         foreign_keys=[buyer_id],
@@ -344,12 +354,27 @@ class ServiceBooking(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+class MessageThread(db.Model):
+    __tablename__ = "message_thread"
+    id = db.Column(db.Integer, primary_key=True)
+    buyer_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    seller_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    messages = db.relationship("DirectMessage", backref="thread", lazy=True, cascade="all, delete")
+    buyer = db.relationship("User", foreign_keys=[buyer_id])
+    seller = db.relationship("User", foreign_keys=[seller_id])
+
+
 class DirectMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    sender_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    receiver_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    content = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    sender_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    receiver_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    thread_id = db.Column(db.Integer, db.ForeignKey("message_thread.id"), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    is_read = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class Review(db.Model):

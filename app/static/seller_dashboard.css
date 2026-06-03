@@ -150,7 +150,7 @@ body::before {
 
 
 /* new listing form */
-.new-listing-form { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5px; }
+.new-listing-form { display: grid; grid-template-columns: 1fr 1fr; width: 100%; gap: 1.5px; }
 .form-panel { background: var(--bark); padding: 1.8rem; }
 .form-panel-title { font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--green); margin-bottom: 1.2rem; }
 .form-field { margin-bottom: 1rem; }

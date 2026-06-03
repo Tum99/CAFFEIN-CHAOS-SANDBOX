@@ -50,13 +50,13 @@
           >
         </li>
 
-        <!-- <li>
+        <li>
           <a
             href="{{ url_for('menu.main_menu') }}"
             class="{{ 'active' if active_page == 'menu' }}"
             >Menu</a
           >
-        </li> -->
+        </li>
 
         <li>
           <a
@@ -77,9 +77,9 @@
       </ul>
 
       {% else %}
-      <!-- <div class="nav-cta">
+      <div class="nav-cta">
         <a href="{{ url_for('auth.login') }}" class="btn-filled">Login</a>
-      </div> -->
+      </div>
       {% endif %}
     </nav>
 

@@ -432,12 +432,12 @@
   <!-- ══ MARKET MAIN ══ -->
   <div class="market-main">
     <div class="results-bar">
-      <div style="display: flex; align-items: center; gap: 1.5rem">
+      <!-- <div style="display: flex; align-items: center; gap: 1.5rem">
         <div class="results-count">
           <strong id="resultsCount">8</strong> listings found
         </div>
         <div class="active-filters" id="activeFilters"></div>
-      </div>
+      </div> -->
       <div style="display: flex; align-items: center; gap: 0.8rem">
         <select class="sort-select" id="sortSelect" onchange="sortListings()">
           <option value="default">Sort: Default</option>
@@ -462,7 +462,7 @@
     </div>
 
     <!-- ══ FEATURED STRIP ══ -->
-    <div class="featured-strip">
+    <!-- <div class="featured-strip">
       <div class="featured-card" onclick="openModal(listings[0])">
         <div class="featured-card-bg"></div>
         <div class="featured-card-overlay"></div>
@@ -528,24 +528,43 @@
           </div>
         </div>
       </div>
+    </div> -->
+
+    <!-- ══ REPLACED FEATURED STRIP WITH DASHBOARD ACTION BANNER ══ -->
+    <div class="marketplace-dashboard-banner">
+      <div class="banner-left">
+        <div class="results-count">
+          <strong id="resultsCount">10</strong> active growers found
+        </div>
+        <div class="active-filters" id="activeFilters"></div>
+      </div>
+      
+      {# Render button if current user is logged in as a grower #}
+      {% if current_user.is_authenticated and current_user.role == 'seller' %}
+        <div class="banner-right">
+          <a href="{{ url_for('seller.dashboard') }}" class="view-my-listings-btn">
+            🚜 View My Listings →
+          </a>
+        </div>
+      {% endif %}
     </div>
   
 
     <!-- ══ LISTINGS GRID ══ -->
     <div class="listings-section">
         <div class="section-head">
-        <div class="section-head-title">All <em>Listings</em></div>
-        <div class="view-toggles" style="display: none"></div>
+          <div class="section-head-title">All <em>Listings</em></div>
+          <div class="view-toggles" style="display: none"></div>
         </div>
         <div class="listings-grid" id="listingsGrid">
         <!-- Populated by JS -->
         </div>
         <div class="empty-state" id="emptyState" style="display: none">
-        <div class="empty-icon">🔍</div>
-        <div class="empty-title">No listings match your filters</div>
-        <div class="empty-desc">
-            Try adjusting or resetting your filters to see more results.
-        </div>
+          <div class="empty-icon">🔍</div>
+          <div class="empty-title">No listings match your filters</div>
+          <div class="empty-desc">
+              Try adjusting or resetting your filters to see more results.
+          </div>
         </div>
     </div>
   </div>
