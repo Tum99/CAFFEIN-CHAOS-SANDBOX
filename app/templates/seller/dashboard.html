@@ -86,7 +86,7 @@
         <div class="content-section active" id="sec-overview">
             <div class="dash-header">
                 <div>
-                    <div class="dash-greeting">Good morning, {{ current_user.first_name }}</div>
+                    <div class="dash-greeting">Good morning, {{ current_user.first_name or current_user.username }}</div>
                     <div class="dash-title">
                         {% if farm %}
                             {{ farm.farm_name }} 
@@ -425,9 +425,18 @@
 
         <!-- ── SETTINGS ── -->
         <div class="content-section" id="sec-settings">
+            <!-- {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, msg in messages %}
+                        <div class="alert alert-{{ category }}" style="padding: 12px; margin-bottom: 20px; border-radius: 4px; border: 1px solid #a3be8c; background: #1c1917; color: #a3be8c;">
+                            ● {{ msg }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %} -->
             <div class="dash-header"><div><div class="dash-greeting">Account</div><div class="dash-title">Account <em>Settings</em></div></div></div>
             <div class="settings-grid">
-                <form action="{{ url_for('seller.update_profile') }}" method="POST" class="settings-panel">
+                <form action="{{ url_for('seller.update_profile') }}" method="POST" class="settings-panel" id="profileForm" onsubmit="return confirmProfileUpdate(event)">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                     <div class="settings-panel-title">Personal Information</div>
@@ -449,7 +458,7 @@
                     <button class="settings-save">Save Changes</button>
                 </form>
 
-                <form action="{{ url_for('seller.update_payout') }}" method="POST" class="settings-panel">
+                <form action="{{ url_for('seller.update_payout') }}" method="POST" class="settings-panel" id="payoutForm" onsubmit="return confirmPayoutUpdate(event)">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="settings-panel-title">Payout Settings</div>
                     
@@ -468,7 +477,7 @@
                     <button type="submit" class="settings-save">Save Payout Settings</button>
                 </form>
 
-                <form action="{{ url_for('seller.update_password') }}" method="POST" class="settings-panel">
+                <form action="{{ url_for('seller.update_password') }}" method="POST" class="settings-panel" id="passwordForm" onsubmit="return confirmPasswordUpdate(event)">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="settings-panel-title">Change Password</div>
                     
@@ -487,13 +496,34 @@
                     <button type="submit" class="settings-save">Update Password</button>
                 </form>
 
-                <div class="settings-panel">
+                <form action="{{ url_for('seller.update_notifications') }}" method="POST" class="settings-panel" id="notificationsForm" onsubmit="return confirmNotificationUpdate(event)">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="settings-panel-title">Notifications</div>
-                    <div class="settings-field"><label>New Order Alerts</label><select><option>SMS + Email</option><option>SMS only</option><option>Email only</option></select></div>
-                    <div class="settings-field"><label>Payment Received</label><select><option>SMS + Email</option><option>SMS only</option></select></div>
-                    <div class="settings-field"><label>New Messages</label><select><option>On</option><option>Off</option></select></div>
-                    <button class="settings-save">Save Preferences</button>
-                </div>
+                    
+                    <div class="settings-field">
+                        <label for="order_alerts">New Order Alerts</label>
+                        <select id="order_alerts" name="order_alerts">
+                            <option value="all" {% if current_user.order_alerts == 'all' or not current_user.order_alerts %}selected{% endif %}>SMS + Email</option>
+                            <option value="sms" {% if current_user.order_alerts == 'sms' %}selected{% endif %}>SMS only</option>
+                            <option value="email" {% if current_user.order_alerts == 'email' %}selected{% endif %}>Email only</option>
+                        </select>
+                    </div>
+                    <div class="settings-field">
+                        <label for="payment_alerts">Payment Received</label>
+                        <select id="payment_alerts" name="payment_alerts">
+                            <option value="all" {% if current_user.payment_alerts == 'all' or not current_user.payment_alerts %}selected{% endif %}>SMS + Email</option>
+                            <option value="sms" {% if current_user.payment_alerts == 'sms' %}selected{% endif %}>SMS only</option>
+                        </select>
+                    </div>
+                    <div class="settings-field">
+                        <label for="message_alerts">New Messages</label>
+                        <select id="message_alerts" name="message_alerts">
+                            <option value="on" {% if current_user.message_alerts == 'on' or current_user.message_alerts is not defined %}selected{% endif %}>On</option>
+                            <option value="off" {% if current_user.message_alerts == 'off' %}selected{% endif %}>Off</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="settings-save">Save Preferences</button>
+                </form>
             </div>
 
         </div>
