@@ -68,7 +68,7 @@
 
         {% if current_user.is_authenticated %} {% if current_user.role %}
         <li>
-          <a href="{{ url_for(current_user.role + '.dashboard') }}">
+          <a href="{{ url_for(current_user.role + '.marketplace') }}">
             Marketplace ({{ current_user.role | capitalize }})
           </a>
         </li>
