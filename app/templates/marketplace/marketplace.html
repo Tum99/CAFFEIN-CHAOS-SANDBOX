@@ -65,34 +65,35 @@
       </div>
 
       <!-- ORDER BOX — shown when logged in as buyer -->
-      <div class="modal-order-box" id="modalOrderBox">
-        <div class="modal-order-title">Place Your Order</div>
-        <div class="modal-qty-row">
-          <span class="modal-qty-label">Quantity (kg)</span>
-          <input
-            class="modal-qty-input"
-            type="number"
-            id="modalQty"
-            value="1"
-            min="1"
-            oninput="updateModalTotal()"
-          />
-        </div>
-        <div class="modal-total-row">
-          <span class="modal-total-label">Total</span>
-          <span class="modal-total-price" id="modalTotal">KES 0</span>
-        </div>
-        <button class="modal-order-btn" onclick="handleOrder()">
-          Pay via M-Pesa →
-        </button>
-        <button class="modal-msg-btn" onclick="handleMessage()">
-          💬 Message Grower First
-        </button>
-        <div class="modal-mpesa">
-          <div class="mpesa-dot"></div>
-          Secure M-Pesa STK Push
-        </div>
-      </div>
+      {% if current_user.is_authenticated %}
+          {% if current_user.role == 'buyer' %}
+              <div class="modal-order-box" id="modalOrderBox">
+                  <div class="modal-order-title">Place Your Order</div>
+                  <div class="modal-qty-row">
+                      <span class="modal-qty-label">Quantity (kg)</span>
+                      <input class="modal-qty-input" type="number" id="modalQty" value="1" min="1" oninput="updateModalTotal()"/>
+                  </div>
+                  <div class="modal-total-row">
+                      <span class="modal-total-label">Total</span>
+                      <span class="modal-total-price" id="modalTotal">KES 0</span>
+                  </div>
+                  <button class="modal-order-btn" onclick="handleOrder()">Pay via M-Pesa →</button>
+                  <button class="modal-msg-btn" onclick="handleMessage()">💬 Message Grower First</button>
+              </div>
+          {% elif current_user.role == 'seller' %}
+              <div class="modal-seller-insight-box" style="background: #1c1917; padding: 1.5rem; border: 1px solid #2e2a24; margin-top: 1.5rem;">
+                  <div style="color: #a8a29e; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Market Insight</div>
+                  <p style="font-size: 0.87rem; margin: 0.5rem 0 0 0; color: #f5ecd7;">
+                      This listing represents live competitor pricing for this varietal. Use this metric to position your own farm lots competitively.
+                  </p>
+              </div>
+          {% endif %}
+      {% else %}
+          <div class="modal-login-prompt" id="modalLoginPrompt">
+              <p>Create a free buyer account to place orders and message growers directly.</p>
+              <a href="{{ url_for('auth.login') }}" class="modal-login-link">Login or Sign Up →</a>
+          </div>
+      {% endif %}
 
       <!-- LOGIN PROMPT — shown when not logged in -->
       <div

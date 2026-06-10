@@ -2,7 +2,7 @@
 import re
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
-from app.models import User, FarmProfile
+from app.models import User, FarmProfile, BuyerProfile
 from app import db, bcrypt
 
 auth = Blueprint("auth", __name__)
@@ -87,10 +87,28 @@ def register():
             db.session.add(user)
             db.session.commit()
 
+            # 3. Dynamic Profile Initialization 🌟
+            if role == 'buyer':
+                buyer_profile = BuyerProfile(user_id=user.id)
+                db.session.add(buyer_profile)
+                
+            elif role == 'seller':
+                seller_profile = SellerProfile(user_id=user.id)
+                db.session.add(farm_profile)
+                
+            elif role == 'both':
+                buyer_profile = BuyerProfile(user_id=user.id)
+                seller_profile = SellerProfile(user_id=user.id)
+                db.session.add(buyer_profile)
+                db.session.add(farm_profile)
+
+            # Finalize profile additions
+            db.session.commit()
+
             login_user(user)
 
             flash("Account created successfully. Please login.", "success")
-            return redirect(url_for("auth.login"))
+            return render_template("auth/login.html")
 
         except Exception as e:
             db.session.rollback()

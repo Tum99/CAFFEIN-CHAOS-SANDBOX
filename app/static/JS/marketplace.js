@@ -1,220 +1,262 @@
-/* cursor */
-const cur=document.getElementById('cursor'),ring=document.getElementById('cursorRing');
-let mx=0,my=0,rx=0,ry=0;
-document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';});
-(function loop(){rx+=(mx-rx)*0.12;ry+=(my-ry)*0.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(loop);})();
+/* ═══════════════════════════════════════════════════════════════
+   CAFFEIN & CHAOS — UNIFIED MARKETPLACE INTERACTIVE ENGINE
+   ═══════════════════════════════════════════════════════════════ */
 
-/* scroll top */
-window.addEventListener('scroll',()=>document.getElementById('scrollTop').classList.toggle('visible',window.scrollY>400));
+/* ══ CURSOR ANIMATION EFFECT ══ */
+const cur = document.getElementById('cursor'), ring = document.getElementById('cursorRing');
+let mx = 0, my = 0, rx = 0, ry = 0;
 
-/* ══ AUTH STATE (demo toggle) ══ */
-let isLoggedIn = true;
-function toggleAuth() {
-isLoggedIn = !isLoggedIn;
-document.getElementById('navUser').style.display = isLoggedIn ? 'flex' : 'none';
-document.querySelector('.btn-dashboard').style.display = isLoggedIn ? '' : 'none';
-document.querySelector('.btn-ghost').textContent = isLoggedIn ? 'Logout (demo)' : 'Login';
-if (!isLoggedIn) {
-    // swap logout for login/signup buttons
-    document.querySelector('.btn-ghost').textContent = 'Login (demo)';
-}
-// update modal state if open
-toggleModalAuth();
-}
+document.addEventListener('mousemove', e => { 
+    mx = e.clientX; 
+    my = e.clientY; 
+    cur.style.left = mx + 'px'; 
+    cur.style.top = my + 'px'; 
+});
 
-function toggleModalAuth() {
-document.getElementById('modalOrderBox').style.display   = isLoggedIn ? 'block' : 'none';
-document.getElementById('modalLoginPrompt').style.display= isLoggedIn ? 'none'  : 'block';
-}
+(function loop() { 
+    rx += (mx - rx) * 0.12; 
+    ry += (my - ry) * 0.12; 
+    ring.style.left = rx + 'px'; 
+    ring.style.top = ry + 'px'; 
+    requestAnimationFrame(loop); 
+})();
 
-/* ══ LISTINGS DATA ══ */
-const listings = [
-{ id:1, farm:'Jepng\'etich Farm', county:'Uasingishu', altitude:'1,850m', verified:true, name:'Arabica Batian — 1kg', varietal:'Batian', process:'Washed', roast:'Medium', harvest:'Oct 2025', stock:100, minOrder:1, price:2800, notes:['Citrus','Molasses','Dark Berry'] },
-{ id:2, farm:'Kirinyaga Estate', county:'Kirinyaga', altitude:'1,700m', verified:true, name:'SL28 Natural Process', varietal:'SL28', process:'Natural', roast:'Light', harvest:'Nov 2025', stock:20, minOrder:0.5, price:3800, notes:['Blueberry','Wine','Honey','Tropical'] },
-{ id:3, farm:'Nyeri Highlands Co-op', county:'Nyeri', altitude:'1,900m', verified:true, name:'Ruiru 11 Dark Roast', varietal:'Ruiru 11', process:'Washed', roast:'Dark', harvest:'Sep 2025', stock:30, minOrder:1, price:2500, notes:['Dark Chocolate','Roasted Nuts','Brown Sugar'] },
-{ id:4, farm:'Murang\'a Valley Farm', county:'Murang\'a', altitude:'1,600m', verified:false, name:'SL34 Honey Process', varietal:'SL34', process:'Honey', roast:'Medium', harvest:'Dec 2025', stock:15, minOrder:1, price:3200, notes:['Stone Fruit','Caramel','Vanilla'] },
-{ id:5, farm:'Meru Highlands', county:'Meru', altitude:'1,750m', verified:true, name:'K7 Washed Light Roast', varietal:'K7', process:'Washed', roast:'Light', harvest:'Oct 2025', stock:40, minOrder:1, price:2900, notes:['Bergamot','Lemon','Floral'] },
-{ id:6, farm:'Jepng\'etich Farm', county:'Uasingishu', altitude:'1,850m', verified:true, name:'Arabica Batian — 250g', varietal:'Batian', process:'Washed', roast:'Medium', harvest:'Oct 2025', stock:50, minOrder:0.25, price:3400, notes:['Citrus','Molasses'] },
-{ id:7, farm:'Kirinyaga Estate', county:'Kirinyaga', altitude:'1,700m', verified:true, name:'SL28 Washed AA', varietal:'SL28', process:'Washed', roast:'Medium', harvest:'Nov 2025', stock:60, minOrder:1, price:3100, notes:['Red Apple','Jasmine','Peach'] },
-{ id:8, farm:'Nandi Hills Farm', county:'Nandi', altitude:'2,000m', verified:false, name:'Batian Natural', varietal:'Batian', process:'Natural', roast:'Light', harvest:'Jan 2026', stock:25, minOrder:1, price:3600, notes:['Strawberry','Passion Fruit','Brown Sugar'] },
-];
+/* ══ BACK-TO-TOP BUTTON SCROLL ACTIVATION ══ */
+window.addEventListener('scroll', () => {
+    document.getElementById('scrollTop').classList.toggle('visible', window.scrollY > 400);
+});
 
-let filtered = [...listings];
+/* ══ CONTEXTUAL STATE FROM JINJA INJECTION ══ */
+const isLoggedIn = typeof USER_IS_AUTHENTICATED !== 'undefined' ? USER_IS_AUTHENTICATED : false;
+const activeUserRole = typeof USER_ROLE !== 'undefined' ? USER_ROLE : 'guest'; 
+
+/* ══ DATA COLLECTION HOOKS ══ */
+let listings = [];
+let filtered = [];
 let currentModal = null;
 
-/* ══ RENDER CARDS ══ */
+/* ══ RENDER MARKETPLACE CARDS ══ */
 function renderCards(data) {
-const grid = document.getElementById('listingsGrid');
-document.getElementById('emptyState').style.display = data.length ? 'none' : 'block';
-document.getElementById('resultsCount').textContent = data.length;
+    const grid = document.getElementById('listingsGrid');
+    document.getElementById('emptyState').style.display = data.length ? 'none' : 'block';
+    document.getElementById('resultsCount').textContent = data.length;
 
-grid.innerHTML = data.map(l => `
-    <div class="listing-card" data-id="${l.id}"
-        style="opacity:0;transform:translateY(18px);transition:opacity 0.45s ease,transform 0.45s cubic-bezier(0.22,1,0.36,1)">
-    <div class="listing-card-img">
-        <div class="listing-card-img-ph">☕</div>
-        <div class="listing-img-overlay"></div>
-        <span class="card-varietal">${l.varietal}</span>
-        <span class="card-process">${l.process}</span>
-        ${l.verified ? '<span class="card-verified">✓ Verified</span>' : ''}
-        <button class="card-quick-view" onclick="event.stopPropagation();openModal(listings.find(x=>x.id===${l.id}))">Quick View</button>
-    </div>
-    <div class="listing-card-body">
-        <div class="card-farm">🌿 ${l.farm}</div>
-        <div class="card-name">${l.name}</div>
-        <div class="card-specs">
-        <div><div class="card-spec-lbl">Roast</div><div class="card-spec-val">${l.roast}</div></div>
-        <div><div class="card-spec-lbl">County</div><div class="card-spec-val">${l.county}</div></div>
-        <div><div class="card-spec-lbl">Available</div><div class="card-spec-val">${l.stock} kg</div></div>
-        <div><div class="card-spec-lbl">Min. Order</div><div class="card-spec-val">${l.minOrder} kg</div></div>
-        </div>
-        <div class="card-notes">${l.notes.map(n=>`<span class="card-note">${n}</span>`).join('')}</div>
-        <div class="card-footer">
-        <div>
-            <div class="card-price">KES ${l.price.toLocaleString()} <small>/kg</small></div>
-            <div class="card-stock">${l.stock} kg remaining</div>
-        </div>
-        <button class="card-order-btn" onclick="event.stopPropagation();openModal(listings.find(x=>x.id===${l.id}))">Order Now</button>
-        </div>
-    </div>
-    </div>
-`).join('');
+    grid.innerHTML = data.map(l => {
+        // Evaluate user's business role context to draw targeted CTAs
+        let actionButtonHtml = '';
+        if (isLoggedIn && activeUserRole === 'buyer') {
+            actionButtonHtml = `<button class="card-order-btn" onclick="event.stopPropagation(); openModal(${l.id})">Order Now</button>`;
+        } else if (isLoggedIn && activeUserRole === 'seller') {
+            actionButtonHtml = `<button class="card-order-btn" style="background:#2e2a24; border-color:#444;" onclick="event.stopPropagation(); openModal(${l.id})">Inspect Metrics</button>`;
+        } else {
+            actionButtonHtml = `<button class="card-order-btn" onclick="event.stopPropagation(); openModal(${l.id})">View Details</button>`;
+        }
 
-/* attach click to whole card */
-grid.querySelectorAll('.listing-card').forEach(card => {
-    card.addEventListener('click', () => {
-    const id = parseInt(card.dataset.id);
-    openModal(listings.find(l => l.id === id));
+        return `
+            <div class="listing-card" data-id="${l.id}"
+                style="opacity:0; transform:translateY(18px); transition:opacity 0.45s ease, transform 0.45s cubic-bezier(0.22,1,0.36,1)">
+                <div class="listing-card-img">
+                    <div class="listing-card-img-ph">☕</div>
+                    <div class="listing-img-overlay"></div>
+                    <span class="card-varietal">${l.varietal}</span>
+                    <span class="card-process">${l.process}</span>
+                    ${l.is_verified ? '<span class="card-verified">✓ Verified</span>' : ''}
+                    <button class="card-quick-view" onclick="event.stopPropagation(); openModal(${l.id})">Quick View</button>
+                </div>
+                <div class="listing-card-body">
+                    <div class="card-farm">🌿 ${l.farm_name}</div>
+                    <div class="card-name">${l.varietal} (${l.process})</div>
+                    <div class="card-specs">
+                        <div><div class="card-spec-lbl">Roast</div><div class="card-spec-val">${l.roast_level}</div></div>
+                        <div><div class="card-spec-lbl">County</div><div class="card-spec-val">${l.county}</div></div>
+                        <div><div class="card-spec-lbl">Available</div><div class="card-spec-val">${l.quantity_kg} kg</div></div>
+                        <div><div class="card-spec-lbl">Min. Order</div><div class="card-spec-val">${l.minimum_order_kg} kg</div></div>
+                    </div>
+                    <div class="card-notes">
+                        ${l.tasting_notes ? l.tasting_notes.split(',').map(n => `<span class="card-note">${n.trim()}</span>`).join('') : '<span class="card-note">Premium Lot</span>'}
+                    </div>
+                    <div class="card-footer">
+                        <div>
+                            <div class="card-price">KES ${l.price_per_kg.toLocaleString()} <small>/kg</small></div>
+                            <div class="card-stock">${l.quantity_kg} kg remaining</div>
+                        </div>
+                        ${actionButtonHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    /* Attach click interface triggers across the wrapper card background layout */
+    grid.querySelectorAll('.listing-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const id = parseInt(card.dataset.id);
+            openModal(listings.find(l => l.id === id));
+        });
     });
-});
 
-/* staggered reveal */
-grid.querySelectorAll('.listing-card').forEach((el,i) => {
-    setTimeout(() => { el.style.opacity='1'; el.style.transform='translateY(0)'; }, i * 60);
-});
+    /* Staggered visual reveal transition */
+    grid.querySelectorAll('.listing-card').forEach((el, i) => {
+        setTimeout(() => { 
+            el.style.opacity = '1'; 
+            el.style.transform = 'translateY(0)'; 
+        }, i * 60);
+    });
 }
 
-/* ══ FILTERS ══ */
+/* ══ SEARCH AND FILTER CRITERIA TRACKING ══ */
 function filterListings() {
-const search = document.getElementById('searchInput').value.toLowerCase();
-const varietals = [...document.querySelectorAll('input[id^="v-"]:checked')].map(i=>i.value);
-const processes = [...document.querySelectorAll('input[id^="p-"]:checked')].map(i=>i.value);
-const roasts    = [...document.querySelectorAll('input[id^="r-"]:checked')].map(i=>i.value);
-const counties  = [...document.querySelectorAll('input[id^="c-"]:checked')].map(i=>i.value);
-const minP = parseFloat(document.getElementById('priceMin').value) || 0;
-const maxP = parseFloat(document.getElementById('priceMax').value) || Infinity;
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const varietals = [...document.querySelectorAll('input[id^="v-"]:checked')].map(i => i.value);
+    const processes = [...document.querySelectorAll('input[id^="p-"]:checked')].map(i => i.value);
+    const roasts    = [...document.querySelectorAll('input[id^="r-"]:checked')].map(i => i.value);
+    const counties  = [...document.querySelectorAll('input[id^="c-"]:checked')].map(i => i.value);
+    const minP = parseFloat(document.getElementById('priceMin').value) || 0;
+    const maxP = parseFloat(document.getElementById('priceMax').value) || Infinity;
 
-filtered = listings.filter(l => {
-    if (search && !l.name.toLowerCase().includes(search) && !l.farm.toLowerCase().includes(search) && !l.varietal.toLowerCase().includes(search)) return false;
-    if (varietals.length && !varietals.includes(l.varietal)) return false;
-    if (processes.length && !processes.includes(l.process)) return false;
-    if (roasts.length   && !roasts.includes(l.roast))       return false;
-    if (counties.length && !counties.includes(l.county))    return false;
-    if (l.price < minP || l.price > maxP)                   return false;
-    return true;
-});
+    filtered = listings.filter(l => {
+        if (search && !l.varietal.toLowerCase().includes(search) && !l.farm_name.toLowerCase().includes(search) && !l.county.toLowerCase().includes(search)) return false;
+        if (varietals.length && !varietals.includes(l.varietal)) return false;
+        if (processes.length && !processes.includes(l.process)) return false;
+        if (roasts.length   && !roasts.includes(l.roast_level))  return false;
+        if (counties.length && !counties.includes(l.county))    return false;
+        if (l.price_per_kg < minP || l.price_per_kg > maxP)     return false;
+        return true;
+    });
 
-updateActivePills(varietals, processes, roasts, counties);
-sortListings();
+    updateActivePills(varietals, processes, roasts, counties);
+    sortListings();
 }
 
-function updateActivePills(v,p,r,c) {
-const container = document.getElementById('activeFilters');
-container.innerHTML = [...v,...p,...r,...c].map(f=>
-    `<div class="active-filter-pill">${f} <span onclick="removeFilter('${f}')">✕</span></div>`
-).join('');
+function updateActivePills(v, p, r, c) {
+    const container = document.getElementById('activeFilters');
+    container.innerHTML = [...v, ...p, ...r, ...c].map(f =>
+        `<div class="active-filter-pill">${f} <span onclick="removeFilter('${f}')">✕</span></div>`
+    ).join('');
 }
 
 function removeFilter(val) {
-document.querySelectorAll('input[type="checkbox"]').forEach(cb => { if(cb.value===val) cb.checked=false; });
-filterListings();
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => { 
+        if (cb.value === val) cb.checked = false; 
+    });
+    filterListings();
 }
 
 function clearFilter(type) {
-const prefix = type==='varietal'?'v-':type==='process'?'p-':type==='roast'?'r-':'c-';
-document.querySelectorAll(`input[id^="${prefix}"]`).forEach(cb => cb.checked=false);
-filterListings();
+    const prefix = type === 'varietal' ? 'v-' : type === 'process' ? 'p-' : type === 'roast' ? 'r-' : 'c-';
+    document.querySelectorAll(`input[id^="${prefix}"]`).forEach(cb => cb.checked = false);
+    filterListings();
 }
 
 function resetFilters() {
-document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked=false);
-document.getElementById('searchInput').value='';
-document.getElementById('priceMin').value='';
-document.getElementById('priceMax').value='';
-document.getElementById('activeFilters').innerHTML='';
-filtered=[...listings];
-renderCards(filtered);
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    document.getElementById('searchInput').value = '';
+    document.getElementById('priceMin').value = '';
+    document.getElementById('priceMax').value = '';
+    document.getElementById('activeFilters').innerHTML = '';
+    filtered = [...listings];
+    renderCards(filtered);
 }
 
-/* ══ SORT ══ */
+/* ══ SORTING RUNTIME LOGIC ══ */
 function sortListings() {
-const s = document.getElementById('sortSelect').value;
-const sorted = [...filtered];
-if (s==='price-asc')  sorted.sort((a,b)=>a.price-b.price);
-if (s==='price-desc') sorted.sort((a,b)=>b.price-a.price);
-if (s==='stock')      sorted.sort((a,b)=>b.stock-a.stock);
-renderCards(sorted);
+    const s = document.getElementById('sortSelect').value;
+    const sorted = [...filtered];
+    if (s === 'price-asc')  sorted.sort((a, b) => a.price_per_kg - b.price_per_kg);
+    if (s === 'price-desc') sorted.sort((a, b) => b.price_per_kg - a.price_per_kg);
+    if (s === 'stock')      sorted.sort((a, b) => b.quantity_kg - a.quantity_kg);
+    if (s === 'newest')     sorted.sort((a, b) => b.id - a.id);
+    renderCards(sorted);
 }
 
-/* ══ VIEW TOGGLE ══ */
+/* ══ GRID VS LIST STRUCTURAL VIEW TOGGLE ══ */
 function setView(v) {
-const grid = document.getElementById('listingsGrid');
-document.getElementById('gridViewBtn').classList.toggle('active', v==='grid');
-document.getElementById('listViewBtn').classList.toggle('active', v==='list');
-grid.classList.toggle('list-view', v==='list');
+    const grid = document.getElementById('listingsGrid');
+    document.getElementById('gridViewBtn').classList.toggle('active', v === 'grid');
+    document.getElementById('listViewBtn').classList.toggle('active', v === 'list');
+    grid.classList.toggle('list-view', v === 'list');
 }
 
-/* ══ MODAL ══ */
+/* ══ CONTEXTUAL IN-VIEW OVERLAY MODAL MANAGER ══ */
 function openModal(l) {
-if (!l) return;
-currentModal = l;
+    if (!l) return;
+    currentModal = l;
 
-document.getElementById('modalFarmName').textContent = '🌿 ' + l.farm + ' — ' + l.county;
-document.getElementById('modalTitle').innerHTML = l.name;
-document.getElementById('mVarietal').textContent = l.varietal;
-document.getElementById('mProcess').textContent  = l.process;
-document.getElementById('mRoast').textContent    = l.roast + ' Roast';
-document.getElementById('mHarvest').textContent  = l.harvest;
-document.getElementById('mStock').textContent    = l.stock + ' kg';
-document.getElementById('mMin').textContent      = l.minOrder + ' kg';
-document.getElementById('mLocation').textContent = l.county;
-document.getElementById('mAltitude').textContent = l.altitude + ' masl';
-document.getElementById('mNotes').innerHTML = l.notes.map(n=>`<span class="modal-note">${n}</span>`).join('');
-document.getElementById('modalQty').value = l.minOrder;
-document.getElementById('modalQty').min   = l.minOrder;
-updateModalTotal();
-toggleModalAuth();
+    // Fill details using matching database model schema references
+    document.getElementById('modalFarmName').textContent = '🌿 ' + l.farm_name + ' — ' + l.county;
+    document.getElementById('modalTitle').innerHTML = `${l.varietal} <em style="font-style: italic; color: var(--green)">${l.process} Process</em>`;
+    document.getElementById('mVarietal').textContent = l.varietal;
+    document.getElementById('mProcess').textContent  = l.process;
+    document.getElementById('mRoast').textContent    = l.roast_level + ' Roast';
+    document.getElementById('mHarvest').textContent  = l.harvest_date || 'Current Batch';
+    document.getElementById('mStock').textContent    = l.quantity_kg + ' kg';
+    document.getElementById('mMin').textContent      = l.minimum_order_kg + ' kg';
+    document.getElementById('mLocation').textContent = l.county;
+    document.getElementById('mAltitude').textContent = l.altitude_masl + ' masl';
+    
+    document.getElementById('mNotes').innerHTML = l.tasting_notes ? 
+        l.tasting_notes.split(',').map(n => `<span class="modal-note">${n.trim()}</span>`).join('') : '<span class="modal-note">Premium Origin</span>';
+    
+    document.getElementById('modalQty').value = l.minimum_order_kg;
+    document.getElementById('modalQty').min   = l.minimum_order_kg;
+    updateModalTotal();
 
-document.getElementById('modalOverlay').classList.add('open');
-document.body.style.overflow = 'hidden';
+    // Toggle contextual UI card wrappers inside single HTML layout context
+    const orderBox = document.getElementById('modalOrderBox');
+    const loginPrompt = document.getElementById('modalLoginPrompt');
+    
+    if (isLoggedIn) {
+        if (activeUserRole === 'buyer') {
+            if (orderBox) orderBox.style.display = 'block';
+        } else {
+            // Logged in as Grower/Seller: Hide purchase modules entirely
+            if (orderBox) orderBox.style.display = 'none';
+        }
+        if (loginPrompt) loginPrompt.style.display = 'none';
+    } else {
+        if (orderBox) orderBox.style.display = 'none';
+        if (loginPrompt) loginPrompt.style.display = 'block';
+    }
+
+    document.getElementById('modalOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
 }
 
 function updateModalTotal() {
-if (!currentModal) return;
-const qty = parseFloat(document.getElementById('modalQty').value) || 0;
-const total = qty * currentModal.price;
-document.getElementById('modalTotal').textContent = 'KES ' + total.toLocaleString();
+    if (!currentModal) return;
+    const qty = parseFloat(document.getElementById('modalQty').value) || 0;
+    const total = qty * currentModal.price_per_kg;
+    document.getElementById('modalTotal').textContent = 'KES ' + total.toLocaleString();
 }
 
 function closeModal(e) {
-if (e.target === document.getElementById('modalOverlay')) closeModalBtn();
+    if (e.target === document.getElementById('modalOverlay')) closeModalBtn();
 }
-function closeModalBtn() {
-document.getElementById('modalOverlay').classList.remove('open');
-document.body.style.overflow = '';
-}
-document.addEventListener('keydown', e => { if(e.key==='Escape') closeModalBtn(); });
 
+function closeModalBtn() {
+    document.getElementById('modalOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', e => { 
+    if (e.key === 'Escape') closeModalBtn(); 
+});
+
+/* ══ TRANSACTION HANDLERS ══ */
 function handleOrder() {
-if (!isLoggedIn) { alert('Please login to place an order.'); return; }
-const qty = document.getElementById('modalQty').value;
-alert(`In Flask:\nPOST /marketplace/order\n{\n  listing_id: ${currentModal.id},\n  quantity_kg: ${qty}\n}\n→ M-Pesa STK Push sent to buyer's registered number`);
+    if (!isLoggedIn) return;
+    const qty = document.getElementById('modalQty').value;
+    alert(`In Flask Ecosystem:\nPOST /marketplace/order\n{\n  listing_id: ${currentModal.id},\n  quantity_kg: ${qty}\n}\n\nInitiating secure M-Pesa STK Push sequence...`);
 }
 
 function handleMessage() {
-if (!isLoggedIn) { alert('Please login to message growers.'); return; }
-alert(`In Flask:\nredirect → /dashboard/buyer#messages\nPre-loaded with conversation to: ${currentModal.farm}`);
+    if (!isLoggedIn) return;
+    alert(`Redirecting to buyer context thread manager...\nOpening message pipeline channel directly with: ${currentModal.farm_name}`);
 }
 
-/* ══ INIT ══ */
-renderCards(listings);
+/* ══ INITIALIZATION MOUNT ══ */
+if (typeof DATABASE_PAYLOAD !== 'undefined') {
+    listings = DATABASE_PAYLOAD;
+    filtered = [...listings];
+    renderCards(listings);
+}

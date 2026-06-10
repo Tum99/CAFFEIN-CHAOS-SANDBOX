@@ -275,6 +275,31 @@ def listings():
                            total_steps=steps_done) # <--- Pass total_steps here!
 
 
+@seller.route('/marketplace', methods=['GET'])
+@login_required
+@seller_required
+def marketplace():
+    """
+    Seller/Grower-facing market inspection view.
+    Allows growers to review competing farm lots, look up average price trends, etc.
+    """
+    search_query = request.args.get('search', '').strip()
+    
+    # Sellers look at raw farm products to scope out market analytics
+    query = Product.query.filter_by(product_type='farm')
+    
+    if search_query:
+        query = query.filter_by(Product.name.ilike(f"%{search_query}%"))
+        
+    farm_products = query.order_by(Product.price.desc()).all()
+    
+    return render_template(
+        'seller/marketplace_insights.html',
+        products=farm_products,
+        search_query=search_query
+    )
+
+
 @seller.route('/setup/go-live', methods=['POST'])
 @login_required
 @seller_required

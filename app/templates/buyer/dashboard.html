@@ -25,12 +25,12 @@
     <a href="#" class="sidebar-link" onclick="showSection('orders', event)">
       <span class="sidebar-icon">📦</span>
       <span class="sidebar-link-text">My Orders</span>
-      <span class="sidebar-badge">3</span>
+      <span class="sidebar-badge">{{ total_orders }}</span>
     </a>
     <a href="#" class="sidebar-link" onclick="showSection('saved', event)">
       <span class="sidebar-icon">🔖</span>
       <span class="sidebar-link-text">Saved Items</span>
-      <span class="sidebar-badge">5</span>
+      <span class="sidebar-badge">0</span>
     </a>
     <a href="#" class="sidebar-link" onclick="showSection('history', event)">
       <span class="sidebar-icon">🕐</span>
@@ -41,7 +41,9 @@
     <a href="#" class="sidebar-link" onclick="showSection('messages', event)">
       <span class="sidebar-icon">💬</span>
       <span class="sidebar-link-text">Messages</span>
-      <span class="sidebar-badge red">2</span>
+      {% if unread_msg_count > 0 %}
+      <span class="sidebar-badge red">{{ unread_msg_count }}</span>
+      {% endif %}
     </a>
     <a href="#" class="sidebar-link" onclick="showSection('support', event)">
       <span class="sidebar-icon">🎧</span>
@@ -66,22 +68,22 @@
         <div class="dash-header">
             <div>
             <div class="dash-greeting">Good morning</div>
-            <div class="dash-title">Welcome back, <em>Faith</em></div>
+            <div class="dash-title">Welcome back, <em>{{ current_user.first_name or 'Buyer' }}</em></div>
             </div>
-            <div class="dash-date">Wednesday, 15 April 2026</div>
+            <div class="dash-date">{{ current_date }}</div>
         </div>
 
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-label">Total Orders</div>
-                <div class="stat-value">12</div>
-                <div class="stat-sub">3 in progress</div>
+                <div class="stat-value">{{ total_orders }}</div>
+                <div class="stat-sub">{{ in_progress_orders }} in progress</div>
                 <div class="stat-icon">📦</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Total Spent</div>
-                <div class="stat-value">KES 28,400</div>
-                <div class="stat-sub">This year</div>
+                <div class="stat-value">KES {{ "{:,.2f}".format(total_spent) }}</div>
+                <div class="stat-sub">Marketplace deals</div>
                 <div class="stat-icon">💳</div>
             </div>
             <div class="stat-card">
@@ -92,7 +94,7 @@
             </div>
             <div class="stat-card">
                 <div class="stat-label">Unread Messages</div>
-                <div class="stat-value">2</div>
+                <div class="stat-value">{{ unread_msg_count }}</div>
                 <div class="stat-sub">From growers</div>
                 <div class="stat-icon">💬</div>
             </div>
@@ -108,9 +110,17 @@
                 <table class="orders-table">
                     <thead><tr><th>Order</th><th>Items</th><th>Total</th><th>Date</th><th>Status</th></tr></thead>
                     <tbody>
-                        <tr><td>#CC-0041</td><td>Bold Starter Pack</td><td>KES 7,500</td><td>12 Apr 2026</td><td><span class="order-status status-processing">Processing</span></td></tr>
-                        <tr><td>#CC-0038</td><td>Arabica 1kg + C&C Tee</td><td>KES 3,500</td><td>5 Apr 2026</td><td><span class="order-status status-delivered">Delivered</span></td></tr>
-                        <tr><td>#CC-0031</td><td>C&C Classic Hamper</td><td>KES 3,500</td><td>28 Mar 2026</td><td><span class="order-status status-delivered">Delivered</span></td></tr>
+                        {% for tx in recent_transactions %}
+                        <tr>
+                            <td>#TX-00{{ tx.id }}</td>
+                            <td>{{ tx.quantity_kg }} kg ({{ tx.listing.varietal }})</td>
+                            <td>KES {{ "{:,.0f}".format(tx.total_amount) }}</td>
+                            <td>{{ tx.created_at.strftime('%d %b %Y') }}</td>
+                            <td><span class="order-status status-{{ tx.status }}">{{ tx.status.title() }}</span></td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" style="text-align:center; padding:20px; color:#a8a29e;">No marketplace orders found.</td></tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
@@ -126,11 +136,16 @@
                 <table class="orders-table" >
                     <thead><tr><th>Order ID</th><th>Items</th><th>Total</th><th>Date</th><th>Payment</th><th>Status</th></tr></thead>
                     <tbody>
-                        <tr><td>#CC-0041</td><td>Bold Starter Pack</td><td>KES 7,500</td><td>12 Apr 2026</td><td>M-Pesa</td><td><span class="order-status status-processing">Processing</span></td></tr>
-                        <tr><td>#CC-0039</td><td>Arabica Batian 3kg</td><td>KES 6,500</td><td>8 Apr 2026</td><td>M-Pesa</td><td><span class="order-status status-pending">Pending</span></td></tr>
-                        <tr><td>#CC-0038</td><td>Arabica 1kg + C&C Tee</td><td>KES 3,500</td><td>5 Apr 2026</td><td>M-Pesa</td><td><span class="order-status status-delivered">Delivered</span></td></tr>
-                        <tr><td>#CC-0031</td><td>C&C Classic Hamper</td><td>KES 3,500</td><td>28 Mar 2026</td><td>M-Pesa</td><td><span class="order-status status-delivered">Delivered</span></td></tr>
-                        <tr><td>#CC-0025</td><td>Take a Step Varsity Jacket</td><td>KES 7,500</td><td>14 Mar 2026</td><td>M-Pesa</td><td><span class="order-status status-delivered">Delivered</span></td></tr>
+                        {% for tx in transactions %}
+                        <tr>
+                            <td>#TX-00{{ tx.id }}</td>
+                            <td>{{ tx.quantity_kg }}kg x {{ tx.listing.varietal }}</td>
+                            <td>KES {{ "{:,.0f}".format(tx.total_amount) }}</td>
+                            <td>{{ tx.created_at.strftime('%d %b %Y') }}</td>
+                            <td>{{ tx.mpesa_reference or 'Pending Push' }}</td>
+                            <td><span class="order-status status-{{ tx.status }}">{{ tx.status.title() }}</span></td>
+                        </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
@@ -141,14 +156,35 @@
     <div class="content-section" id="sec-saved">
         <div class="dash-header"><div><div class="dash-greeting">Shopping</div><div class="dash-title"><em>Saved</em> Items</div></div></div>
         <div class="panel">
-            <div class="panel-head"><div class="panel-title">Your Wishlist</div><a class="panel-action" href="#">Add all to cart</a></div>
+            <div class="panel-head">
+                <div class="panel-title">Your Wishlist ({{ saved_count }})</div>
+                {% if saved_items %}
+                    <a class="panel-action" href="#">Add all to cart</a>
+                {% endif %}
+            </div>
             <div class="panel-body">
                 <div class="saved-grid">
-                    <div class="saved-item"><div class="saved-item-img">☕</div><div><div class="saved-item-name">Arabica Batian 1kg</div><div class="saved-item-price">KES 2,500</div></div><button class="saved-item-remove">✕</button></div>
-                    <div class="saved-item"><div class="saved-item-img">🧥</div><div><div class="saved-item-name">Varsity Jacket</div><div class="saved-item-price">KES 7,500</div></div><button class="saved-item-remove">✕</button></div>
-                    <div class="saved-item"><div class="saved-item-img">🎁</div><div><div class="saved-item-name">Gold Hamper</div><div class="saved-item-price">KES 6,500</div></div><button class="saved-item-remove">✕</button></div>
-                    <div class="saved-item"><div class="saved-item-img">🥤</div><div><div class="saved-item-name">C&C Tumbler</div><div class="saved-item-price">KES 1,800</div></div><button class="saved-item-remove">✕</button></div>
-                    <div class="saved-item"><div class="saved-item-img">👕</div><div><div class="saved-item-name">Olive Green Tee</div><div class="saved-item-price">KES 1,000</div></div><button class="saved-item-remove">✕</button></div>
+                    {% for item in saved_items %}
+                    <div class="saved-item">
+                        <div class="saved-item-img">
+                            {% if item.product.product_type == 'farm' %}☕
+                            {% elif item.product.product_type == 'apparel' %}🧥
+                            {% else %}🥤{% endif %}
+                        </div>
+                        <div>
+                            <div class="saved-item-name">{{ item.product.name }}</div>
+                            <div class="saved-item-price">KES {{ "{:,.0f}".format(item.product.price) }}</div>
+                        </div>
+                        <form action="{{ url_for('buyer.remove_from_wishlist', item_id=item.id) }}" method="POST" style="margin-left: auto;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="saved-item-remove" style="background:transparent; border:none; cursor:pointer;">✕</button>
+                        </form>
+                    </div>
+                    {% else %}
+                    <div style="text-align: center; width: 100%; padding: 40px 0; color: #a8a29e;">
+                        <p>Your wishlist is empty. Explore the marketplace to save items!</p>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -158,14 +194,29 @@
     <div class="content-section" id="sec-history">
         <div class="dash-header"><div><div class="dash-greeting">Shopping</div><div class="dash-title">Browsing <em>History</em></div></div></div>
         <div class="panel">
-            <div class="panel-head"><div class="panel-title">Recently Viewed</div><a class="panel-action" href="#">Clear history</a></div>
+            <div class="panel-head"><div class="panel-title">Recently Viewed</div></div>
             <div class="panel-body">
                 <div class="history-list">
-                    <div class="history-item"><div class="history-icon">📦</div><div><div class="history-name">Bold Starter Pack</div><div class="history-time">Today, 10:32am</div></div><div class="history-price">KES 7,500</div></div>
-                    <div class="history-item"><div class="history-icon">☕</div><div><div class="history-name">SL28 Natural Process 250g</div><div class="history-time">Today, 10:28am</div></div><div class="history-price">KES 950</div></div>
-                    <div class="history-item"><div class="history-icon">🌱</div><div><div class="history-name">Jepng'etich Farm — Batian Listing</div><div class="history-time">Yesterday, 4:15pm</div></div><div class="history-price">KES 2,800/kg</div></div>
-                    <div class="history-item"><div class="history-icon">🎁</div><div><div class="history-name">Corporate Hamper</div><div class="history-time">Yesterday, 3:42pm</div></div><div class="history-price">KES 8,500</div></div>
-                    <div class="history-item"><div class="history-icon">🧥</div><div><div class="history-name">Take a Step Varsity Jacket</div><div class="history-time">12 Apr, 9:20am</div></div><div class="history-price">KES 7,500</div></div>
+                    {% for product in browsing_history %}
+                    <div class="history-item">
+                        <div class="history-icon">
+                            {% if product.product_type == 'farm' %}🌱{% else %}📦{% endif %}
+                        </div>
+                        <div>
+                            <div class="history-name">
+                                <a href="/marketplace/product/{{ product.id }}" style="color: inherit; text-decoration: none;">
+                                    {{ product.name }}
+                                </a>
+                            </div>
+                            <div class="history-time" style="text-transform: capitalize;">{{ product.product_type }} category</div>
+                        </div>
+                        <div class="history-price">KES {{ "{:,.0f}".format(product.price) }}</div>
+                    </div>
+                    {% else %}
+                    <div style="text-align: center; padding: 30px; color: #a8a29e;">
+                        No browsing logs tracked in this session yet.
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -179,38 +230,27 @@
             <div class="panel-body" style="padding:0">
                 <div class="message-layout">
                     <div class="message-threads">
-                        <div class="thread-item active-thread">
-                            <div class="thread-avatar green">JF</div>
-                            <div class="thread-info"><div class="thread-name">Jepng'etich Farm</div><div class="thread-preview">Yes, the 5kg lot is available...</div></div>
-                            <div class="thread-meta"><div class="thread-time">2m</div><div class="thread-unread">2</div></div>
+                        {% for thread in threads %}
+                        <div class="thread-item {% if loop.first %}active-thread{% endif %}" onclick="loadThreadData('{{ thread.id }}')">
+                            <div class="thread-avatar">{{ thread.seller.first_name[:2].upper() if thread.seller.first_name else 'GR' }}</div>
+                            <div class="thread-info">
+                                <div class="thread-name">{{ thread.seller.first_name }} {{ thread.seller.last_name }}</div>
+                                <div class="thread-preview">{{ thread.messages[-1].body if thread.messages else 'No messages yet' }}</div>
+                            </div>
                         </div>
-                        <div class="thread-item">
-                            <div class="thread-avatar">CC</div>
-                            <div class="thread-info"><div class="thread-name">C&C Support</div><div class="thread-preview">Your order #CC-0041 is being...</div></div>
-                            <div class="thread-meta"><div class="thread-time">1h</div></div>
-                        </div>
-                        <div class="thread-item">
-                            <div class="thread-avatar green">KF</div>
-                            <div class="thread-info"><div class="thread-name">Kirinyaga Farm</div><div class="thread-preview">We have a new SL34 lot ready</div></div>
-                            <div class="thread-meta"><div class="thread-time">2d</div></div>
-                        </div>
+                        {% endfor %}
                     </div>
 
-                    <div class="message-chat">
+                    <div class="message-chat" id="chatWindow" style="display: none;">
                         <div class="chat-head">
-                            <div class="chat-head-avatar">JF</div>
-                            <div><div class="chat-head-name">Jepng'etich Farm</div><div class="chat-head-status">● Online</div></div>
+                            <div class="chat-head-avatar" id="chatHeadAvatar">--</div>
+                            <div><div class="chat-head-name" id="chatHeadName">Select a thread</div><div class="chat-head-status">● Online</div></div>
                         </div>
-                        <div class="chat-messages">
-                            <div class="msg received"><div class="msg-bubble">Hello! I saw you were interested in our Batian 1kg listing.</div><div class="msg-time">10:15am</div></div>
-                            <div class="msg sent"><div class="msg-bubble">Yes! I'd like to order 5kg. Is the lot still available?</div><div class="msg-time">10:18am</div></div>
-                            <div class="msg received"><div class="msg-bubble">Yes, the 5kg lot is available. We can do KES 2,800/kg. Harvest was October 2025 — very fresh batch.</div><div class="msg-time">10:20am</div></div>
-                            <div class="msg sent"><div class="msg-bubble">That works for me. How do I proceed with the M-Pesa payment?</div><div class="msg-time">10:22am</div></div>
-                            <div class="msg received"><div class="msg-bubble">Click "Order Now" on the listing and the M-Pesa STK push will come to your number automatically. Let me know if you need help!</div><div class="msg-time">10:24am</div></div>
-                        </div>
-                         <div class="chat-input-area">
-                            <input class="chat-input" placeholder="Type a message..."/>
-                            <button class="chat-send">Send</button>
+                        <div class="chat-messages" id="chatMessagesContainer">
+                            </div>
+                        <div class="chat-input-area">
+                            <input class="chat-input" id="chatInputField" placeholder="Reply..."/>
+                            <button class="chat-send" id="chatSendButton">Send</button>
                         </div>
                     </div>
                 </div>
@@ -223,48 +263,103 @@
     <div class="content-section" id="sec-support">
         <div class="dash-header"><div><div class="dash-greeting">Help</div><div class="dash-title">Support <em>Centre</em></div></div></div>
         <div class="support-grid">
-            <div class="support-card"><div class="support-card-icon">💬</div><div class="support-card-title">Live Chat</div><div class="support-card-desc">Chat with our support team in real time. Available Mon–Sat, 8am–8pm EAT.</div><button class="support-btn">Start Chat →</button></div>
-            <div class="support-card"><div class="support-card-icon">📧</div><div class="support-card-title">Email Support</div><div class="support-card-desc">Send us a detailed message and we'll respond within 24 hours.</div><button class="support-btn">Send Email →</button></div>
-            <div class="support-card"><div class="support-card-icon">📋</div><div class="support-card-title">Raise a Ticket</div><div class="support-card-desc">For order issues, payment disputes, or account problems. Track your ticket status here.</div><button class="support-btn">New Ticket →</button></div>
-            <div class="support-card"><div class="support-card-icon">📖</div><div class="support-card-title">Help & FAQs</div><div class="support-card-desc">Browse common questions about ordering, M-Pesa payments, and the grower marketplace.</div><button class="support-btn">Browse FAQs →</button></div>
+            <div class="support-card">
+                <div class="support-card-icon">💬</div>
+                <div class="support-card-title">Live Chat</div>
+                <div class="support-card-desc">Chat with our support team in real time. Available Mon–Sat, 8am–8pm EAT.</div>
+                <button class="support-btn" onclick="showSection('messages')">Start Chat →</button>
+            </div>
+            
+            <div class="support-card">
+                <div class="support-card-icon">📧</div>
+                <div class="support-card-title">Email Support</div>
+                <div class="support-card-desc">Send us a detailed message and we'll respond within 24 hours.</div>
+                <a href="mailto:support@caffeinandchaos.com?subject=Buyer Account Support — {{ current_user.email }}" class="support-btn" style="text-decoration:none; display:inline-block; text-align:center;">Send Email →</a>
+            </div>
+            
+            <div class="support-card">
+                <div class="support-card-icon">📋</div>
+                <div class="support-card-title">Raise a Ticket</div>
+                <div class="support-card-desc">For order issues, payment disputes, or account problems. Track your ticket status here.</div>
+                <button class="support-btn" onclick="alert('Ticket Portal Access: Please describe your issue inside our Live Chat or email support line for immediate tracking.')">New Ticket →</button>
+            </div>
+            
+            <div class="support-card">
+                <div class="support-card-icon">📖</div>
+                <div class="support-card-title">Help & FAQs</div>
+                <div class="support-card-desc">Browse common questions about ordering, M-Pesa payments, and the grower marketplace.</div>
+                <button class="support-btn" onclick="alert('The Caffein & Chaos Documentation repository is currently being updated.')">Browse FAQs →</button>
+            </div>
         </div>
-        </div>
-
     </div>
 
     <!-- ── SETTINGS ── -->
     <div class="content-section" id="sec-settings">
         <div class="dash-header"><div><div class="dash-greeting">Account</div><div class="dash-title">Account <em>Settings</em></div></div></div>
         <div class="settings-grid">
-            <div class="settings-panel">
+            <form action="{{ url_for('buyer.update_profile') }}" method="POST" class="settings-panel" onsubmit="return confirm('Save updates to profile entries?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="settings-panel-title">Personal Information</div>
-                <div class="settings-field"><label>First Name</label><input type="text" value="Faith"/></div>
-                <div class="settings-field"><label>Last Name</label><input type="text" value="Njeri"/></div>
-                <div class="settings-field"><label>Email</label><input type="email" value="faith@example.com"/></div>
-                <div class="settings-field"><label>Phone (M-Pesa)</label><input type="tel" value="0712 345 678"/></div>
-                <button class="settings-save">Save Changes</button>
-            </div>
-            <div class="settings-panel">
+                <div class="settings-field"><label>First Name</label><input type="text" name="first_name" value="{{ current_user.first_name or '' }}"/></div>
+                <div class="settings-field"><label>Last Name</label><input type="text" name="last_name" value="{{ current_user.last_name or '' }}"/></div>
+                <div class="settings-field"><label>Email</label><input type="email" name="email" value="{{ current_user.email }}"/></div>
+                <div class="settings-field"><label>Phone (M-Pesa)</label><input type="tel" name="phone" value="{{ current_user.phone or '' }}"/></div>
+                <button type="submit" class="settings-save">Save Changes</button>
+            </form>
+            <form action="{{ url_for('buyer.update_address') }}" method="POST" class="settings-panel">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="settings-panel-title">Delivery Address</div>
-                <div class="settings-field"><label>Town / City</label><input type="text" value="Nairobi"/></div>
-                <div class="settings-field"><label>Area</label><input type="text" value="Westlands"/></div>
-                <div class="settings-field"><label>Delivery Notes</label><input type="text" placeholder="e.g. Gate 3, Blue door"/></div>
-                <button class="settings-save">Save Address</button>
-            </div>
-            <div class="settings-panel">
+                <div class="settings-field"><label>Town / City</label><input type="text" name="town" value="Nairobi"/></div>
+                <div class="settings-field"><label>Area</label><input type="text" name="area" value="Westlands"/></div>
+                <div class="settings-field"><label>Delivery Notes</label><input type="text" name="notes" placeholder="e.g. Gate 3, Blue door"/></div>
+                <button type="submit" class="settings-save">Save Address</button>
+            </form>
+            <form action="{{ url_for('buyer.update_password') }}" method="POST" class="settings-panel" id="passwordForm" onsubmit="return confirmPasswordUpdate(event)">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="settings-panel-title">Change Password</div>
-                <div class="settings-field"><label>Current Password</label><input type="password" placeholder="••••••••"/></div>
-                <div class="settings-field"><label>New Password</label><input type="password" placeholder="Min. 8 characters"/></div>
-                <div class="settings-field"><label>Confirm New Password</label><input type="password" placeholder="••••••••"/></div>
-                <button class="settings-save">Update Password</button>
-            </div>
-            <div class="settings-panel">
+                
+                <div class="settings-field">
+                    <label for="current_password">Current Password</label>
+                    <input type="password" id="current_password" name="current_password" placeholder="••••••••" required/>
+                </div>
+                <div class="settings-field">
+                    <label for="new_password">New Password</label>
+                    <input type="password" id="new_password" name="new_password" placeholder="Min. 8 characters" required/>
+                </div>
+                <div class="settings-field">
+                    <label for="confirm_password">Confirm New Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" placeholder="••••••••" required/>
+                </div>
+                <button type="submit" class="settings-save">Update Password</button>
+            </form>
+            <form action="{{ url_for('buyer.update_notifications') }}" method="POST" class="settings-panel" id="notificationsForm" onsubmit="return confirmNotificationUpdate(event)">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="settings-panel-title">Notifications</div>
-                <div class="settings-field"><label>Order Updates</label><select><option>Email + SMS</option><option>Email only</option><option>SMS only</option></select></div>
-                <div class="settings-field"><label>New Farm Listings</label><select><option>Email</option><option>Off</option></select></div>
-                <div class="settings-field"><label>Promotions & Events</label><select><option>On</option><option>Off</option></select></div>
-                <button class="settings-save">Save Preferences</button>
-            </div>
+                
+                <div class="settings-field">
+                    <label for="order_alerts">New Order Alerts</label>
+                    <select id="order_alerts" name="order_alerts">
+                        <option value="all" {% if current_user.order_alerts == 'all' or not current_user.order_alerts %}selected{% endif %}>SMS + Email</option>
+                        <option value="sms" {% if current_user.order_alerts == 'sms' %}selected{% endif %}>SMS only</option>
+                        <option value="email" {% if current_user.order_alerts == 'email' %}selected{% endif %}>Email only</option>
+                    </select>
+                </div>
+                <div class="settings-field">
+                    <label for="payment_alerts">Payment Received</label>
+                    <select id="payment_alerts" name="payment_alerts">
+                        <option value="all" {% if current_user.payment_alerts == 'all' or not current_user.payment_alerts %}selected{% endif %}>SMS + Email</option>
+                        <option value="sms" {% if current_user.payment_alerts == 'sms' %}selected{% endif %}>SMS only</option>
+                    </select>
+                </div>
+                <div class="settings-field">
+                    <label for="message_alerts">New Messages</label>
+                    <select id="message_alerts" name="message_alerts">
+                        <option value="on" {% if current_user.message_alerts == 'on' or current_user.message_alerts is not defined %}selected{% endif %}>On</option>
+                        <option value="off" {% if current_user.message_alerts == 'off' %}selected{% endif %}>Off</option>
+                    </select>
+                </div>
+                <button type="submit" class="settings-save">Save Preferences</button>
+            </form>
         </div>
 
     </div>

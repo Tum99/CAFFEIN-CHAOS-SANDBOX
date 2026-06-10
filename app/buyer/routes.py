@@ -1,26 +1,93 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from flask_login import login_required, current_user
-from app.models import Order, DirectMessage
+from app.models import User, Order, GrowerBuyerTransaction, MessageThread, DirectMessage, BuyerProfile, CartItem, Product, Category
+from app import db
+from werkzeug.security import generate_password_hash, check_password_hash
 from app.utils.decorators import buyer_required
+from datetime import datetime
+from werkzeug.utils import secure_filename
+import os
 
 
 buyer = Blueprint('buyer', __name__, url_prefix='/buyer')
 
 
-@buyer.route('/buyer')
-@login_required
-@buyer_required
-def profile():
-    return render_template(
-        'buyer/profile.html',
-        buyer=current_user.buyer_profile
-    )
-
 @buyer.route('/dashboard')
 @login_required
 @buyer_required
 def dashboard():
-    return render_template('buyer/dashboard.html')
+    all_transactions = GrowerBuyerTransaction.query.filter_by(buyer_id=current_user.id)\
+        .order_by(GrowerBuyerTransaction.created_at.desc()).all()
+
+    recent_transactions = all_transactions[:5]
+
+    total_orders = len(all_transactions)
+    in_progress_orders = sum(1 for tx in all_transactions if tx.status in ['pending', 'confirmed', 'paid', 'shipped'])
+
+    total_spent = sum(tx.total_amount for tx in all_transactions if tx.status != 'cancelled')
+
+    unread_msg_count = DirectMessage.query.filter_by(receiver_id=current_user.id, is_read=False).count()
+
+    threads = MessageThread.query.filter_by(buyer_id=current_user.id)\
+        .order_by(MessageThread.updated_at.desc()).all()
+
+    saved_cart_items = CartItem.query.filter_by(user_id=current_user.id).all()
+    saved_count = len(saved_cart_items)
+
+    session_history = session.get('browsing_history', [])
+
+    browsing_history = []
+    if session_history:
+        # Keeps database query order matched to the session list order
+        browsing_history = [Product.query.get(pid) for pid in session_history if Product.query.get(pid)]
+
+
+    return render_template(
+        'buyer/dashboard.html',
+        transactions=all_transactions,
+        recent_transactions=recent_transactions,
+        total_orders=total_orders,
+        in_progress_orders=in_progress_orders,
+        total_spent=total_spent,
+        unread_msg_count=unread_msg_count,
+        threads=threads,
+        current_date=datetime.now().strftime("%A, %d %B %Y"),
+        saved_items=saved_cart_items,
+        saved_count=saved_count,
+        browsing_history=browsing_history[:5]
+    )
+
+
+@buyer.route('/settings/profile', methods=['POST'])
+@login_required
+@buyer_required
+def update_profile():
+    current_user.first_name = request.form.get('first_name', '').strip()
+    current_user.last_name = request.form.get('last_name', '').strip()
+    current_user.email = request.form.get('email', '').strip()
+    current_user.phone = request.form.get('phone', '').strip()
+    
+    db.session.commit()
+    flash('Personal details saved successfully.', 'success')
+    return redirect(url_for('buyer.dashboard', _anchor='sec-settings'))
+
+
+@buyer.route('/settings/address', methods=['POST'])
+@login_required
+@buyer_required
+def update_address():
+    profile = current_user.buyer_profile
+    if profile:
+        # Save delivery preferences details as string json or text formatting
+        town = request.form.get('town', '').strip()
+        area = request.form.get('area', '').strip()
+        notes = request.form.get('notes', '').strip()
+        
+        profile.preferences = f"{town} | {area} | Notes: {notes}"
+        db.session.commit()
+        flash('Delivery configuration address successfully updated.', 'success')
+    return redirect(url_for('buyer.dashboard', _anchor='sec-settings'))
+
 
 @buyer.route('/post_order')
 @login_required
@@ -53,4 +120,94 @@ def messages():
     return render_template(
         'buyer/messages.html',
         messages=messages
+    )
+
+
+@buyer.route('/settings/password', methods=['POST'])
+@login_required
+@buyer_required
+def update_password():
+    current_pass = request.form.get('current_password')
+    new_pass = request.form.get('new_password')
+    confirm_pass = request.form.get('confirm_password')
+    
+    # 1. Verify old password matches database entry hash signature
+    if not check_password_hash(current_user.password_hash, current_pass):
+        flash('Incorrect current password confirmation.', 'error')
+        return redirect(url_for('seller.dashboard', _anchor='sec-settings'))
+        
+    # 2. Verify confirmation compliance
+    if new_pass != confirm_pass:
+        flash('New password mismatch error.', 'error')
+        return redirect(url_for('seller.dashboard', _anchor='sec-settings'))
+        
+    if len(new_pass) < 8:
+        flash('Password must contain at least 8 elements.', 'error')
+        return redirect(url_for('seller.dashboard', _anchor='sec-settings'))
+
+    # 3. Apply secure hash change
+    current_user.password_hash = generate_password_hash(new_pass)
+    db.session.commit()
+    
+    flash('Account security password modified smoothly.', 'success')
+    return redirect(url_for('buyer.dashboard', _anchor='sec-settings'))
+
+
+@buyer.route('/settings/notifications', methods=['POST'])
+@login_required
+@buyer_required
+def update_notifications():
+    if hasattr(current_user, 'order_alerts'):
+        current_user.order_alerts = request.form.get('order_alerts')
+        current_user.payment_alerts = request.form.get('payment_alerts')
+        current_user.message_alerts = request.form.get('message_alerts')
+        db.session.commit()
+        flash('Notification system preferences saved successfully.', 'success')
+    else:
+        # Mock success notification if columns do not exist in database yet
+        flash('Notification preferences modified locally.', 'success')
+        
+    return redirect(url_for('buyer.dashboard', _anchor='sec-settings'))
+
+
+@buyer.route('/wishlist/remove/<int:item_id>', methods=['POST'])
+@login_required
+@buyer_required
+def remove_from_wishlist(item_id):
+    item = CartItem.query.filter_by(id=item_id, user_id=current_user.id).first()
+    if item:
+        db.session.delete(item)
+        db.session.commit()
+        flash("Item removed from your saved list.", "info")
+    return redirect(url_for('buyer.dashboard', _anchor='sec-saved'))
+
+
+@buyer.route('/marketplace', methods=['GET'])
+@login_required
+@buyer_required
+def marketplace():
+    """
+    Buyer-facing marketplace view. 
+    Allows searching, filtering, and clicking 'Add to Wishlist/Cart'.
+    """
+    category_id = request.args.get('category_id', type=int)
+    search_query = request.args.get('search', '').strip()
+    
+    # Base query for active/available items
+    query = Product.query.filter_by(is_available=True)
+    
+    if category_id:
+        query = query.filter_by(category_id=category_id)
+    if search_query:
+        query = query.filter_by(Product.name.ilike(f"%{search_query}%"))
+        
+    products = query.order_by(Product.id.desc()).all()
+    categories = Category.query.order_by(Category.display_order).all()
+    
+    return render_template(
+        'marketplace/marketplace.html',
+        products=products,
+        categories=categories,
+        search_query=search_query,
+        current_category=category_id
     )
