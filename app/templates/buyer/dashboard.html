@@ -231,13 +231,30 @@
                 <div class="message-layout">
                     <div class="message-threads">
                         {% for thread in threads %}
-                        <div class="thread-item {% if loop.first %}active-thread{% endif %}" onclick="loadThreadData('{{ thread.id }}')">
-                            <div class="thread-avatar">{{ thread.seller.first_name[:2].upper() if thread.seller.first_name else 'GR' }}</div>
-                            <div class="thread-info">
-                                <div class="thread-name">{{ thread.seller.first_name }} {{ thread.seller.last_name }}</div>
-                                <div class="thread-preview">{{ thread.messages[-1].body if thread.messages else 'No messages yet' }}</div>
+                            <div class="thread-item" data-thread-id="{{ thread.id }}">
+                                <div class="thread-avatar">
+                                    {% if thread.seller.first_name %}
+                                        {{ thread.seller.first_name[:2].upper() }}
+                                    {% else %}
+                                        {{ thread.seller.username[:2].upper() if thread.seller.username else 'GR' }}
+                                    {% endif %}
+                                </div>
+                                <div class="thread-info">
+                                    <div class="thread-name">
+                                        {% if thread.seller.first_name %}
+                                            {{ thread.seller.first_name }} {{ thread.seller.last_name }}
+                                        {% else %}
+                                            {{ thread.seller.username }}
+                                        {% endif %}
+                                    </div>
+                                    <div class="thread-preview">{{ thread.messages[-1].body if thread.messages else 'No messages yet' }}</div>
+                                </div>
+                                <div class="thread-meta">
+                                    <div class="thread-time">{{ thread.updated_at.strftime('%H:%M') }}</div>
+                                </div>
                             </div>
-                        </div>
+                        {% else %}
+                            <div style="padding: 20px; color: var(--gray)">No conversations found yet.</div>
                         {% endfor %}
                     </div>
 
@@ -249,14 +266,13 @@
                         <div class="chat-messages" id="chatMessagesContainer">
                             </div>
                         <div class="chat-input-area">
-                            <input class="chat-input" id="chatInputField" placeholder="Reply..."/>
+                            <input class="chat-input" id="chatInputField" placeholder="Reply..." autocomplete="off"/>
                             <button class="chat-send" id="chatSendButton">Send</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
 
     <!-- ── SUPPORT ── -->

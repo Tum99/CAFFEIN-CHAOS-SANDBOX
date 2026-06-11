@@ -252,6 +252,90 @@ def add_listing():
     return redirect(url_for('seller.seller_setup'))
 
 
+@seller.route('/next-listings')
+@login_required
+@seller_required
+def add_next_listing():
+    if current_user.role != 'seller':
+        flash("Unauthorized access.", "error")
+        return redirect(url_for('main.index'))
+
+    if not farm:
+        flash("You must complete your Farm Profile before adding a listing.", "error")
+        return redirect(url_for('seller.dashboard', _anchor='sec-dashboard'))
+
+    name = request.form.get('name', '').strip()
+    description = request.form.get('description', '').strip()
+    varietal = request.form.get('varietal')
+    process = request.form.get('process')
+    roast_level = request.form.get('roast')
+    tasting_notes = request.form.get('notes', '').strip()
+    harvest_date_str = request.form.get('harvest_date')
+
+    try:
+        price = float(request.form.get('price') or 0.0)
+        stock = float(request.form.get('stock') or 0.0) # Matches quantity_kg mapping
+        min_order = float(request.form.get('min_order') or 1.0)
+    except ValueError:
+        flash("Price, stock, and minimum order values must be valid numbers.", "error")
+        return redirect(url_for('seller.dashboard', _anchor='sec-new-listing'))
+
+    harvest_date = None
+    if harvest_date_str:
+        try:
+            harvest_date = datetime.strptime(harvest_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            pass
+
+    if not name or price <= 0 or stock <= 0:
+        flash("Product setup failed. Name, stock, and price cannot be blank.", "error")
+        return redirect(url_for('seller.dashboard', _anchor='sec-new-listing'))
+
+    try:
+        # Step A: Instantiate the base global Product row entry
+        new_base_product = Product(
+            seller_id=current_user.id,
+            name=name,
+            description=description,
+            price=price,
+            stock=int(stock), # Cast safely if your base model requires an integer
+            product_type='farm',
+            is_available=True
+        )
+
+        db.session.add(new_base_product)
+        db.session.flush()
+
+    # Step B: Instantiate your coffee-specific transaction model row using the flushed ID
+        new_farm_listing = FarmProductListing(
+            product_id=new_base_product.id, # Seamlessly linking tables
+            farm_id=farm.id,                 # FarmProfile reference matching schema constraints
+            grower_id=current_user.id,       # Explicit user owner relationship mapping
+            varietal=varietal,
+            process=process,
+            roast_level=roast_level,
+            harvest_date=harvest_date,
+            quantity_kg=stock,
+            minimum_order_kg=min_order,
+            price_per_kg=price,
+            tasting_notes=tasting_notes,
+            status="available"
+        )
+    
+        db.session.add(new_farm_listing)
+        
+        # Step C: Complete transaction synchronously
+        db.session.commit()
+        flash("Excellent! Your coffee lot has been published live to the marketplace.", "success")
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"CRITICAL SQL RELATIONSHIP CRASH: {e}") # Log terminal detail output
+        flash("An database error occurred. Your listing could not be safely finalized.", "error")
+
+    return redirect(url_for('seller.dashboard', _anchor='sec-new-listing'))
+
+
 @seller.route('/listings')
 @login_required
 @seller_required

@@ -225,6 +225,7 @@ class FarmProductListing(db.Model):
     When a grower lists a specific coffee lot/batch for sale.
     Links to the Product table but adds farm-specific trading details.
     """
+    name = db.Column(db.String(100))
     id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(
         db.Integer,
