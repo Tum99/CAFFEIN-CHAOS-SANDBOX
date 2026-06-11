@@ -650,6 +650,7 @@
         <div class="new-listing-form">
           <form action="{{ url_for('seller.add_listing') }}" method="POST">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            
             <div class="form-panel">
               <div class="form-panel-title">Product Details</div>
               <div class="form-field">

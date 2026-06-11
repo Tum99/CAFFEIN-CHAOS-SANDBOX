@@ -233,24 +233,27 @@
         <div class="content-section" id="sec-new-listing">
             <div class="dash-header"><div><div class="dash-greeting">My Farm</div><div class="dash-title">Add New <em>Listing</em></div></div></div>
             <div class="new-listing-form">
-                <div class="form-panel">
-                    <div class="form-panel-title">Product Details</div>
-                    <div class="form-field"><label>Product Name</label><input type="text" placeholder="e.g. Arabica Batian — 500g"/></div>
-                    <div class="form-field"><label>Price per kg (KES)</label><input type="number" placeholder="e.g. 2800"/></div>
-                    <div class="form-field"><label>Total stock available (kg)</label><input type="number" placeholder="e.g. 50"/></div>
-                    <div class="form-field"><label>Minimum order (kg)</label><input type="number" placeholder="e.g. 1"/></div>
-                    <div class="form-field"><label>Description</label><textarea placeholder="Describe your coffee..."></textarea></div>
-
-                </div>
-                <div class="form-panel">
-                    <div class="form-panel-title">Coffee Specifications</div>
-                    <div class="form-field"><label>Varietal</label><select><option>Batian</option><option>SL28</option><option>SL34</option><option>Ruiru 11</option><option>K7</option></select></div>
-                    <div class="form-field"><label>Process</label><select><option>Washed</option><option>Natural</option><option>Honey</option></select></div>
-                    <div class="form-field"><label>Roast Level</label><select><option>Light</option><option>Medium</option><option>Dark</option></select></div>
-                    <div class="form-field"><label>Harvest Date</label><input type="date"/></div>
-                    <div class="form-field"><label>Tasting Notes (comma separated)</label><input type="text" placeholder="e.g. Citrus, Molasses, Berry"/></div>
-                    <button class="form-submit">Publish Listing →</button>
-                </div>
+                <form action="{{ url_for('seller.add_next_listing') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            
+                    <div class="form-panel">
+                        <div class="form-panel-title">Product Details</div>
+                        <div class="form-field"><label>Product Name</label><input name="name" type="text" placeholder="e.g. Arabica Batian — 500g"/></div>
+                        <div class="form-field"><label>Price per kg (KES)</label><input name="price" type="number" placeholder="e.g. 2800"/></div>
+                        <div class="form-field"><label>Total stock available (kg)</label><input name="stock" type="number" placeholder="e.g. 50"/></div>
+                        <div class="form-field"><label>Minimum order (kg)</label><input name="min_order" type="number" placeholder="e.g. 1"/></div>
+                        <div class="form-field"><label>Description</label><textarea name="description" placeholder="Describe your coffee..."></textarea></div>
+                    </div>
+                    <div class="form-panel">
+                        <div class="form-panel-title">Coffee Specifications</div>
+                        <div class="form-field"><label>Varietal</label><select name="varietal"><option>Batian</option><option>SL28</option><option>SL34</option><option>Ruiru 11</option><option>K7</option></select></div>
+                        <div class="form-field"><label>Process</label><select name="process"><option>Washed</option><option>Natural</option><option>Honey</option></select></div>
+                        <div class="form-field"><label>Roast Level</label><select name="roast"><option>Light</option><option>Medium</option><option>Dark</option></select></div>
+                        <div class="form-field"><label>Harvest Date</label><input type="date" name="harvest_date"/></div>
+                        <div class="form-field"><label>Tasting Notes (comma separated)</label><input name="notes" type="text" placeholder="e.g. Citrus, Molasses, Berry"/></div>
+                        <button class="form-submit" type="submit">Publish Listing →</button>
+                    </div>
+                </form> 
             </div>
 
         </div>
@@ -388,7 +391,8 @@
                         <div class="message-threads">
                             {% for thread in threads %}
                                 {% set other_user = thread.seller if current_user.id == thread.buyer_id else thread.buyer %}
-                                <div class="thread-item {% if loop.first %}active-thread{% endif %}" data-thread-id="{{ thread.id }}">                                    <div class="thread-avatar">{{ other_user.username[:2].upper() }}</div>
+                                <div class="thread-item" data-thread-id="{{ thread.id }}">
+                                    <div class="thread-avatar">{{ other_user.username[:2].upper() if other_user.username else 'BY' }}</div>
                                     <div class="thread-info">
                                         <div class="thread-name">{{ other_user.username }}</div>
                                         <div class="thread-preview">
@@ -396,7 +400,7 @@
                                         </div>
                                     </div>
                                     <div class="thread-meta">
-                                        <div class="thread-time">{{ thread.updated_at.strftime('%H:%M') }}</div><div class="thread-unread">1</div>
+                                        <div class="thread-time">{{ thread.updated_at.strftime('%H:%M') }}</div>
                                     </div>
                                 </div>
                             {% else %}
@@ -412,14 +416,13 @@
                             <div class="chat-messages" id="chatMessagesContainer">
                                 </div>
                             <div class="chat-input-area">
-                                <input class="chat-input" id="chatInputField" placeholder="Reply..."/>
+                                <input class="chat-input" id="chatInputField" placeholder="Reply..." autocomplete="off"/>
                                 <button class="chat-send" id="chatSendButton">Send</button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-
         </div>
 
 
