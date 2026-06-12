@@ -161,6 +161,13 @@ class Product(db.Model):
         cascade="all, delete"
     )
 
+    farm_listing = db.relationship(
+        "FarmProductListing", 
+        back_populates="product", 
+        uselist=False, 
+        cascade="all, delete-orphan"
+    )
+
     def __repr__(self):
         return f"<Product {self.name}>"
 
@@ -261,7 +268,7 @@ class FarmProductListing(db.Model):
     listed_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # relationships
-    product = db.relationship("Product", backref="farm_listing", uselist=False)
+    product = db.relationship("Product", back_populates="farm_listing")
     farm = db.relationship("FarmProfile", backref="listings")
 
     def __repr__(self):

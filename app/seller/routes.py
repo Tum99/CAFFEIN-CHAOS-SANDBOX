@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from app.utils.decorators import seller_required
 from datetime import datetime
 from app import db
+import json
 from werkzeug.utils import secure_filename
 import os
 
@@ -368,18 +369,70 @@ def marketplace():
     Allows growers to review competing farm lots, look up average price trends, etc.
     """
     search_query = request.args.get('search', '').strip()
-    
-    # Sellers look at raw farm products to scope out market analytics
     query = Product.query.filter_by(product_type='farm')
     
     if search_query:
         query = query.filter_by(Product.name.ilike(f"%{search_query}%"))
         
     farm_products = query.order_by(Product.price.desc()).all()
+
+    formatted_listings = []
+    for p in farm_products:
+        listing_details = p.farm_listing if hasattr(p, 'farm_listing') else None
+
+        # Determine fallback name fields safely
+        farm_name = "Verified Grower"
+        county = "Kenya Origin"
+        varietal = "Premium"
+        process = "Washed"
+        roast_level = "Medium"
+        harvest_date_str = "Recent"
+        quantity = float(p.stock or 0)
+        min_order = 1.0
+        tasting_notes = "Clean, balanced single-origin profile"
+    
+        if listing_details:
+            farm_name = listing_details.farm.farm_name if listing_details.farm else farm_name
+            county = listing_details.farm.county if listing_details.farm else county
+            varietal = listing_details.varietal or varietal
+            process = listing_details.process or process
+            roast_level = listing_details.roast_level or roast_level
+            harvest_date_str = listing_details.harvest_date.strftime('%B %Y') if listing_details.harvest_date else harvest_date_str
+            quantity = listing_details.quantity_kg or quantity
+            min_order = listing_details.minimum_order_kg or min_order
+            tasting_notes = listing_details.tasting_notes or tasting_notes
+
+        formatted_listings.append({
+            "id": listing_details.id if listing_details else p.id,
+            "product_id": p.id,
+            "name": p.name or f"{varietal} {process}",
+            "farm_name": farm_name,
+            "varietal": varietal,
+            "process": process,
+            "roast_level": roast_level,
+            "harvest_date": harvest_date_str,
+            "quantity_kg": quantity,
+            "minimum_order_kg": min_order,
+            "price_per_kg": float(p.price or 0.0),
+            "tasting_notes": tasting_notes,
+            "county": county,
+            "altitude": "1,600m - 1,950m"
+        })
+
+    # 3. Calculate dynamic Hero Stats over verified, live growers
+    live_farms = FarmProfile.query.filter_by(is_live=True, is_setup_complete=True).all()
+    stats = {
+        "total_listings": len(farm_products),
+        "total_farms": len(live_farms),
+        "total_counties": len({f.county for f in live_farms if f.county})
+    }
     
     return render_template(
-        'seller/marketplace_insights.html',
+        'marketplace/marketplace.html',
         products=farm_products,
+        listings=farm_products, # Map to listings variant to avoid template UndefinedErrors
+        json_payload=json.dumps(formatted_listings),
+        stats=stats,
         search_query=search_query
     )
 

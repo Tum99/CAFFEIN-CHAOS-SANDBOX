@@ -33,6 +33,7 @@ body::before {
     display: flex; 
     padding-top: 64px; 
     min-height: 100vh; 
+    /* background-color: #c9afa1; */
 }
 /* sidebar — green accents */
 .dash-sidebar { 
