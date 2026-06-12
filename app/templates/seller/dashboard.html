@@ -266,6 +266,7 @@
                 <div class="farm-status-toggle">
                     <div class="status-label">Marketplace Status</div>
                     <form action="{{ url_for('seller.toggle_live') }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                         <button type="submit" class="status-pill {{ 'active' if farm.is_live else 'offline' }}">
                             {{ '● LIVE ON MARKET' if farm.is_live else '○ OFFLINE' }}
                         </button>

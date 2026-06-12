@@ -260,3 +260,46 @@ if (typeof DATABASE_PAYLOAD !== 'undefined') {
     filtered = [...listings];
     renderCards(listings);
 }
+
+
+/* Ensure your static/js/marketplace.js contains an initial layout execution engine */
+
+function displayListings(itemsToRender) {
+    const grid = document.getElementById("listingsGrid");
+    const emptyState = document.getElementById("emptyState");
+    if(!grid) return;
+
+    grid.innerHTML = "";
+    
+    if(itemsToRender.length === 0) {
+        emptyState.style.display = "block";
+        return;
+    }
+    emptyState.style.display = "none";
+
+    itemsToRender.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "product-card";
+        card.onclick = () => openModalDetails(item); // Mapping click details
+        
+        card.innerHTML = `
+            <div class="card-img-ph">☕</div>
+            <div class="card-body">
+                <div class="card-farm">${item.farm_name} • <small>${item.county}</small></div>
+                <div class="card-title">${item.name}</div>
+                <div class="card-price">KES ${item.price_per_kg.toLocaleString()} /kg</div>
+                <div class="card-meta">${item.varietal} | ${item.process} Process</div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+    
+    document.getElementById("resultsCount").textContent = itemsToRender.length;
+}
+
+// Fire the pipeline instantly on DOM initialization load
+document.addEventListener("DOMContentLoaded", () => {
+    if(typeof listings !== 'undefined') {
+        displayListings(listings);
+    }
+});
