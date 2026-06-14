@@ -127,10 +127,10 @@
         <div class="hero-stat-num">{{ stats.total_farms if stats else 0 }}</div>
         <div class="hero-stat-lbl">Active Farms</div>
       </div>
-      <div>
+      <!-- <div>
         <div class="hero-stat-num">{{ stats.total_listings if stats else 0 }}</div>
         <div class="hero-stat-lbl">Coffee Lots</div>
-      </div>
+      </div> -->
       <div>
         <div class="hero-stat-num">{{ stats.total_counties if stats else 0 }}</div>
         <div class="hero-stat-lbl">Counties</div>
@@ -140,7 +140,7 @@
 </div>
 
 <!-- ══ TICKER ══ -->
-<div class="ticker">
+<!-- <div class="ticker">
   <div class="ticker-track">
     <span class="ticker-item"
       >Batian Washed <span class="ticker-sep">✦</span></span
@@ -191,7 +191,7 @@
       >M-Pesa Payments <span class="ticker-sep">✦</span></span
     >
   </div>
-</div>
+</div> -->
 
 <!-- ══ MAIN LAYOUT ══ -->
 <div class="page-wrap">
@@ -535,7 +535,7 @@
     <div class="marketplace-dashboard-banner">
       <div class="banner-left">
         <div class="results-count">
-          <strong id="resultsCount">{{ stats.total_farms if stats else 0 }}</strong> active growers found
+          <strong id="resultsCount">{{ stats.total_farms if stats else 0 }}</strong> active listings found
         </div>
         <div class="active-filters" id="activeFilters"></div>
       </div>
@@ -577,6 +577,21 @@
 {% endblock %}
 
 {% block scripts %}
+<script>
+  // 1. Inject Flask context variables explicitly into global window scope
+  window.USER_IS_AUTHENTICATED = {{ 'true' if current_user.is_authenticated else 'false' }};
+  window.USER_ROLE = "{{ current_user.role if current_user.is_authenticated else 'guest' }}";
+  
+  // 2. Safe parsing of our database JSON collection payload string
+  window.DATABASE_PAYLOAD = {{ json_payload | safe if json_payload else '[]' }};
+  window.listings = window.DATABASE_PAYLOAD; // Dual configuration mapping mapping safeguard
+  
+  console.log("=== HTML Data Injection Check ===");
+  console.log("Logged In:", window.USER_IS_AUTHENTICATED);
+  console.log("User Role:", window.USER_ROLE);
+  console.log("Payload Records Injected:", window.DATABASE_PAYLOAD.length);
+</script>
+
 <script src="{{ url_for('static', filename='js/marketplace.js') }}"></script>
 <script src="{{ url_for('static', filename='js/logout_base.js') }}"></script>
 {% endblock %}
