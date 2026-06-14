@@ -86,7 +86,7 @@ def seller_setup():
 
        
 
-@seller.route('/skip-onboarding', methods=['POST'])
+@seller.route('/skip-onboarding', methods=['GET'])
 @login_required
 @seller_required
 def skip_onboarding():
@@ -272,6 +272,20 @@ def add_next_listing():
     roast_level = request.form.get('roast')
     tasting_notes = request.form.get('notes', '').strip()
     harvest_date_str = request.form.get('harvest_date')
+    file = request.files.get('listing_image')
+    filename = None
+
+    if file and file.filename != '':
+        # Sanitize filename string data to stay secure against injection exploits
+        filename = secure_filename(file.filename)
+        
+        # Ensure your application's upload folder exists
+        upload_path = os.path.join(current_app.root_path, 'static', 'uploads')
+        if not os.path.exists(upload_path):
+            os.makedirs(upload_path)
+            
+        # Write the file down to your disk storage layer
+        file.save(os.path.join(upload_path, filename))
 
     try:
         price = float(request.form.get('price') or 0.0)
@@ -372,13 +386,19 @@ def marketplace():
     query = Product.query.filter_by(product_type='farm')
     
     if search_query:
-        query = query.filter_by(Product.name.ilike(f"%{search_query}%"))
+        query = Product.query.filter_by(product_type='farm')
         
     farm_products = query.order_by(Product.price.desc()).all()
 
     formatted_listings = []
     for p in farm_products:
-        listing_details = p.farm_listing if hasattr(p, 'farm_listing') else None
+        listing_details = None
+        if hasattr(p, 'farm_listing') and p.farm_listing:
+            # If it's a list/collection, snatch the first entry safely
+            if isinstance(p.farm_listing, list) or hasattr(p.farm_listing, '__len__'):
+                listing_details = p.farm_listing[0] if len(p.farm_listing) > 0 else None
+            else:
+                listing_details = p.farm_listing
 
         # Determine fallback name fields safely
         farm_name = "Verified Grower"
@@ -441,44 +461,50 @@ def marketplace():
 @login_required
 @seller_required
 def go_live():
+    # 1. Look up the grower's profile context records
     farm = FarmProfile.query.filter_by(user_id=current_user.id).first()
-    
-    # 1. can't go live without a farm profile
     if not farm:
-        flash('Please complete your farm profile first.', 'error')
-        return redirect(url_for('seller.dashboard')) # Updated blueprint namespace
+        flash('Please complete your farm profile description modules first.', 'error')
+        return redirect(url_for('seller.seller_setup'))
 
-    # 2. Get all this seller's products of type 'farm'
+    # 2. Extract their created coffee lot records
     listings = Product.query.filter_by(
         seller_id=current_user.id,
         product_type='farm'
     ).all()
 
-    # 3. can't go live without at least one listing
     if not listings:
-        flash('Please add at least one listing first.', 'error')
-        return redirect(url_for('seller.dashboard')) 
+        flash('Please build at least one coffee lot listing configuration before going live.', 'warning')
+        return redirect(url_for('seller.seller_setup')) 
 
-    # 4. Publish all their listings
+    # 3. Publish and update individual product listings
     for listing in listings:
-        # Since 'listing' is a Product object, 'listing.farm_listing' works perfectly via backref!
         if listing.farm_listing:
-            listing.farm_listing.status = 'available'
-        
+            if isinstance(listing.farm_listing, list):
+                for sub_l in listing.farm_listing:
+                    sub_l.status = 'available'
+            else:
+                listing.farm_listing.status = 'available'
         listing.is_available = True
 
-    # Save all changes permanently to your database
+    # 4. CRITICAL CORE FIX: Toggle the profile states so your dashboard switches green instantly
+    farm.is_live = True
+    farm.is_setup_complete = True # Unlocks full dashboard navigation viewports
+
+    # Save everything cleanly in one transaction
     db.session.commit()
     
-    flash('Your farm is now live on the marketplace!', 'success')
-    return redirect(url_for('marketplace.list_view'))
-    
+    flash('Congratulations! Your farm profile and coffee lots are officially live on the marketplace!', 'success')
+    return redirect(url_for('seller.dashboard'))
 
 @seller.route('/toggle-live', methods=['POST'])
 @login_required
 @seller_required
 def toggle_live():
     farm = FarmProfile.query.filter_by(user_id=current_user.id).first()
+    if not farm:
+        flash("Farm profile not found.", "error")
+        return redirect(url_for('seller.dashboard'))
     
     # Check if they have listings before letting them go live
     has_listings = FarmProductListing.query.filter_by(farm_id=farm.id).first()
@@ -489,12 +515,16 @@ def toggle_live():
 
     # Flip the boolean
     farm.is_live = not farm.is_live
+    
+    # CRITICAL FIX: If they are toggling to live, their setup is obviously complete!
+    if farm.is_live:
+        farm.is_setup_complete = True
+        
     db.session.commit()
     
     status = "now live!" if farm.is_live else "now hidden from the marketplace."
     flash(f"Your farm is {status}", "success")
     return redirect(url_for('seller.dashboard'))
-
 
 @seller.route('/settings/profile', methods=['POST'])
 @login_required

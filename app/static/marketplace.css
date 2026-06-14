@@ -124,7 +124,7 @@ body::before {
 
 
 /* ══ MAIN CONTENT ══ */
-.market-main { flex: 1; min-width: 0; }
+.market-main { flex: 1; min-width: 0; height: calc(94vh);}
 
 /* ══ FEATURED FARM STRIP ══ */
 .featured-strip {

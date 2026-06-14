@@ -260,6 +260,7 @@ class FarmProductListing(db.Model):
     minimum_order_kg = db.Column(db.Float, default=1.0)
     price_per_kg = db.Column(db.Float, nullable=False)
     tasting_notes = db.Column(db.String(255))     # e.g. "Citrus, Molasses, Berry"
+    listing_image = db.Column(db.String(255), nullable=True)
     status = db.Column(
         db.String(20),
         default="available"
