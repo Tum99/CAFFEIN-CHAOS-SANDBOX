@@ -299,3 +299,47 @@ if (document.readyState === 'loading') {
 } else {
     startMarketplaceEngine();
 }
+
+
+function handleOrderPlacement() {
+    if (!currentModal) return;
+    
+    const qtyInput = document.getElementById('modalQty');
+    const orderQuantity = qtyInput ? parseFloat(qtyInput.value) : 0;
+    
+    if (orderQuantity < currentModal.minimum_order_kg) {
+        alert(`Minimum order requirement for this coffee lot is ${currentModal.minimum_order_kg} kg.`);
+        return;
+    }
+
+    console.log(`Initiating M-Pesa STK Push for listing ID: ${currentModal.product_id}, Qty: ${orderQuantity}`);
+    
+    // Dispatch to your buyer purchase order processing route
+    fetch('/buyer/order/create', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('input[name="csrf_token"]')?.value || ''
+        },
+        body: JSON.stringify({
+            product_id: currentModal.product_id,
+            quantity: orderQuantity
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert("M-Pesa payment request transmitted! Please check your mobile phone handset display to enter your PIN.");
+            closeModalBtn();
+        } else {
+            alert(data.message || "Transaction initialization error encountered.");
+        }
+    })
+    .catch(err => console.error("Checkout pipeline break:", err));
+}
+
+function handleGrowerMessage() {
+    if (!currentModal) return;
+    // Redirect buyer directly to their messaging conversation route thread with the grower
+    window.location.href = `/messaging/chat?with_user_id=${currentModal.seller_id || ''}`;
+}

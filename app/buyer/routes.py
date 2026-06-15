@@ -1,12 +1,13 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from flask_login import login_required, current_user
-from app.models import User, Order, GrowerBuyerTransaction, MessageThread, DirectMessage, BuyerProfile, CartItem, Product, Category
+from app.models import User, Order, GrowerBuyerTransaction, FarmProductListing, FarmProfile, MessageThread, DirectMessage, BuyerProfile, CartItem, Product, Category
 from app import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.utils.decorators import buyer_required
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import os
+import json
 
 
 buyer = Blueprint('buyer', __name__, url_prefix='/buyer')
@@ -188,26 +189,104 @@ def remove_from_wishlist(item_id):
 def marketplace():
     """
     Buyer-facing marketplace view. 
-    Allows searching, filtering, and clicking 'Add to Wishlist/Cart'.
+    Allows searching, filtering, and checking out via M-Pesa.
     """
     category_id = request.args.get('category_id', type=int)
     search_query = request.args.get('search', '').strip()
     
-    # Base query for active/available items
-    query = Product.query.filter_by(is_available=True)
+    # 1. Gather all products that belong to LIVE and verified farm profiles
+    # This filters out drafts or hidden onboarding setups entirely
+    query = Product.query.join(Product.farm_listing)\
+                         .join(FarmProductListing.farm)\
+                         .filter(
+                             Product.is_available == True,
+                             FarmProfile.is_live == True,
+                             FarmProfile.is_setup_complete == True
+                         )
     
     if category_id:
-        query = query.filter_by(category_id=category_id)
-    if search_query:
-        query = query.filter_by(Product.name.ilike(f"%{search_query}%"))
+        query = query.filter(Product.category_id == category_id)
         
-    products = query.order_by(Product.id.desc()).all()
+    #  FIX 1: Switched from .filter_by() to .filter() for the .ilike expression
+    if search_query:
+        query = query.filter(Product.name.ilike(f"%{search_query}%"))
+        
+    farm_products = query.order_by(Product.id.desc()).all()
     categories = Category.query.order_by(Category.display_order).all()
+
+    # 2. Build the exact unified JSON data model array payload your marketplace.js demands
+    formatted_listings = []
+    for p in farm_products:
+        # Pull listing_details context safely from relation proxies
+        listing_details = None
+        if hasattr(p, 'farm_listing') and p.farm_listing:
+            if isinstance(p.farm_listing, list) or hasattr(p.farm_listing, '__len__'):
+                listing_details = p.farm_listing[0] if len(p.farm_listing) > 0 else None
+            else:
+                listing_details = p.farm_listing
+
+        # Layout styling fallbacks
+        farm_name = "Verified Grower"
+        county = "Kenya Origin"
+        varietal = "Premium"
+        process = "Washed"
+        roast_level = "Medium"
+        harvest_date_str = "Recent"
+        quantity = float(p.stock or 0)
+        min_order = 1.0
+        tasting_notes = "Clean, balanced single-origin profile"
+        
+        # Pull our uploaded custom images if they exist on the model
+        image_file = "default_coffee.jpg"
+        if hasattr(listing_details, 'listing_image') and listing_details.listing_image:
+            image_file = listing_details.listing_image
     
+        if listing_details:
+            farm_name = listing_details.farm.farm_name if listing_details.farm else farm_name
+            county = listing_details.farm.county if listing_details.farm else county
+            varietal = listing_details.varietal or varietal
+            process = listing_details.process or process
+            roast_level = listing_details.roast_level or roast_level
+            harvest_date_str = listing_details.harvest_date.strftime('%B %Y') if listing_details.harvest_date else harvest_date_str
+            quantity = listing_details.quantity_kg or quantity
+            min_order = listing_details.minimum_order_kg or min_order
+            tasting_notes = listing_details.tasting_notes or tasting_notes
+
+        formatted_listings.append({
+            "id": listing_details.id if listing_details else p.id,
+            "product_id": p.id,
+            "seller_id": p.seller_id, # critical for matching up your Chat engine routing targets later
+            "name": p.name or f"{varietal} {process}",
+            "farm_name": farm_name,
+            "varietal": varietal,
+            "process": process,
+            "roast_level": roast_level,
+            "harvest_date": harvest_date_str,
+            "quantity_kg": quantity,
+            "minimum_order_kg": min_order,
+            "price_per_kg": float(p.price or 0.0),
+            "tasting_notes": tasting_notes,
+            "county": county,
+            "altitude": "1,600m - 1,950m",
+            "listing_image": image_file
+        })
+
+    # 3. Calculate dynamic live data stats to fix your top dashboard numbers display
+    live_farms = FarmProfile.query.filter_by(is_live=True, is_setup_complete=True).all()
+    stats = {
+        "total_listings": len(farm_products),
+        "total_farms": len(live_farms),
+        "total_counties": len({f.county for f in live_farms if f.county})
+    }
+    
+    # 4. Return variables explicitly into your template view context scope
     return render_template(
         'marketplace/marketplace.html',
-        products=products,
+        products=farm_products,
+        listings=farm_products,
+        json_payload=json.dumps(formatted_listings), # Injects straight into your window array targets
         categories=categories,
+        stats=stats, # Fixes your Active Farms counter displays
         search_query=search_query,
         current_category=category_id
     )
