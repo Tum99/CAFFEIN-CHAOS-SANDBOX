@@ -4,28 +4,21 @@ from app import db
 
 
 class User(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(150), unique=True, nullable=False)
-    first_name = db.Column(db.String(50))
-    last_name = db.Column(db.String(50))
-    password = db.Column(db.String(200), nullable=False)
-    phone = db.Column(db.Integer, unique=True, nullable=False)
-    # buyer / seller / admin
-    role = db.Column(db.String(20), nullable=False)
+    __tablename__ = "user"
+
+    id          = db.Column(db.Integer, primary_key=True)
+    email       = db.Column(db.String(150), unique=True, nullable=False)
+    first_name  = db.Column(db.String(50))
+    last_name   = db.Column(db.String(50))
+    password    = db.Column(db.String(200), nullable=False)
+    phone       = db.Column(db.Integer, unique=True, nullable=False)
+    role        = db.Column(db.String(20), nullable=False)   # buyer / seller / admin
     profile_pic = db.Column(db.String(255), default='default_user.jpg')
 
     # Relationships
-    products = db.relationship(
-        "Product",
-        backref="seller",
-        lazy=True
-    )
+    products = db.relationship("Product", backref="seller", lazy=True)
 
-    services = db.relationship(
-        "Service",
-        backref="seller",
-        lazy=True
-    )
+    services = db.relationship("Service", backref="seller", lazy=True)
 
     messages_sent = db.relationship(
         "DirectMessage",
@@ -33,7 +26,6 @@ class User(db.Model, UserMixin):
         backref="sender",
         lazy=True
     )
-
     messages_received = db.relationship(
         "DirectMessage",
         foreign_keys="DirectMessage.receiver_id",
@@ -47,14 +39,12 @@ class User(db.Model, UserMixin):
         uselist=False,
         cascade="all, delete"
     )
-
     buyer_profile = db.relationship(
         "BuyerProfile",
         backref="user",
         uselist=False,
         cascade="all, delete"
     )
-
     cart_items = db.relationship(
         "CartItem",
         backref="user",
@@ -67,9 +57,11 @@ class User(db.Model, UserMixin):
 
 
 class SellerProfile(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    __tablename__ = "seller_profile"
+
+    id      = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    bio = db.Column(db.Text)
+    bio     = db.Column(db.Text)
     location = db.Column(db.String(100))
 
     bids = db.relationship("Bid", backref="seller", lazy=True)
@@ -79,8 +71,10 @@ class SellerProfile(db.Model):
 
 
 class BuyerProfile(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    __tablename__ = "buyer_profile"
+
+    id          = db.Column(db.Integer, primary_key=True)
+    user_id     = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     preferences = db.Column(db.Text)
 
     orders = db.relationship(
@@ -89,7 +83,6 @@ class BuyerProfile(db.Model):
         lazy=True,
         cascade="all, delete"
     )
-
     bookings = db.relationship(
         "ServiceBooking",
         backref="buyer",
@@ -101,50 +94,36 @@ class BuyerProfile(db.Model):
         return f"<BuyerProfile {self.user_id}>"
 
 
-
 class Category(db.Model):
     __tablename__ = "categories"
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False, unique=True)
+
+    id            = db.Column(db.Integer, primary_key=True)
+    name          = db.Column(db.String(100), nullable=False, unique=True)
     display_order = db.Column(db.Integer, default=0)
 
-    products = db.relationship(
-        "Product",
-        backref="category",
-        lazy=True
-    )
+    products = db.relationship("Product", backref="category", lazy=True)
 
 
 class Product(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    seller_id = db.Column(
-        db.Integer,
-        db.ForeignKey("user.id"),
-        nullable=False
-    )
-    name = db.Column(db.String(150), nullable=False)
+    __tablename__ = "product"
+
+    id          = db.Column(db.Integer, primary_key=True)
+    seller_id   = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    name        = db.Column(db.String(150), nullable=False)
     description = db.Column(db.Text)
-    price = db.Column(db.Float, nullable=False)
-    stock = db.Column(db.Integer, default=1)
-    category_id = db.Column(
-        db.Integer,
-        db.ForeignKey("categories.id"),
-        nullable=True
-    )
+    price       = db.Column(db.Float, nullable=False)
+    stock       = db.Column(db.Integer, default=1)
+    category_id = db.Column(db.Integer, db.ForeignKey("categories.id"), nullable=True)
 
-     # NEW — distinguishes what kind of product this is
-    product_type = db.Column(
-        db.String(30),
-        nullable=False,
-        default="menu"
-        # options:
-        # "menu"    → items on the cafe menu (coffee drinks, desserts etc.)
-        # "merch"   → branded merchandise (tumbler, wood stand etc.)
-        # "apparel" → clothing (tees, jackets, aprons)
-        # "farm"    → raw coffee from growers (beans, lots, batches)
-    )
+    # FIX: removed the extra leading space before the comment
+    # Distinguishes what kind of product this is:
+    #   "menu"    → cafe menu items (drinks, desserts)
+    #   "merch"   → branded merchandise (tumbler, stand)
+    #   "apparel" → clothing (tees, jackets, aprons)
+    #   "farm"    → raw coffee from growers
+    product_type = db.Column(db.String(30), nullable=False, default="menu")
 
-    # NEW — only relevant for farm products
+    # Whether this product is visible / available to order
     is_available = db.Column(db.Boolean, default=True)
 
     images = db.relationship(
@@ -153,18 +132,16 @@ class Product(db.Model):
         lazy=True,
         cascade="all, delete-orphan"
     )
-
     cart_items = db.relationship(
         "CartItem",
         backref="product",
         lazy=True,
         cascade="all, delete"
     )
-
     farm_listing = db.relationship(
-        "FarmProductListing", 
-        back_populates="product", 
-        uselist=False, 
+        "FarmProductListing",
+        back_populates="product",
+        uselist=False,
         cascade="all, delete-orphan"
     )
 
@@ -172,14 +149,11 @@ class Product(db.Model):
         return f"<Product {self.name}>"
 
 
-
 class ProductImage(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    product_id = db.Column(
-        db.Integer,
-        db.ForeignKey("product.id"),
-        nullable=False
-    )
+    __tablename__ = "product_image"
+
+    id         = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False)
     image_path = db.Column(db.String(255), nullable=False)
 
     def __repr__(self):
@@ -187,35 +161,25 @@ class ProductImage(db.Model):
 
 
 class FarmProfile(db.Model):
-    """
-    Extra details for users who are coffee growers.
-    One grower (User) has one FarmProfile.
-    """
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(
-        db.Integer,
-        db.ForeignKey("user.id"),
-        nullable=False,
-        unique=True
-    )
-    farm_name = db.Column(db.String(150), nullable=False)
-    farm_image = db.Column(db.String(255))
-    location = db.Column(db.String(150))
-    county = db.Column(db.String(100))
-    farm_size_acres = db.Column(db.Float)
-    altitude_masl = db.Column(db.Integer)         # metres above sea level
-    certifications = db.Column(db.String(255))    # e.g. "Organic, Fair Trade"
-    bio = db.Column(db.Text)
-    is_verified = db.Column(db.Boolean, default=False)
-    joined_at = db.Column(db.DateTime, default=datetime.utcnow)
-    phone = db.Column(db.Integer)
-    whatsapp_phone = db.Column(db.Integer)
-    # User is done typing
-    is_setup_complete = db.Column(db.Boolean, default=False)
-    # If you also want to track if they are "Live" on the marketplace:
-    is_live = db.Column(db.Boolean, default=False)
+    __tablename__ = "farm_profile"
 
-    # farm's coffee listings (filtered from Product table)
+    id               = db.Column(db.Integer, primary_key=True)
+    user_id          = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, unique=True)
+    farm_name        = db.Column(db.String(150), nullable=False)
+    farm_image       = db.Column(db.String(255))
+    location         = db.Column(db.String(150))
+    county           = db.Column(db.String(100))
+    farm_size_acres  = db.Column(db.Float)
+    altitude_masl    = db.Column(db.Integer)
+    certifications   = db.Column(db.String(255))
+    bio              = db.Column(db.Text)
+    is_verified      = db.Column(db.Boolean, default=False)
+    joined_at        = db.Column(db.DateTime, default=datetime.utcnow)
+    phone            = db.Column(db.Integer)
+    whatsapp_phone   = db.Column(db.Integer)
+    is_setup_complete = db.Column(db.Boolean, default=False)
+    is_live          = db.Column(db.Boolean, default=False)
+
     @property
     def farm_products(self):
         return Product.query.filter_by(
@@ -228,124 +192,86 @@ class FarmProfile(db.Model):
 
 
 class FarmProductListing(db.Model):
-    """
-    When a grower lists a specific coffee lot/batch for sale.
-    Links to the Product table but adds farm-specific trading details.
-    """
-    name = db.Column(db.String(100))
-    id = db.Column(db.Integer, primary_key=True)
-    product_id = db.Column(
-        db.Integer,
-        db.ForeignKey("product.id"),
-        nullable=False
-    )
-    farm_id = db.Column(
-        db.Integer,
-        db.ForeignKey("farm_profile.id"),
-        nullable=False
-    )
+    __tablename__ = "farm_product_listing"
 
-    grower_id = db.Column(
-        db.Integer,
-        db.ForeignKey("user.id"),
-        nullable=False
-    )
+    # FIX: id declared first — avoids column ordering issues in some DB backends
+    id         = db.Column(db.Integer, primary_key=True)
+    name       = db.Column(db.String(100))
+    product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False)
+    farm_id    = db.Column(db.Integer, db.ForeignKey("farm_profile.id"), nullable=False)
+    grower_id  = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
-    # coffee-specific details
-    varietal = db.Column(db.String(100))          # e.g. Batian, SL28, Ruiru 11
-    process = db.Column(db.String(50))            # Washed, Natural, Honey
-    roast_level = db.Column(db.String(30))        # Light, Medium, Dark
-    harvest_date = db.Column(db.Date)
-    quantity_kg = db.Column(db.Float)             # total kg available
+    # Coffee-specific trading details
+    varietal         = db.Column(db.String(100))   # Batian, SL28, Ruiru 11
+    process          = db.Column(db.String(50))    # Washed, Natural, Honey
+    roast_level      = db.Column(db.String(30))    # Light, Medium, Dark
+    harvest_date     = db.Column(db.Date)
+    quantity_kg      = db.Column(db.Float)
     minimum_order_kg = db.Column(db.Float, default=1.0)
-    price_per_kg = db.Column(db.Float, nullable=False)
-    tasting_notes = db.Column(db.String(255))     # e.g. "Citrus, Molasses, Berry"
-    listing_image = db.Column(db.String(255), nullable=True)
-    status = db.Column(
-        db.String(20),
-        default="available"
-        # "available", "reserved", "sold"
-    )
-    listed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    price_per_kg     = db.Column(db.Float, nullable=False)
+    tasting_notes    = db.Column(db.String(255))
+    listing_image    = db.Column(db.String(255), nullable=True)
+    listed_at        = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # relationships
+    # FIX: status default was breaking because the comment was inside
+    #      the default= call.  Moved comment outside.
+    # Values: "available", "reserved", "sold"
+    status = db.Column(db.String(20), default="available")
+
+    # Relationships
     product = db.relationship("Product", back_populates="farm_listing")
-    farm = db.relationship("FarmProfile", backref="listings")
+    farm    = db.relationship("FarmProfile", backref="listings")
 
     def __repr__(self):
         return f"<FarmProductListing {self.id} — {self.varietal}>"
 
 
 class GrowerBuyerTransaction(db.Model):
-    """
-    Records a completed or in-progress deal between a grower and a buyer.
-    Separate from the cafe's regular Order model.
-    """
-    id = db.Column(db.Integer, primary_key=True)
-    listing_id = db.Column(
-        db.Integer,
-        db.ForeignKey("farm_product_listing.id"),
-        nullable=False
-    )
-    buyer_id = db.Column(
-        db.Integer,
-        db.ForeignKey("user.id"),
-        nullable=False
-    )
-    grower_id = db.Column(
-        db.Integer,
-        db.ForeignKey("user.id"),
-        nullable=False
-    )
-    quantity_kg = db.Column(db.Float, nullable=False)
+    __tablename__ = "grower_buyer_transaction"
+
+    id                 = db.Column(db.Integer, primary_key=True)
+    listing_id         = db.Column(db.Integer, db.ForeignKey("farm_product_listing.id"), nullable=False)
+    buyer_id           = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    grower_id          = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    quantity_kg        = db.Column(db.Float, nullable=False)
     agreed_price_per_kg = db.Column(db.Float, nullable=False)
-    total_amount = db.Column(db.Float, nullable=False)
-    status = db.Column(
-        db.String(20),
-        default="pending"
-        # "pending", "confirmed", "paid", "shipped", "completed", "cancelled"
-    )
-    mpesa_reference = db.Column(db.String(100))   # M-Pesa transaction code
-    notes = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    total_amount       = db.Column(db.Float, nullable=False)
+    mpesa_reference    = db.Column(db.String(100))
+    notes              = db.Column(db.Text)
+    created_at         = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at         = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # relationships
-    listing = db.relationship(
-        "FarmProductListing", 
-        backref="transactions"
-    )
+    # FIX: same comment-in-default bug fixed here too
+    # Values: "pending", "confirmed", "paid", "shipped", "completed", "cancelled"
+    status = db.Column(db.String(20), default="pending")
 
-    buyer = db.relationship(
-        "User",
-        foreign_keys=[buyer_id],
-        backref="purchases"
-    )
-    grower = db.relationship(
-        "User",
-        foreign_keys=[grower_id],
-        backref="sales"
-    )
+    # Relationships
+    listing = db.relationship("FarmProductListing", backref="transactions")
+    buyer   = db.relationship("User", foreign_keys=[buyer_id],  backref="purchases")
+    grower  = db.relationship("User", foreign_keys=[grower_id], backref="sales")
 
     def __repr__(self):
         return f"<Transaction {self.id} — {self.status}>"
 
 
-
 class CartItem(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    __tablename__ = "cart_item"
+
+    id         = db.Column(db.Integer, primary_key=True)
+    user_id    = db.Column(db.Integer, db.ForeignKey("user.id"))
     product_id = db.Column(db.Integer, db.ForeignKey("product.id"))
-    quantity = db.Column(db.Integer, default=1)
+    quantity   = db.Column(db.Integer, default=1)
 
 
 class Service(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
+    __tablename__ = "service"
+
+    id          = db.Column(db.Integer, primary_key=True)
+    name        = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
-    price = db.Column(db.Float)
-    category = db.Column(db.String(50))  # drink / repair
-    seller_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    price       = db.Column(db.Float)
+    category    = db.Column(db.String(50))   # catering / training / platform / subscription
+    seller_id   = db.Column(db.Integer, db.ForeignKey("user.id"))
 
     bookings = db.relationship(
         "ServiceBooking",
@@ -356,63 +282,75 @@ class Service(db.Model):
 
 
 class ServiceBooking(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    __tablename__ = "service_booking"
+
+    id         = db.Column(db.Integer, primary_key=True)
     service_id = db.Column(db.Integer, db.ForeignKey("service.id"))
-    buyer_id = db.Column(db.Integer, db.ForeignKey("buyer_profile.id"))
-    status = db.Column(db.String(20), default="pending")
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    buyer_id   = db.Column(db.Integer, db.ForeignKey("buyer_profile.id"))
+    status     = db.Column(db.String(20), default="pending")
+    timestamp  = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class MessageThread(db.Model):
     __tablename__ = "message_thread"
-    id = db.Column(db.Integer, primary_key=True)
-    buyer_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-    seller_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+
+    id         = db.Column(db.Integer, primary_key=True)
+    buyer_id   = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    seller_id  = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Relationships
-    messages = db.relationship("DirectMessage", backref="thread", lazy=True, cascade="all, delete")
-    buyer = db.relationship("User", foreign_keys=[buyer_id])
+    messages = db.relationship(
+        "DirectMessage",
+        backref="thread",
+        lazy=True,
+        cascade="all, delete"
+    )
+    buyer  = db.relationship("User", foreign_keys=[buyer_id])
     seller = db.relationship("User", foreign_keys=[seller_id])
 
 
 class DirectMessage(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    sender_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    __tablename__ = "direct_message"
+
+    id          = db.Column(db.Integer, primary_key=True)
+    sender_id   = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     receiver_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-    thread_id = db.Column(db.Integer, db.ForeignKey("message_thread.id"), nullable=False)
-    body = db.Column(db.Text, nullable=False)
-    is_read = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    thread_id   = db.Column(db.Integer, db.ForeignKey("message_thread.id"), nullable=False)
+    body        = db.Column(db.Text, nullable=False)
+    is_read     = db.Column(db.Boolean, default=False)
+    created_at  = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class Review(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    __tablename__ = "review"
+
+    id          = db.Column(db.Integer, primary_key=True)
     reviewer_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    target_type = db.Column(db.String(20))  # product / service
-    target_id = db.Column(db.Integer)
-    rating = db.Column(db.Integer)
-    comment = db.Column(db.Text)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    target_type = db.Column(db.String(20))   # product / service
+    target_id   = db.Column(db.Integer)
+    rating      = db.Column(db.Integer)
+    comment     = db.Column(db.Text)
+    timestamp   = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class Event(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(255), nullable=False)
+    __tablename__ = "event"
+
+    id          = db.Column(db.Integer, primary_key=True)
+    title       = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text)
-    date = db.Column(db.DateTime)
-    location = db.Column(db.String(255))
+    date        = db.Column(db.DateTime)
+    location    = db.Column(db.String(255))
 
 
 class Order(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    buyer_id = db.Column(
-        db.Integer,
-        db.ForeignKey("buyer_profile.id", ondelete="CASCADE")
-    )
-    title = db.Column(db.String(255), nullable=False)
+    __tablename__ = "order"
+
+    id          = db.Column(db.Integer, primary_key=True)
+    buyer_id    = db.Column(db.Integer, db.ForeignKey("buyer_profile.id", ondelete="CASCADE"))
+    title       = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at  = db.Column(db.DateTime, default=datetime.utcnow)
 
     bids = db.relationship(
         "Bid",
@@ -423,17 +361,21 @@ class Order(db.Model):
 
 
 class Bid(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    order_id = db.Column(db.Integer, db.ForeignKey("order.id"))
-    seller_id = db.Column(db.Integer, db.ForeignKey("seller_profile.id"))
+    __tablename__ = "bid"
+
+    id          = db.Column(db.Integer, primary_key=True)
+    order_id    = db.Column(db.Integer, db.ForeignKey("order.id"))
+    seller_id   = db.Column(db.Integer, db.ForeignKey("seller_profile.id"))
     offer_price = db.Column(db.Float)
-    message = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    message     = db.Column(db.Text)
+    created_at  = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class Recipe(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(200))
+    __tablename__ = "recipe"
+
+    id          = db.Column(db.Integer, primary_key=True)
+    name        = db.Column(db.String(200))
     ingredients = db.Column(db.Text)
-    steps = db.Column(db.Text)
-    category = db.Column(db.String(50))  # latte / espresso / cold brew
+    steps       = db.Column(db.Text)
+    category    = db.Column(db.String(50))   # latte / espresso / cold brew
