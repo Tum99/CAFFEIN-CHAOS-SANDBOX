@@ -15,4 +15,3 @@ def main_menu():
         products=products,
         body_class='page-menu'
     )
-    
