@@ -24,7 +24,7 @@ def create_app():
     app = Flask(__name__)
 
     # This check allows you to use SQLite locally but PostgreSQL on Render
-    database_url = os.environ.get("DATABASE_URL", "sqlite:///local.db")
+    database_url = os.environ.get("DATABASE_URL")
     if database_url and database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql://", 1)
 
@@ -88,9 +88,6 @@ def create_app():
     def inject_user():
         return dict(current_user=current_user)
 
-    with app.app_context():
-        # This ensures your coffee product tables are created on launch
-        db.create_all()
 
 
     return app

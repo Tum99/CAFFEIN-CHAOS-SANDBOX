@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 # seed_admin_menu.py
 from app import create_app, db
 from app.models import User, Category, Product
