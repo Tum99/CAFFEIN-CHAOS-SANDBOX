@@ -86,7 +86,7 @@
         <div class="content-section active" id="sec-overview">
             <div class="dash-header">
                 <div>
-                    <div class="dash-greeting">Good morning, {{ current_user.first_name or current_user.username }}</div>
+                    <div class="dash-greeting">Good morning, {{ current_user.first_name or current_user.email }}</div>
                     <div class="dash-title">
                         {% if farm %}
                             {{ farm.farm_name }} 
@@ -270,8 +270,8 @@
                     <div class="status-label">Marketplace Status</div>
                     <form action="{{ url_for('seller.toggle_live') }}" method="POST">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                        <button type="submit" class="status-pill {{ 'active' if farm.is_live else 'offline' }}">
-                            {{ '● LIVE ON MARKET' if farm.is_live else '○ OFFLINE' }}
+                        <button type="submit" class="status-pill {{ 'active' if farm and farm.is_live else 'offline' }}">
+                            {{ '● LIVE ON MARKET' if farm and farm.is_live else '○ OFFLINE' }}
                         </button>
                     </form>
                 </div>

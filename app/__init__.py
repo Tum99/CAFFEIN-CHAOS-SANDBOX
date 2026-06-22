@@ -86,8 +86,16 @@ def create_app():
 
     @app.context_processor
     def inject_user():
-        return dict(current_user=current_user)
+        setup_complete = False
+        if current_user.is_authenticated and current_user.role == 'seller':
+            from app.models import FarmProfile
+            farm = FarmProfile.query.filter_by(user_id=current_user.id).first()
+            setup_complete = bool(farm and farm.is_setup_complete)
 
+        return dict(
+            current_user=current_user,
+            seller_setup_complete=setup_complete
+        )
 
 
     return app

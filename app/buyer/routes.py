@@ -97,7 +97,7 @@ def post_order():
         title = request.form.get('title')
         description = request.form.get('description')
         if title:
-            new_order = Order(title=title, description=description, user_id=current_user.id)
+            new_order = Order(title=title, description=description, buyer_id=current_user.id)
             db.session.add(new_order)
             db.session.commit()
             flash("Order posted successfully!", "success")
@@ -116,7 +116,7 @@ def messages():
     messages = DirectMessage.query.filter(
         (DirectMessage.sender_id == current_user.id) |
         (DirectMessage.receiver_id == current_user.id)
-    ).order_by(DirectMessage.timestamp.desc()).all()
+    ).order_by(DirectMessage.created_at.desc()).all()
 
     return render_template(
         'buyer/messages.html',
@@ -133,7 +133,7 @@ def update_password():
     confirm_pass = request.form.get('confirm_password')
     
     # 1. Verify old password matches database entry hash signature
-    if not check_password_hash(current_user.password_hash, current_pass):
+    if not check_password_hash(current_user.password, current_pass):
         flash('Incorrect current password confirmation.', 'error')
         return redirect(url_for('seller.dashboard', _anchor='sec-settings'))
         
@@ -147,7 +147,7 @@ def update_password():
         return redirect(url_for('seller.dashboard', _anchor='sec-settings'))
 
     # 3. Apply secure hash change
-    current_user.password_hash = generate_password_hash(new_pass)
+    current_user.password = generate_password_hash(new_pass)
     db.session.commit()
     
     flash('Account security password modified smoothly.', 'success')

@@ -1,6 +1,6 @@
 from flask import flash, Blueprint, render_template, request, redirect, url_for, current_app
 from flask_login import login_required, current_user
-from app.models import SellerProfile, DirectMessage, FarmProfile, Product, FarmProductListing, GrowerBuyerTransaction as transactions
+from app.models import SellerProfile, DirectMessage, MessageThread, FarmProfile, Product, FarmProductListing, GrowerBuyerTransaction as transactions
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.utils.decorators import seller_required
 from datetime import datetime
@@ -130,7 +130,7 @@ def dashboard():
     current_year = datetime.utcnow().year
 
     for order in completed_orders:
-        listing = order.farm_product_listing 
+        listing = order.listing 
 
         if listing:
             display_name = f"{listing.varietal} ({listing.process})"
@@ -189,7 +189,7 @@ def messages():
     # Get messages sent TO this seller
     messages = DirectMessage.query.filter_by(
         receiver_id=current_user.id
-    ).order_by(DirectMessage.timestamp.desc()).all()
+    ).order_by(DirectMessage.created_at.desc()).all()
 
     return render_template(
         'seller/messages.html',
@@ -261,6 +261,7 @@ def add_next_listing():
         flash("Unauthorized access.", "error")
         return redirect(url_for('main.index'))
 
+    farm = FarmProfile.query.filter_by(user_id=current_user.id).first()
     if not farm:
         flash("You must complete your Farm Profile before adding a listing.", "error")
         return redirect(url_for('seller.dashboard', _anchor='sec-dashboard'))
@@ -571,7 +572,7 @@ def update_password():
     confirm_pass = request.form.get('confirm_password')
     
     # 1. Verify old password matches database entry hash signature
-    if not check_password_hash(current_user.password_hash, current_pass):
+    if not check_password_hash(current_user.password, current_pass):
         flash('Incorrect current password confirmation.', 'error')
         return redirect(url_for('seller.dashboard', _anchor='sec-settings'))
         
@@ -585,7 +586,7 @@ def update_password():
         return redirect(url_for('seller.dashboard', _anchor='sec-settings'))
 
     # 3. Apply secure hash change
-    current_user.password_hash = generate_password_hash(new_pass)
+    current_user.password = generate_password_hash(new_pass)
     db.session.commit()
     
     flash('Account security password modified smoothly.', 'success')

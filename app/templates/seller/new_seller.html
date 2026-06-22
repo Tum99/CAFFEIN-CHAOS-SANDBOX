@@ -141,9 +141,8 @@
             >
               Set Up My Farm Profile →
             </a>
-            <a href="#" class="btn-outline-lg">Browse the Marketplace</a>
+            <a href="{{ url_for('seller.marketplace') }}" class="btn-outline-lg">Browse the Marketplace</a>
           </div>
-          <!-- <div class="welcome-hero-num">0</div> -->
         </div>
         {% elif farm and listings|length == 0 %}
         <div class="setup-summary-bar">

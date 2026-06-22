@@ -7,6 +7,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='products_services.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='seller_dashboard.css') }}" />
+    {# Extra CSS per-page (dashboards, marketplace etc) #}
+    {% block extra_css %}{% endblock %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='mobile.css') }}"/>
 
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.9.0/fonts/remixicon.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Jost:wght@200;300;400;500;600&display=swap" rel="stylesheet" />
@@ -33,14 +36,36 @@
         </li>
 
         {% if current_user.is_authenticated %}
-          {% if current_user.role %}
+
+          {# Marketplace — hidden for sellers mid-setup #}
+          {% if current_user.role == 'seller' and seller_setup_complete %}
             <li>
-              <a href="{{ url_for(current_user.role + '.marketplace') }}">
-                Marketplace ({{ current_user.role | capitalize }})
-              </a>
+              <a href="{{ url_for('seller.marketplace') }}">Marketplace (Seller)</a>
+            </li>
+          {% elif current_user.role == 'buyer' %}
+            <li>
+              <a href="{{ url_for('buyer.marketplace') }}">Marketplace</a>
             </li>
           {% endif %}
-          <li><button class="btn-ghost" onclick="openLogout()">Logout</button></li>
+
+          {# Dashboard — always visible once logged in #}
+          {% if current_user.role == 'seller' %}
+            <li><a href="{{ url_for('seller.dashboard') }}">Dashboard</a></li>
+          {% elif current_user.role == 'buyer' %}
+            <li><a href="{{ url_for('buyer.dashboard') }}">Dashboard</a></li>
+          {% endif %}
+
+          {# Messages — hidden for sellers mid-setup #}
+          {% if current_user.role != 'seller' or seller_setup_complete %}
+            <li>
+              <a href="/messages">Messages</a>
+            </li>
+          {% endif %}
+
+          <li>
+            <button class="btn-ghost" onclick="openLogout()">Logout</button>
+          </li>
+
         {% else %}
           <li><a href="{{ url_for('auth.login') }}" class="btn-filled">Login</a></li>
         {% endif %}
@@ -72,6 +97,7 @@
 
     {% block scripts %}
     <script src="{{ url_for('static', filename='js/logout_base.js') }}"></script>
+     <script src="{{ url_for('static', filename='js/mobile_nav.js') }}"></script>
     {% endblock %}
   </body>
 </html>
