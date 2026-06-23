@@ -1,15 +1,20 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, flash, redirect, request, url_for
 from flask_login import login_required, current_user
 from app.auth.routes import redirect_by_role
-from app.models import FarmProductListing, FarmProfile
+from app.models import FarmProductListing, FarmProfile, db
+import json
 
 main = Blueprint('main', __name__)
 
+@main.route('/test-flash')
+def test_flash():
+    flash('This is a success message', 'success')
+    flash('This is an error message', 'error')
+    flash('This is a warning message', 'warning')
+    return redirect(url_for('main.home'))
+
 @main.route('/')
 def home():
-    if current_user.is_authenticated:
-        return redirect_by_role(current_user)
-
     return render_template(
         'main/index.html', 
         active_page='home', 
@@ -29,11 +34,6 @@ def events():
         active_page='events', 
         body_class='page-events')
 
-
-
-import json
-from flask import Blueprint, render_template
-from app.models import FarmProductListing, FarmProfile, db
 
 @main.route('/marketplace')
 def marketplace():

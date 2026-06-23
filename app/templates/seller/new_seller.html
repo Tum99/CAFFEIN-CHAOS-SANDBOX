@@ -25,7 +25,7 @@
         <div class="sidebar-progress">
           <div class="sidebar-progress-label">
             Setup Progress
-            <span id="progressPct">{{ (total_steps / 3 * 100)|round }}%</span>
+            <span id="progressPct">{{ ((total_steps|default(0)) / 3 * 100)|round }}%</span>
           </div>
           <div class="progress-bar-track">
             {% set step1_done = farm is not none %} {% set step2_done =
@@ -153,12 +153,16 @@
           </div>
 
           <div class="summary-action-card">
-            <div class="step2-eyebrow" style="color:var(--green)">Step 2 of 3 — First Listing</div>
+            <div class="step2-eyebrow" style="color:var(--green)">Step 2 of 3: Add First Listing</div>
             <div class="action-text">
-              <h1 style="font-family:'Cormorant Garamond', serif;">Farm Profile <em>Created!</em></h1>
+              <h1 class="step2-title">Farm Profile <em>Created!</em></h1>
               <p class="step2-desc">
-                Your farm profile is ready. Now add your first coffee lot to
-                start selling.
+                Your farm profile is ready, great work! Now it's time to add 
+                your first coffee lot. Tell buyers what you're selling by adding 
+                the varietal, process, roast level, how many kilograms you have 
+                available, and your price per kg. This is what buyers will see 
+                when they browse the marketplace, so the more detail you add, 
+                the better.
               </p>
             </div>
             <button
@@ -177,12 +181,15 @@
             <div class="step-pill active">3. Go Live</div>
           </div>
           <div class="summary-action-card ready-state">
-            <div class="go-live-eyebrow" style="color:var(--green)">Step 3 of 3 — Final Step</div>
+            <div class="go-live-eyebrow" style="color:var(--green)">Step 3 of 3: Final Step</div>
             <div class="action-text">
-              <h1 style="font-family:'Cormorant Garamond', serif;">You are ready to go <em>Live!</em> Review and publish<br></h1>
+              <h1 class="go-live-title" style="font-family:'Cormorant Garamond', serif;">You are ready to go <em>Live!</em></h1>
               <p class="go-live-desc">
-                Once you publish, your listing will appear on the Caffeine & Chaos
-                marketplace. Buyers can find you, message you, and place orders.
+                Once you publish, your listing goes live on the Caffeine & Chaos 
+              marketplace for buyers across Kenya to discover. Those interested 
+              can message you directly, ask questions, and place orders when 
+              they're ready. Payments are handled securely via M-Pesa, and 
+              you'll be notified on your dashboard the moment an order comes in.
               </p>
             </div>
             <div class="step-actions" style="margin-top: 2rem; text-align: center;">
@@ -193,7 +200,7 @@
                   <input type="checkbox" name="checkbox" id="confirmDetails" required
                         style="margin-top:0.2rem; accent-color:var(--green); cursor:none;"/>
                   <label for="confirmDetails"
-                        style="font-size:0.8rem; color:rgba(245,236,215,0.5); line-height:1.7; cursor:none;">
+                        style="font-size:0.9rem; color:rgba(245,236,215,0.5); line-height:1.7; cursor:none;">
                     I confirm that my farm profile and listing details are accurate.
                     I understand that buyers will be able to find and contact me through
                     the Caffeine & Chaos marketplace.
@@ -203,7 +210,7 @@
                 <div class="step3-actions">
                   <form action="{{ url_for('seller.go_live') }}" method="POST">
                       <div style="display: flex; gap: 1rem; align-items: center;">
-                          <button type="submit" class="publish-btn" style="background: #a3e635; color: #000; padding: 1rem 2rem; font-weight: bold; border: none; cursor: pointer; text-transform: uppercase;">
+                          <button type="submit" class="publish-btn">
                               Publish to Marketplace
                           </button>
                           
@@ -211,10 +218,14 @@
                       </div>
                   </form>
 
-                  <button type="button" class="btn-outline-sl"
-                          onclick="showSection('new-listing', event)">
-                    ← Edit Listing
-                  </button>
+                  {% if listings and listings[0].id %}
+                    <a href="{{ url_for('seller.edit_listing', listing_id=listings[0].id) }}" 
+                      class="btn-outline-sl">
+                      ← Edit Listing
+                    </a>
+                  {% else %}
+                    <button class="btn-outline-sl" disabled>← Edit Listing</button>
+                  {% endif %}
 
                 </div>        
                 
@@ -232,34 +243,42 @@
         </div>
         {% endif %}
 
-        <!-- Tips strip -->
-        <div class="tips-strip">
-          <div class="tips-label">💡 Tips</div>
-          <div class="tips-list">
-            <div class="tip-item">
-              <div class="tip-dot"></div>
-              Add your altitude — buyers pay more for high-altitude coffee
-            </div>
-            <div class="tip-item">
-              <div class="tip-dot"></div>
-              Include tasting notes to attract specialty buyers
-            </div>
-            <div class="tip-item">
-              <div class="tip-dot"></div>
-              Upload a farm photo to build buyer trust
-            </div>
-            <div class="tip-item">
-              <div class="tip-dot"></div>
-              Verified farms get 3× more enquiries
+        {% if not farm %}
+          <!-- Tips strip -->
+          <div class="tips-strip">
+            <div class="tips-label">💡 Tips</div>
+            <div class="tips-list">
+              <div class="tip-item">
+                <div class="tip-dot"></div>
+                Add your altitude — buyers pay more for high-altitude coffee
+              </div>
+              <div class="tip-item">
+                <div class="tip-dot"></div>
+                Include tasting notes to attract specialty buyers
+              </div>
+              <div class="tip-item">
+                <div class="tip-dot"></div>
+                Upload a farm photo to build buyer trust
+              </div>
+              <div class="tip-item">
+                <div class="tip-dot"></div>
+                Verified farms get 3× more enquiries
+              </div>
             </div>
           </div>
-        </div>
+        {% endif %}
 
         <!-- Setup steps -->
         <div class="setup-section">
           <div class="setup-header">
             <div class="setup-header-left">
-              <div class="setup-eyebrow">Getting Started</div>
+              {% if not farm %}
+                <div class="setup-eyebrow">Getting Started</div>
+              {% elif farm and listings|length == 0 %}
+                <div class="setup-eyebrow">Halfway There!</div>
+              {% else %}
+                <div class="setup-eyebrow">Take The Final Step 🌱</div>
+              {% endif %}
               <div class="setup-title">Your <em>Setup</em> Checklist</div>
             </div>
           </div>
@@ -395,20 +414,21 @@
         
         {% else %}
 
-        <div style="margin-bottom: 2rem">
+        <div class="farm-setup" style="margin-bottom: 2rem">
           <div class="setup-eyebrow">Step 1 of 3</div>
           <div
-            class="welcome-title"
-            style="font-size: 2rem; margin-bottom: 0.5rem"
+            class="farm-setup-title"
+            style="font-size: 3rem; margin-bottom: 0.9rem"
           >
             Set Up Your <em>Farm Profile</em>
           </div>
           <p
+            class="farm-setup-desc"
             style="
-              font-size: 0.85rem;
+              font-size: 1.2rem;
               color: rgba(245, 236, 215, 0.45);
               line-height: 1.8;
-              max-width: 520px;
+              max-width: 720px;
             "
           >
             This is what buyers see when they discover your coffee. Take a few
@@ -432,13 +452,14 @@
                   type="text"
                   name="farm_name"
                   placeholder="e.g. Kinyua Family Farm"
+                  required
                 />
               </div>
 
               <div class="form-row">
                 <div class="form-field">
                   <label>County *</label>
-                  <select name="county">
+                  <select name="county" required>
                     <option value="">Select county</option>
                     <option>Uasingishu</option>
                     <option>Kirinyaga</option>
@@ -453,7 +474,7 @@
                 </div>
                 <div class="form-field">
                   <label>Town / Area *</label>
-                  <input type="text" name="location" placeholder="e.g. Ziwa" />
+                  <input type="text" name="location" placeholder="e.g. Ziwa" required/>
                 </div>
               </div>
               <div class="form-row">
@@ -483,11 +504,11 @@
                 />
               </div>
               <div class="form-field">
-                <label>Your Story / Bio</label>
+                <label>Your Story / Bio (optional)</label>
                 <textarea
                   name="bio"
                   placeholder="Tell buyers about your farm, how long you've been growing, what makes your coffee special..."
-                ></textarea>
+                  ></textarea>
               </div>
             </div>
 
@@ -495,7 +516,7 @@
               <div class="form-section-title">Contact & Verification</div>
               <div class="form-field">
                 <label>Phone Number *</label>
-                <input type="tel" name="phone" placeholder="07XX XXX XXX" />
+                <input type="tel" name="phone" placeholder="07XX XXX XXX" required/>
               </div>
               <div class="form-field">
                 <label>WhatsApp Number</label>
@@ -503,6 +524,7 @@
                   type="tel"
                   name="whatsapp"
                   placeholder="Same as above or different"
+                  required
                 />
               </div>
               <div class="form-field">
@@ -562,7 +584,7 @@
                 Save Farm Profile →
               </button>
               <a
-                href="#"
+                href="{{ url_for('seller.seller_setup') }}"
                 class="form-skip"
                 onclick="showSection('overview', null)"
                 >Skip for now</a
@@ -671,7 +693,8 @@
           </div>
         </div>
         <div class="new-listing-form">
-          <form action="{{ url_for('seller.add_listing') }}" method="POST">
+          <form action="{{ url_for('seller.edit_listing', listing_id=editing_listing.id) 
+                if editing_listing else url_for('seller.add_listing') }}" method="POST">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
             
             <div class="form-panel">
@@ -681,24 +704,39 @@
                 ><input
                   type="text"
                   name="name"
+                  value="{{ editing_listing.product.name if editing_listing else '' }}"
                   placeholder="e.g. Arabica Batian — 500g"
                 />
               </div>
               <div class="form-field">
                 <label>Price per kg (KES)</label
-                ><input type="number" name="price" placeholder="e.g. 2800" />
+                ><input 
+                type="number" 
+                name="price" 
+                value="{{ editing_listing.price_per_kg if editing_listing else '' }}"
+                placeholder="e.g. 2800" />
               </div>
               <div class="form-field">
                 <label>Total stock available (kg)</label
-                ><input type="number" name="stock" placeholder="e.g. 50" />
+                ><input 
+                type="number" 
+                name="stock" 
+                value="{{ editing_listing.quantity_kg if editing_listing else '' }}"
+                placeholder="e.g. 50" />
               </div>
               <div class="form-field">
                 <label>Minimum order (kg)</label
-                ><input type="number" name="min_order" placeholder="e.g. 1" />
+                ><input 
+                type="number" 
+                name="min_order"
+                value="{{ editing_listing.minimum_order_kg if editing_listing else 1 }}" 
+                placeholder="e.g. 1" />
               </div>
               <div class="form-field">
                 <label>Description</label
-                ><textarea placeholder="Describe your coffee..."></textarea>
+                ><textarea placeholder="Describe your coffee...">
+                  {{- editing_listing.product.description if editing_listing else '' -}}
+                </textarea>
               </div>
             </div>
 
@@ -706,7 +744,14 @@
               <div class="form-panel-title">Coffee Specifications</div>
               <div class="form-field">
                 <label>Varietal</label>
-                <select name="varietal">
+                <select name="varietal" required>
+                  <option value="">Select</option>
+                  {% for v in ['Batian','SL28','SL34','Ruiru 11','K7','Other'] %}
+                    <option value="{{ v }}"
+                      {{ 'selected' if editing_listing and editing_listing.varietal == v }}>
+                      {{ v }}
+                    </option>
+                  {% endfor %}
                   <option>Batian</option>
                   <option>SL28</option>
                   <option>SL34</option>
@@ -716,7 +761,13 @@
               </div>
               <div class="form-field">
                 <label>Process</label>
-                <select name="process">
+                <select name="process" required>
+                  {% for p in ['Washed','Natural','Honey'] %}
+                    <option value="{{ p }}"
+                      {{ 'selected' if editing_listing and editing_listing.process == p }}>
+                      {{ p }}
+                    </option>
+                  {% endfor %}
                   <option>Washed</option>
                   <option>Natural</option>
                   <option>Honey</option>
@@ -724,7 +775,13 @@
               </div>
               <div class="form-field">
                 <label>Roast Level</label>
-                <select name="roast">
+                <select name="roast" required>
+                  {% for r in ['Light','Medium','Dark'] %}
+                    <option value="{{ r }}"
+                      {{ 'selected' if editing_listing and editing_listing.roast_level == r }}>
+                      {{ r }}
+                    </option>
+                  {% endfor %}
                   <option>Light</option>
                   <option>Medium</option>
                   <option>Dark</option>
@@ -732,14 +789,17 @@
               </div>
               <div class="form-field">
                 <label>Harvest Date</label
-                ><input type="date" name="harvest_date" />
+                ><input type="date" name="harvest_date" value="{{ editing_listing.harvest_date.strftime('%Y-%m-%d') 
+                     if editing_listing and editing_listing.harvest_date else '' }}"/>
               </div>
               <div class="form-field">
                 <label>Tasting Notes (comma separated)</label
                 ><input
                   type="text"
                   name="notes"
+                  value="{{ editing_listing.tasting_notes if editing_listing else '' }}"
                   placeholder="e.g. Citrus, Molasses, Berry"
+                  required
                 />
               </div>
               <div class="form-field">
@@ -750,9 +810,12 @@
                   style="font-size: 0.78rem; color: rgba(245, 236, 215, 0.4)"
                 />
               </div>
-              <button class="form-submit" type="submit">
-                Publish Listing →
-              </button>
+              <div class="form-actions"></div>
+                <button class="form-submit" type="submit">
+                  {{ 'Update Listing →' if editing_listing else 'Save & Continue →' }}
+                </button>
+                <a href="{{ url_for('seller.seller_setup') }}" class="form-skip">← Back</a>
+              </div>
             </div>
           </form>
         </div>
