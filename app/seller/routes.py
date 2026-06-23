@@ -41,6 +41,18 @@ def seller_setup():
         whatsapp_phone = request.form.get('whatsapp')
         farm_image = request.files.get('farm_photo')
 
+        # Server-side validation
+        errors = []
+        if not farm_name: errors.append("Farm name is required.")
+        if not county:    errors.append("County is required.")
+        if not location:  errors.append("Location is required.")
+        if not phone:     errors.append("Phone number is required.")
+
+        if errors:
+            for error in errors:
+                flash(error, 'error')
+            return redirect(url_for('seller.seller_setup'))
+
         if not farm:
             # Create the FarmProfile
             farm = FarmProfile(
@@ -607,3 +619,58 @@ def update_notifications():
         flash('Notification preferences modified locally.', 'success')
         
     return redirect(url_for('seller.dashboard', _anchor='sec-settings'))
+
+
+@seller.route('/edit-listing/<int:listing_id>', methods=['GET', 'POST'])
+@login_required
+@seller_required
+def edit_listing(listing_id):
+    listing = FarmProductListing.query.get_or_404(listing_id)
+
+    # Security — make sure this listing belongs to the current user
+    if listing.grower_id != current_user.id:
+        flash("You don't have permission to edit this listing.", "error")
+        return redirect(url_for('seller.seller_setup'))
+
+    farm = FarmProfile.query.filter_by(user_id=current_user.id).first()
+
+    if request.method == 'POST':
+        # Update the product
+        listing.product.name        = request.form.get('name', '').strip()
+        listing.product.description = request.form.get('description', '').strip()
+        listing.product.price       = float(request.form.get('price', 0))
+        listing.product.stock       = int(float(request.form.get('stock', 0)))
+
+        # Update the listing details
+        listing.varietal         = request.form.get('varietal')
+        listing.process          = request.form.get('process')
+        listing.roast_level      = request.form.get('roast')
+        listing.tasting_notes    = request.form.get('notes', '').strip()
+        listing.quantity_kg      = float(request.form.get('stock', 0))
+        listing.price_per_kg     = float(request.form.get('price', 0))
+        listing.minimum_order_kg = float(request.form.get('min_order', 1.0))
+
+        harvest_date_str = request.form.get('harvest_date')
+        if harvest_date_str:
+            try:
+                listing.harvest_date = datetime.strptime(
+                    harvest_date_str, '%Y-%m-%d'
+                ).date()
+            except ValueError:
+                pass
+
+        db.session.commit()
+        flash("Listing updated successfully!", "success")
+
+        # Send them back to Step 3 to review and publish
+        return redirect(url_for('seller.seller_setup', section='step3'))
+
+    # GET — render the setup page with the listing pre-filled
+    return render_template('seller/new_seller.html',
+        farm=farm,
+        listings=[listing],
+        editing_listing=listing,  # ← tells the template to pre-fill fields
+        active_section='step2',   # ← opens on Step 2
+        body_class='page-setup',
+        active_page='dashboard'
+    )
