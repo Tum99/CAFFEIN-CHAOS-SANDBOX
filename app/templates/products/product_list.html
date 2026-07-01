@@ -3,6 +3,42 @@
 <div class="cursor" id="cursor"></div>
 <div class="cursor-ring" id="cursorRing"></div>
 
+<div class="prod-modal-overlay" id="prodModalOverlay" onclick="closeProdModal(event)">
+  <div class="prod-modal-box">
+    <button class="prod-modal-close" onclick="closeProdModalBtn()">✕</button>
+ 
+    <div class="prod-modal-left">
+      <img src="" alt="" id="prodModalImg" class="prod-modal-img"/>
+      <div class="prod-modal-img-overlay"></div>
+      <div class="prod-modal-tag" id="prodModalTag">Category</div>
+    </div>
+ 
+    <div class="prod-modal-right">
+      <div class="prod-modal-name"  id="prodModalName">Product Name</div>
+      <div class="prod-modal-price" id="prodModalPrice">KES 0</div>
+      <div class="prod-modal-divider"></div>
+ 
+      <div class="prod-modal-desc-label">About this product</div>
+      <div class="prod-modal-desc" id="prodModalDesc">Description</div>
+ 
+      <!-- Includes pills — shown for packs, hidden for single items -->
+      <div class="prod-modal-includes" id="prodModalIncludes" style="display:none;">
+        <div class="prod-modal-desc-label" style="margin-top:1rem;">What's included</div>
+        <div class="prod-modal-pills" id="prodModalPills"></div>
+      </div>
+ 
+      <div class="prod-modal-footer">
+        <button class="prod-modal-add" id="prodModalAddBtn" onclick="addProdFromModal()">
+          Add to Cart →
+        </button>
+        <div class="prod-modal-mpesa">
+          <div class="mpesa-dot"></div>Paid securely via M-Pesa
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════════ PAGE HERO ══════════════════ -->
 <div class="page-hero">
   <div class="hero-left">
@@ -48,10 +84,17 @@
     </div>
 
     <div class="individuals-grid">
-      <div class="ind-card">
+      <div class="ind-card"
+        onclick="openProductModal(this)"
+        data-name="Arabica Premium Citrus — 250g"
+        data-price="850"
+        data-description="Single origin Kenyan Arabica. Medium roast, citrus and molasses notes. Farm direct from Uasingishu highlands."
+        data-tag="Coffee Bag"
+        data-img="{{ url_for('static', filename='images/Bag1.jpeg') }}"
+        data-includes="">
+
         <div class="ind-img">
           <img src="{{ url_for('static', filename='images/Bag1.jpeg') }}" alt="250g bag"/>
-          <!-- <div class="ind-img-ph">☕</div> -->
           <div class="ind-img-overlay"></div>
           <!-- <button class="ind-quick-add" onclick="addToCart('Arabica 250g', 850, '☕')">Quick Add</button> -->
         </div>
@@ -128,7 +171,15 @@
       <div class="packs-hero">
         
         <!-- BOLD STARTER PACK -->
-        <div class="pack-hero-card bold-pack">
+        <div class="pack-hero-card bold-pack"
+          onclick="openProductModal(this)"
+          data-name="The Bold Starter Pack"
+          data-price="7500"
+          data-description="Everything you need to live the C&C life. 3kg of our signature Arabica, a branded tee, keychain, and cap — all in one pack."
+          data-tag="Value Pack"
+          data-img="{{ url_for('static', filename='images/Value_Pack1.png') }}"
+          data-includes="☕ 3kg Arabica|👕 C&C T-Shirt|🔑 Keychain|🧢 C&C Cap">
+
           <div class="pack-bg-num">01</div>
           <div class="pack-img-area">
             <img src="{{ url_for('static', filename='images/Value_Pack1.png') }}" alt="Bold Starter Pack"/>
@@ -546,97 +597,9 @@
 <div class="scroll-top" id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</div>
 
 
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/products_services.js') }}"></script>
+{% endblock %}
 
-
-<script>
-  /* cursor */
-  const cur = document.getElementById('cursor');
-  const ring = document.getElementById('cursorRing');
-  let mx=0,my=0,rx=0,ry=0;
-  document.addEventListener('mousemove', e => {
-    mx=e.clientX; my=e.clientY;
-    cur.style.left=mx+'px'; cur.style.top=my+'px';
-  });
-  (function loop(){ rx+=(mx-rx)*0.12; ry+=(my-ry)*0.12; ring.style.left=rx+'px'; ring.style.top=ry+'px'; requestAnimationFrame(loop); })();
- 
-  /* scroll top */
-  const st = document.getElementById('scrollTop');
-  window.addEventListener('scroll', () => st.classList.toggle('visible', window.scrollY > 400));
- 
-  /* category nav highlight on scroll */
-  const sections = document.querySelectorAll('section[id]');
-  const navBtns  = document.querySelectorAll('.cat-nav-btn');
-  window.addEventListener('scroll', () => {
-    let cur = '';
-    sections.forEach(s => { if(s.getBoundingClientRect().top <= 150) cur = s.id; });
-    navBtns.forEach(b => { b.classList.toggle('active', b.dataset.section === cur); });
-  });
-  navBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.getElementById(btn.dataset.section)?.scrollIntoView({behavior:'smooth'});
-    });
-  });
- 
-  /* ── CART ── */
-  // let cart = [];
- 
-  // function addToCart(name, price, icon) {
-  //   const existing = cart.find(i => i.name === name);
-  //   if(existing) { existing.qty++; }
-  //   else { cart.push({ name, price, icon, qty: 1 }); }
-  //   updateCart();
-  //   openCart();
-  // }
- 
-  // function removeFromCart(name) {
-  //   cart = cart.filter(i => i.name !== name);
-  //   updateCart();
-  // }
- 
-  // function updateCart() {
-  //   const total = cart.reduce((s,i) => s + i.price * i.qty, 0);
-  //   const count = cart.reduce((s,i) => s + i.qty, 0);
-  //   document.getElementById('cartBadge').textContent = count;
-  //   document.getElementById('cartSubtotal').textContent = `KES ${total.toLocaleString()}`;
-  //   document.getElementById('cartGrand').textContent = `KES ${total.toLocaleString()}`;
- 
-  //   const itemsEl = document.getElementById('cartItems');
-  //   if(cart.length === 0) {
-  //     itemsEl.innerHTML = `<div class="cart-empty"><div class="cart-empty-icon">🛒</div><div class="cart-empty-text">Your cart is empty</div></div>`;
-  //     return;
-  //   }
-  //   itemsEl.innerHTML = cart.map(i => `
-  //     <div class="cart-item">
-  //       <div class="cart-item-img">${i.icon}</div>
-  //       <div class="cart-item-info">
-  //         <div class="cart-item-name">${i.name} ${i.qty > 1 ? `×${i.qty}` : ''}</div>
-  //         <div class="cart-item-price">KES ${(i.price * i.qty).toLocaleString()}</div>
-  //       </div>
-  //       <button class="cart-item-remove" onclick="removeFromCart('${i.name}')">✕</button>
-  //     </div>
-  //   `).join('');
-  // }
- 
-  // function openCart() {
-  //   document.getElementById('cartDrawer').classList.add('open');
-  //   document.getElementById('cartOverlay').classList.add('open');
-  // }
-  // function closeCart() {
-  //   document.getElementById('cartDrawer').classList.remove('open');
-  //   document.getElementById('cartOverlay').classList.remove('open');
-  // }
- 
-  /* scroll reveal */
-  const obs = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if(e.isIntersecting) { e.target.style.opacity='1'; e.target.style.transform='translateY(0)'; }
-    });
-  }, {threshold: 0.07});
-  document.querySelectorAll('.pack-hero-card,.pack-card,.hamper-card,.ind-card').forEach((el,i) => {
-    el.style.opacity='0'; el.style.transform='translateY(24px)';
-    el.style.transition=`opacity 0.55s ease ${(i%4)*0.07}s, transform 0.55s cubic-bezier(0.22,1,0.36,1) ${(i%4)*0.07}s`;
-    obs.observe(el);
-  });
-</script>
 
 {% endblock %}
