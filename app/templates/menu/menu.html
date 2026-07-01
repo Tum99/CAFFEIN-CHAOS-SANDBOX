@@ -3,6 +3,34 @@
 
 {% block content %}
 
+<div class="menu-modal-overlay" id="menuModalOverlay" onclick="closeMenuModal(event)">
+  <div class="menu-modal-box">
+    <button class="menu-modal-close" onclick="closeMenuModalBtn()">✕</button>
+ 
+    <div class="menu-modal-img-wrap">
+      <img src="" alt="" id="menuModalImg" class="menu-modal-img"/>
+      <div class="menu-modal-img-overlay"></div>
+      <div class="menu-modal-cat" id="menuModalCat">Category</div>
+    </div>
+ 
+    <div class="menu-modal-body">
+      <div class="menu-modal-name"    id="menuModalName">Item Name</div>
+      <div class="menu-modal-price"   id="menuModalPrice">KES 0</div>
+      <div class="menu-modal-divider"></div>
+      <div class="menu-modal-desc-label">About this item</div>
+      <div class="menu-modal-desc"    id="menuModalDesc">Description here.</div>
+      <div class="menu-modal-footer">
+        <button class="menu-modal-add" id="menuModalAddBtn" onclick="addFromModal()">
+          + Add to Order
+        </button>
+        <div class="menu-modal-mpesa">
+          <div class="mpesa-dot"></div>Pay via M-Pesa at checkout
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="menu-page">
     <div class="cursor" id="cursor"></div>
     <div class="cursor-ring" id="cursorRing"></div>
@@ -62,30 +90,36 @@
             </div>
 
             <div class="item-grid">
-                {% if category in categories %}
+                {% if category.products %}
                     {% for product in category.products %}
-                        <div class="item-card">
+                        {# Store all product data in data-* attributes so JS can read them #}
+                        <div class="item-card"
+                             onclick="openMenuModal(this)"
+                             data-name="{{ product.name }}"
+                             data-price="{{ product.price }}"
+                             data-description="{{ product.description or 'A Caffeine & Chaos signature item.' }}"
+                             data-category="{{ category.name }}"
+                             data-img="{% if product.images %}{{ url_for('static', filename='images/Product-images/' + product.images[0].image_path) }}{% else %}{{ url_for('static', filename='images/cup2.jpg') }}{% endif %}">
+ 
                             <div class="item-image">
-
                                 {% if product.images %}
-                                    <img src="{{ url_for('static', filename='images/Product-images/' + product.images[0].image_path) }}" 
-                                    alt="{{ product.name }}">
+                                    <img src="{{ url_for('static', filename='images/Product-images/' + product.images[0].image_path) }}"
+                                         alt="{{ product.name }}">
                                 {% else %}
                                     <img src="{{ url_for('static', filename='images/cup2.jpg') }}" alt="Default">
                                 {% endif %}
-
                                 <div class="item-img-overlay"></div>
-                                <div class="item-add">+</div>
-
+                                <!-- + button stops propagation so it adds to cart without opening modal -->
+                                <div class="item-add" onclick="event.stopPropagation(); addMenuItemToCart('{{ product.name }}', {{ product.price }})">+</div>
                             </div>
                             <div class="item-info">
                                 <div class="item-name">{{ product.name }}</div>
                                 <div class="item-description">{{ product.description }}</div>
-                                <div class="item-price">KES {{ product.price }}</div>
+                                <div class="item-price">KES {{ "{:,.0f}".format(product.price) }}</div>
                             </div>
                         </div>
                     {% endfor %}
-                    {% else %}
+                {% else %}
                     <p style="color: var(--muted); font-size: 0.85rem;">Coming soon.</p>
                 {% endif %}
             </div>
