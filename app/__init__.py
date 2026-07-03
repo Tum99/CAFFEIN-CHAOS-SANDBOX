@@ -35,6 +35,7 @@ def create_app():
     app.config['UPLOAD_FOLDER'] = os.path.join('app', 'static', 'uploads')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config["WTF_CSRF_ENABLED"] = True
+    app.config['VERSION'] = str(int(time.time()))
 
     csrf = CSRFProtect(app)
 
