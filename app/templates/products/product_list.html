@@ -598,7 +598,7 @@
 
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/products_services.js') }}"></script>
+<script src="{{ url_for('static', filename='js/products_services.js') }}?v={{ config.VERSION }}"></script>
 {% endblock %}
 
 
