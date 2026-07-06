@@ -16,6 +16,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
   </head>
   <body class="{{ body_class | default('') }}">
+    <div class="cursor" id="cursor"></div>
+    <div class="cursor-ring" id="cursorRing"></div>
+
     <nav id="navbar">
       <a href="#" class="nav-logo">
         <div class="nav-logo-icon">
@@ -114,11 +117,33 @@
     </div>
     {% endif %}
 
-    {% block content %}{% endblock %} 
+    {% block content %}
+      <!-- Page content goes here -->
+    {% endblock %} 
 
     {% block scripts %}
     <script src="{{ url_for('static', filename='js/logout_base.js') }}"></script>
-     <script src="{{ url_for('static', filename='js/mobile_nav.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/mobile_nav.js') }}"></script>
+    <script>
+    const cursor = document.getElementById('cursor');
+    const ring   = document.getElementById('cursorRing');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+
+    if (cursor && ring) {
+      document.addEventListener('mousemove', e => {
+        mx = e.clientX; my = e.clientY;
+        cursor.style.left = mx + 'px';
+        cursor.style.top  = my + 'px';
+      });
+      (function animRing() {
+        rx += (mx - rx) * 0.12;
+        ry += (my - ry) * 0.12;
+        ring.style.left = rx + 'px';
+        ring.style.top  = ry + 'px';
+        requestAnimationFrame(animRing);
+      })();
+    }
+    </script>
     {% endblock %}
   </body>
 </html>
