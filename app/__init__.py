@@ -68,6 +68,7 @@ def create_app():
     from app.menu.routes import menu
     from app.admin.routes import admin
     from app.messaging.routes import messaging
+    from app.mpesa.routes import mpesa
     
 
     app.register_blueprint(main)
@@ -80,6 +81,7 @@ def create_app():
     app.register_blueprint(menu)
     app.register_blueprint(admin)
     app.register_blueprint(messaging)
+    app.register_blueprint(mpesa)
     
 
     @app.route('/test-products')

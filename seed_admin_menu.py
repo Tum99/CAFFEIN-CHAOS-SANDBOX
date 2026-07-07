@@ -374,63 +374,6 @@ farm_products_data = [
             "tasting_notes": "Citrus, Molasses, Dark Berry",
             "status": "available"
         }
-    },
-    {
-        "product": {
-            "name": "Arabica Batian — 1kg",
-            "price": 2800,
-            "description": "Full kilogram of our signature Batian varietal. Premium citrus with molasses.",
-            "stock": 100
-        },
-        "listing": {
-            "varietal": "Batian",
-            "process": "Washed",
-            "roast_level": "Medium",
-            "harvest_date": date(2025, 10, 15),
-            "quantity_kg": 100.0,
-            "minimum_order_kg": 1.0,
-            "price_per_kg": 2800,
-            "tasting_notes": "Citrus, Molasses, Dark Berry",
-            "status": "available"
-        }
-    },
-    {
-        "product": {
-            "name": "SL28 Natural Process — 250g",
-            "price": 950,
-            "description": "Natural processed SL28. Fruity and wine-like with a heavy body.",
-            "stock": 80
-        },
-        "listing": {
-            "varietal": "SL28",
-            "process": "Natural",
-            "roast_level": "Light",
-            "harvest_date": date(2025, 11, 5),
-            "quantity_kg": 20.0,
-            "minimum_order_kg": 0.25,
-            "price_per_kg": 3800,
-            "tasting_notes": "Blueberry, Wine, Honey, Tropical Fruit",
-            "status": "available"
-        }
-    },
-    {
-        "product": {
-            "name": "Ruiru 11 — 500g",
-            "price": 1400,
-            "description": "Disease-resistant Ruiru 11 variety. Bold, full-bodied with chocolate and nut notes.",
-            "stock": 60
-        },
-        "listing": {
-            "varietal": "Ruiru 11",
-            "process": "Washed",
-            "roast_level": "Dark",
-            "harvest_date": date(2025, 9, 20),
-            "quantity_kg": 30.0,
-            "minimum_order_kg": 0.5,
-            "price_per_kg": 2800,
-            "tasting_notes": "Dark Chocolate, Roasted Nuts, Brown Sugar",
-            "status": "available"
-        }
     }
 ]
 
