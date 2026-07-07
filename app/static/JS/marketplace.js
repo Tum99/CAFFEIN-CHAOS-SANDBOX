@@ -75,7 +75,13 @@ function renderCards(data) {
             <div class="listing-card" data-id="${l.id}"
                 style="opacity:0; transform:translateY(18px); transition:opacity 0.45s ease, transform 0.45s cubic-bezier(0.22,1,0.36,1)">
                 <div class="listing-card-img">
-                    <div class="listing-card-img-ph">☕</div>
+                    ${l.listing_image 
+                        ? `<img src="/static/${l.listing_image}" alt="${l.name}" 
+                            style="width:100%;height:100%;object-fit:cover;display:block;"
+                            onerror="this.style.display='none'">`
+                        : ''
+                    }
+                    <div class="listing-card-img-ph" style="${l.listing_image ? 'display:none' : ''}">☕</div>
                     <div class="listing-img-overlay"></div>
                     <span class="card-varietal">${l.varietal || 'Premium'}</span>
                     <span class="card-process">${l.process || 'Washed'}</span>
@@ -342,4 +348,377 @@ function handleGrowerMessage() {
     if (!currentModal) return;
     // Redirect buyer directly to their messaging conversation route thread with the grower
     window.location.href = `/messaging/chat?with_user_id=${currentModal.seller_id || ''}`;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MARKETPLACE MPESA ADDITIONS
+   Add these functions to the BOTTOM of your existing marketplace.js
+   They replace handleOrderPlacement() and handleGrowerMessage()
+═══════════════════════════════════════════════════════════════ */
+
+/* ── PHONE NUMBER INPUT MODAL ── */
+// Shown before STK push so buyer can confirm/enter their phone
+function showPhoneModal(onConfirm) {
+  // Remove any existing phone modal
+  const existing = document.getElementById('phoneModal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'phoneModal';
+  modal.innerHTML = `
+    <div style="
+      position:fixed; inset:0; z-index:3000;
+      background:rgba(6,4,2,0.92); backdrop-filter:blur(12px);
+      display:flex; align-items:center; justify-content:center; padding:1.5rem;
+    ">
+      <div style="
+        background:#1C0F08; border:1px solid rgba(200,135,58,0.2);
+        padding:2rem; max-width:400px; width:100%;
+      ">
+        <div style="font-size:0.58rem;letter-spacing:0.22em;text-transform:uppercase;color:rgba(200,135,58,0.6);margin-bottom:0.5rem;">
+          M-Pesa Payment
+        </div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:#FDFAF5;margin-bottom:0.4rem;">
+          Confirm your phone number
+        </div>
+        <div style="font-size:0.8rem;color:rgba(245,236,215,0.45);margin-bottom:1.4rem;line-height:1.6;">
+          We'll send an M-Pesa payment prompt to this number.
+        </div>
+        <input
+          id="phoneModalInput"
+          type="tel"
+          placeholder="e.g. 0712 345 678"
+          style="
+            width:100%; padding:0.75rem 1rem; margin-bottom:1rem;
+            background:rgba(200,135,58,0.06); border:1px solid rgba(200,135,58,0.15);
+            color:#F5ECD7; font-family:'Jost',sans-serif; font-size:0.9rem;
+            outline:none;
+          "
+        />
+        <div id="phoneModalError" style="color:#E06C75;font-size:0.75rem;margin-bottom:0.8rem;display:none;"></div>
+        <div style="display:flex;gap:0.8rem;">
+          <button onclick="document.getElementById('phoneModal').remove()" style="
+            flex:1; padding:0.75rem; background:transparent;
+            border:1px solid rgba(200,135,58,0.2); color:rgba(245,236,215,0.5);
+            font-family:'Jost',sans-serif; font-size:0.7rem;
+            letter-spacing:0.14em; text-transform:uppercase; cursor:pointer;
+          ">Cancel</button>
+          <button id="phoneModalConfirm" style="
+            flex:2; padding:0.75rem; background:#C8873A; color:#0A0604;
+            border:none; font-family:'Jost',sans-serif; font-size:0.7rem;
+            letter-spacing:0.14em; text-transform:uppercase; font-weight:600;
+            cursor:pointer;
+          ">Send M-Pesa Request →</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Focus phone input
+  setTimeout(() => {
+    const input = document.getElementById('phoneModalInput');
+    if (input) input.focus();
+  }, 100);
+
+  // Confirm button
+  document.getElementById('phoneModalConfirm').addEventListener('click', () => {
+    const phone = document.getElementById('phoneModalInput').value.trim();
+    const errorEl = document.getElementById('phoneModalError');
+
+    if (!phone || phone.length < 9) {
+      errorEl.textContent = 'Please enter a valid Kenyan phone number.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    document.getElementById('phoneModal').remove();
+    onConfirm(phone);
+  });
+}
+
+
+/* ── HANDLE ORDER (replaces handleOrderPlacement) ── */
+function handleOrder() {
+  if (!currentModal) return;
+
+  const qtyInput = document.getElementById('modalQty');
+  const qty = parseFloat(qtyInput ? qtyInput.value : 0);
+
+  if (!qty || qty < (currentModal.minimum_order_kg || 1)) {
+    showToast(`Minimum order is ${currentModal.minimum_order_kg || 1} kg`, 'error');
+    return;
+  }
+
+  if (qty > currentModal.quantity_kg) {
+    showToast(`Only ${currentModal.quantity_kg} kg available`, 'error');
+    return;
+  }
+
+  // Show phone confirmation modal before initiating payment
+  showPhoneModal((phone) => {
+    initiatePayment(currentModal, qty, phone);
+  });
+}
+
+
+/* ── INITIATE PAYMENT ── */
+function initiatePayment(listing, quantity, phone) {
+  const orderBtn = document.querySelector('.modal-order-btn');
+  if (orderBtn) {
+    orderBtn.disabled = true;
+    orderBtn.textContent = 'Sending M-Pesa request...';
+  }
+
+  fetch('/mpesa/initiate', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken':  getCsrfToken()
+    },
+    body: JSON.stringify({
+      listing_id: listing.id,
+      quantity:   quantity,
+      phone:      phone
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      showToast('M-Pesa request sent! Check your phone and enter your PIN.', 'success');
+
+      // Start polling for payment confirmation
+      pollPaymentStatus(data.transaction_id, orderBtn);
+
+    } else {
+      showToast(data.error || 'Payment failed. Please try again.', 'error');
+      if (orderBtn) {
+        orderBtn.disabled = false;
+        orderBtn.textContent = 'Pay via M-Pesa →';
+      }
+    }
+  })
+  .catch(err => {
+    console.error('Payment error:', err);
+    showToast('Network error. Please try again.', 'error');
+    if (orderBtn) {
+      orderBtn.disabled = false;
+      orderBtn.textContent = 'Pay via M-Pesa →';
+    }
+  });
+}
+
+
+/* ── POLL PAYMENT STATUS ── */
+// Checks every 5 seconds for up to 2 minutes
+function pollPaymentStatus(transactionId, orderBtn) {
+  let attempts = 0;
+  const maxAttempts = 24; // 24 × 5s = 2 minutes
+
+  const interval = setInterval(() => {
+    attempts++;
+
+    fetch(`/mpesa/status/${transactionId}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.paid) {
+          clearInterval(interval);
+          showToast('Payment confirmed! Your order has been placed.', 'success');
+          if (orderBtn) {
+            orderBtn.textContent = '✓ Order Placed';
+            orderBtn.style.background = '#7AB648';
+          }
+          // Refresh the listing quantity shown in modal
+          if (currentModal) {
+            currentModal.quantity_kg = Math.max(0, currentModal.quantity_kg - (parseFloat(document.getElementById('modalQty')?.value) || 0));
+            document.getElementById('mStock').textContent = currentModal.quantity_kg + ' kg';
+          }
+
+        } else if (data.status === 'cancelled') {
+          clearInterval(interval);
+          showToast('Payment was cancelled. Please try again.', 'error');
+          if (orderBtn) {
+            orderBtn.disabled = false;
+            orderBtn.textContent = 'Pay via M-Pesa →';
+          }
+
+        } else if (attempts >= maxAttempts) {
+          clearInterval(interval);
+          showToast('Payment is taking longer than expected. Check your M-Pesa messages.', 'warning');
+          if (orderBtn) {
+            orderBtn.disabled = false;
+            orderBtn.textContent = 'Pay via M-Pesa →';
+          }
+        }
+      })
+      .catch(() => {
+        if (attempts >= maxAttempts) {
+          clearInterval(interval);
+        }
+      });
+
+  }, 5000); // poll every 5 seconds
+}
+
+
+/* ── HANDLE MESSAGE (replaces handleGrowerMessage) ── */
+function handleMessage() {
+  if (!currentModal) return;
+
+  // Remove any existing message modal
+  const existing = document.getElementById('msgModal');
+  if (existing) existing.remove();
+
+  const listing = currentModal;
+  const modal = document.createElement('div');
+  modal.id = 'msgModal';
+  modal.innerHTML = `
+    <div style="
+      position:fixed; inset:0; z-index:3000;
+      background:rgba(6,4,2,0.92); backdrop-filter:blur(12px);
+      display:flex; align-items:center; justify-content:center; padding:1.5rem;
+    ">
+      <div style="
+        background:#1C0F08; border:1px solid rgba(200,135,58,0.2);
+        padding:2rem; max-width:440px; width:100%;
+      ">
+        <div style="font-size:0.58rem;letter-spacing:0.22em;text-transform:uppercase;color:rgba(122,182,72,0.7);margin-bottom:0.5rem;">
+          Message Grower
+        </div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:1.35rem;color:#FDFAF5;margin-bottom:0.3rem;">
+          ${listing.farm_name}
+        </div>
+        <div style="font-size:0.75rem;color:rgba(245,236,215,0.35);margin-bottom:1.2rem;">
+          ${listing.varietal} · ${listing.process} · ${listing.county}
+        </div>
+        <textarea
+          id="msgModalInput"
+          placeholder="Hi, I'm interested in your ${listing.varietal} lot. Is the ${listing.quantity_kg}kg still available?..."
+          style="
+            width:100%; height:120px; padding:0.8rem 1rem; margin-bottom:1rem;
+            background:rgba(200,135,58,0.05); border:1px solid rgba(200,135,58,0.12);
+            color:#F5ECD7; font-family:'Jost',sans-serif; font-size:0.82rem;
+            outline:none; resize:vertical; line-height:1.6;
+          "
+        ></textarea>
+        <div id="msgModalError" style="color:#E06C75;font-size:0.75rem;margin-bottom:0.8rem;display:none;"></div>
+        <div style="display:flex;gap:0.8rem;">
+          <button onclick="document.getElementById('msgModal').remove()" style="
+            flex:1; padding:0.75rem; background:transparent;
+            border:1px solid rgba(200,135,58,0.2); color:rgba(245,236,215,0.5);
+            font-family:'Jost',sans-serif; font-size:0.7rem;
+            letter-spacing:0.14em; text-transform:uppercase; cursor:pointer;
+          ">Cancel</button>
+          <button id="msgModalSend" style="
+            flex:2; padding:0.75rem; background:#7AB648; color:#0A0604;
+            border:none; font-family:'Jost',sans-serif; font-size:0.7rem;
+            letter-spacing:0.14em; text-transform:uppercase; font-weight:600;
+            cursor:pointer;
+          ">Send Message →</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+  document.getElementById('msgModalInput').focus();
+
+  document.getElementById('msgModalSend').addEventListener('click', () => {
+    const body    = document.getElementById('msgModalInput').value.trim();
+    const errorEl = document.getElementById('msgModalError');
+    const sendBtn = document.getElementById('msgModalSend');
+
+    if (!body) {
+      errorEl.textContent = 'Please write a message before sending.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Sending...';
+
+    fetch('/mpesa/message_grower', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken':  getCsrfToken()
+      },
+      body: JSON.stringify({
+        seller_id:  listing.seller_id,
+        listing_id: listing.id,
+        body:       body
+      })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        document.getElementById('msgModal').remove();
+        showToast('Message sent to grower! Check your inbox for their reply.', 'success');
+      } else {
+        errorEl.textContent = data.error || 'Failed to send message.';
+        errorEl.style.display = 'block';
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send Message →';
+      }
+    })
+    .catch(() => {
+      errorEl.textContent = 'Network error. Please try again.';
+      errorEl.style.display = 'block';
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Send Message →';
+    });
+  });
+}
+
+
+/* ── TOAST NOTIFICATIONS ── */
+function showToast(message, type = 'info') {
+  const existing = document.getElementById('mpesaToast');
+  if (existing) existing.remove();
+
+  const colors = {
+    success: { bg: 'rgba(122,182,72,0.15)',  border: '#7AB648', color: '#7AB648' },
+    error:   { bg: 'rgba(224,108,117,0.15)', border: '#E06C75', color: '#E06C75' },
+    warning: { bg: 'rgba(200,135,58,0.15)',  border: '#C8873A', color: '#C8873A' },
+    info:    { bg: 'rgba(74,158,255,0.15)',  border: '#4A9EFF', color: '#4A9EFF' }
+  };
+  const c = colors[type] || colors.info;
+
+  const toast = document.createElement('div');
+  toast.id = 'mpesaToast';
+  toast.style.cssText = `
+    position:fixed; bottom:2rem; left:50%; transform:translateX(-50%);
+    z-index:4000; padding:1rem 1.5rem;
+    background:${c.bg}; border:1px solid ${c.border}; border-left:3px solid ${c.border};
+    color:${c.color}; font-family:'Jost',sans-serif; font-size:0.82rem;
+    max-width:420px; width:calc(100% - 2rem); text-align:center;
+    animation: toastIn 0.35s cubic-bezier(0.22,1,0.36,1) both;
+  `;
+  toast.textContent = message;
+
+  // Add animation keyframes if not already added
+  if (!document.getElementById('toastStyle')) {
+    const style = document.createElement('style');
+    style.id = 'toastStyle';
+    style.textContent = `
+      @keyframes toastIn {
+        from { opacity:0; transform:translateX(-50%) translateY(10px); }
+        to   { opacity:1; transform:translateX(-50%) translateY(0); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  document.body.appendChild(toast);
+  setTimeout(() => { if (toast.parentNode) toast.remove(); }, 5000);
+}
+
+
+/* ── CSRF TOKEN HELPER ── */
+function getCsrfToken() {
+  const meta = document.querySelector('meta[name="csrf-token"]');
+  if (meta) return meta.getAttribute('content');
+  const cookie = document.cookie.split(';').find(c => c.trim().startsWith('csrf_token='));
+  return cookie ? cookie.split('=')[1].trim() : '';
 }

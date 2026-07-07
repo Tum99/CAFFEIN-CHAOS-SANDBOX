@@ -14,6 +14,7 @@
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.9.0/fonts/remixicon.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Jost:wght@200;300;400;500;600&display=swap" rel="stylesheet" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}"/>
   </head>
   <body class="{{ body_class | default('') }}">
     <div class="cursor" id="cursor"></div>
@@ -59,11 +60,11 @@
           {% endif %}
 
           {# Messages — hidden for sellers mid-setup #}
-          {% if current_user.role != 'seller' or seller_setup_complete %}
+          <!-- {% if current_user.role != 'seller' or seller_setup_complete %}
             <li>
               <a href="/messages">Messages</a>
             </li>
-          {% endif %}
+          {% endif %} -->
 
           <li>
             <button class="btn-ghost" onclick="openLogout()">Logout</button>

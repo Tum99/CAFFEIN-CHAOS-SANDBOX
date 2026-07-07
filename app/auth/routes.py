@@ -108,7 +108,7 @@ def register():
             login_user(user)
 
             flash("Account created successfully. Please login.", "success")
-            return render_template("auth/login.html")
+            return render_template("auth/login.html", body_class='page-login')
 
         except Exception as e:
             db.session.rollback()
