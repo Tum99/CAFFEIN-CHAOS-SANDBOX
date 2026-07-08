@@ -323,6 +323,7 @@ print("✅ Merch products added")
 # 7. FARM PROFILE
 # FIX: profile_image → farm_image (matches model field name)
 # ══════════════════════════════════════════════════════
+grower_user = User.query.filter_by(email=grower_email).first()
 farm = FarmProfile.query.filter_by(user_id=grower_user.id).first()
 if not farm:
     farm = FarmProfile(
