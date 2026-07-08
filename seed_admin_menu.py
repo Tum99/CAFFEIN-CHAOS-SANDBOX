@@ -1,9 +1,8 @@
 # seed_admin_menu.py
+from dotenv import load_dotenv
+load_dotenv()
 from app import create_app, db
-from app.models import (
-    User, Category, Product,
-    FarmProfile, FarmProductListing, Service
-)
+from app.models import (User, Category, Product, Service)
 from werkzeug.security import generate_password_hash
 from datetime import date
 
@@ -323,32 +322,32 @@ print("✅ Merch products added")
 # 7. FARM PROFILE
 # FIX: profile_image → farm_image (matches model field name)
 # ══════════════════════════════════════════════════════
-grower_user = User.query.filter_by(email=grower_email).first()
-farm = FarmProfile.query.filter_by(user_id=grower_user.id).first()
-if not farm:
-    farm = FarmProfile(
-        user_id=grower_user.id,
-        farm_name="Jepng'etich Farm",
-        location="Ziwa, Uasingishu County",
-        county="Uasingishu",
-        farm_size_acres=12.5,
-        altitude_masl=1850,
-        certifications="Organic",
-        bio=(
-            "Family-run coffee farm in the highlands of Uasingishu County. "
-            "We grow Batian and SL28 varieties at 1,850m above sea level. "
-            "Our coffee is known for its premium citrus profile with a molasses finish."
-        ),
-        farm_image="images/farm/jepngetich-farm.jpg",  # FIX: was profile_image
-        is_verified=True,
-        is_live=True,
-        is_setup_complete=True
-    )
-    db.session.add(farm)
-    db.session.commit()
-    print("✅ Farm profile created")
-else:
-    print("ℹ️  Farm profile already exists")
+# grower_user = User.query.filter_by(email=grower_email).first()
+# farm = FarmProfile.query.filter_by(user_id=grower_user.id).first()
+# if not farm:
+#     farm = FarmProfile(
+#         user_id=grower_user.id,
+#         farm_name="Jepng'etich Farm",
+#         location="Ziwa, Uasingishu County",
+#         county="Uasingishu",
+#         farm_size_acres=12.5,
+#         altitude_masl=1850,
+#         certifications="Organic",
+#         bio=(
+#             "Family-run coffee farm in the highlands of Uasingishu County. "
+#             "We grow Batian and SL28 varieties at 1,850m above sea level. "
+#             "Our coffee is known for its premium citrus profile with a molasses finish."
+#         ),
+#         farm_image="images/farm/jepngetich-farm.jpg",  # FIX: was profile_image
+#         is_verified=True,
+#         is_live=True,
+#         is_setup_complete=True
+#     )
+#     db.session.add(farm)
+#     db.session.commit()
+#     print("✅ Farm profile created")
+# else:
+#     print("ℹ️  Farm profile already exists")
 
 
 # ══════════════════════════════════════════════════════
@@ -506,11 +505,9 @@ print("")
 print("🎉 Seeding complete!")
 print("─────────────────────────────────────────")
 print(f"  Admin user    : {admin_email}")
-print(f"  Grower user   : {grower_email}")
 print(f"  Categories    : {len(category_names)}")
 print(f"  Menu items    : {sum(len(v) for v in products_data.values())}")
 print(f"  Apparel items : {len(apparel_products)}")
 print(f"  Merch items   : {len(merch_products)}")
-print(f"  Farm products : {len(farm_products_data)}")
 print(f"  Services      : {len(services_data)}")
 print("─────────────────────────────────────────")
