@@ -68,3 +68,92 @@ function confirmNotificationUpdate(event) {
     }
     return true;
 }
+
+function loadThread(threadId, name, initial) {
+// Mark thread as active
+document.querySelectorAll('.thread-item').forEach(el => {
+    el.classList.toggle('active-thread', parseInt(el.dataset.threadId) === threadId);
+});
+
+// Show chat inner, hide empty state
+document.getElementById('chatEmpty').style.display  = 'none';
+document.getElementById('chatInner').style.display  = 'flex';
+
+// Update header
+document.getElementById('chatHeadAvatar').textContent = initial;
+document.getElementById('chatHeadName').textContent   = name;
+
+// Load messages
+const container = document.getElementById('chatMessagesContainer');
+container.innerHTML = '<div style="padding:1rem;font-size:0.75rem;color:rgba(245,236,215,0.3);">Loading...</div>';
+
+fetch(`/api/messages/${threadId}`)
+    .then(r => r.json())
+    .then(data => {
+        if (!data.messages.length) {
+            container.innerHTML = '<div style="padding:1.5rem;font-size:0.78rem;color:rgba(245,236,215,0.25);text-align:center;">No messages yet.</div>';
+            return;
+        }
+        container.innerHTML = data.messages.map(m => `
+            <div class="msg ${m.is_mine ? 'sent' : 'received'}">
+                <div class="msg-bubble">${escapeHtml(m.body)}</div>
+                <div class="msg-time">${m.time}</div>
+            </div>
+        `).join('');
+        container.scrollTop = container.scrollHeight;
+    })
+    .catch(() => {
+        container.innerHTML = '<div style="color:#E06C75;padding:1rem;font-size:0.8rem;">Failed to load messages.</div>';
+    });
+}
+
+// Auto-load first thread if any exist
+document.addEventListener('DOMContentLoaded', () => {
+const first = document.querySelector('.thread-item');
+if (first) first.click();
+});
+
+// Send button
+document.getElementById('chatSendButton')?.addEventListener('click', sendReply);
+document.getElementById('chatInputField')?.addEventListener('keydown', e => {
+if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); }
+});
+
+function sendReply() {
+const input     = document.getElementById('chatInputField');
+const activeThread = document.querySelector('.thread-item.active-thread');
+if (!input || !activeThread) return;
+
+const body     = input.value.trim();
+const threadId = parseInt(activeThread.dataset.threadId);
+if (!body || !threadId) return;
+
+fetch(`/api/messages/${threadId}/send`, {
+    method:  'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken':  document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+    },
+    body: JSON.stringify({ body })
+})
+.then(r => r.json())
+.then(data => {
+    if (data.status === 'success') {
+        input.value = '';
+        const container = document.getElementById('chatMessagesContainer');
+        const msgEl = document.createElement('div');
+        msgEl.className = 'msg sent';
+        msgEl.innerHTML = `
+            <div class="msg-bubble">${escapeHtml(data.message.body)}</div>
+            <div class="msg-time">${data.message.time}</div>
+        `;
+        container.appendChild(msgEl);
+        container.scrollTop = container.scrollHeight;
+    }
+})
+.catch(() => alert('Failed to send. Please try again.'));
+}
+
+function escapeHtml(str) {
+return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}

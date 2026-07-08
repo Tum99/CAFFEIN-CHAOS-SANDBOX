@@ -60,11 +60,11 @@
           {% endif %}
 
           {# Messages — hidden for sellers mid-setup #}
-          <!-- {% if current_user.role != 'seller' or seller_setup_complete %}
+          {% if current_user.role != 'seller' or seller_setup_complete %}
             <li>
-              <a href="/messages">Messages</a>
+              <a href="/messages">Messages ({{ unread_msg_count }})</a>
             </li>
-          {% endif %} -->
+          {% endif %}
 
           <li>
             <button class="btn-ghost" onclick="openLogout()">Logout</button>

@@ -11,7 +11,6 @@ import os
 
 seller = Blueprint('seller', __name__, url_prefix='/seller')
 
-
 @seller.route('/setup', methods=['GET', 'POST'])
 @login_required
 @seller_required
@@ -129,6 +128,7 @@ def dashboard():
     orders = transactions.query.join(FarmProductListing).filter(FarmProductListing.grower_id == current_user.id).all()
 
     listings = FarmProductListing.query.filter_by(farm_id=farm.id).all()
+    total_stock_kg = sum(l.quantity_kg for l in listings if l.quantity_kg and l.status == 'available')
 
     # 1. Get all completed/paid transactions
     completed_orders = [o for o in orders if o.status in ['paid', 'completed']]
@@ -167,11 +167,18 @@ def dashboard():
         if t.status in ['paid', 'completed']
     )
 
+    unread_msg_count = DirectMessage.query.filter_by(receiver_id=current_user.id, is_read=False).count()
+
+    threads = MessageThread.query.filter_by(seller_id=current_user.id)\
+        .order_by(MessageThread.updated_at.desc()).all()
+
     return render_template('seller/dashboard.html',
         active_page='dashboard',
         body_class='page-dashboard',
         farm=farm,
         listings=listings,
+        total_stock_kg=total_stock_kg,
+        unread_msg_count=unread_msg_count,
         orders=orders,
         this_month_earnings=f"{this_month_gross:,.0f}",
         total_gross=f"{total_gross:,.0f}",

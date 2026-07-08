@@ -1,10 +1,13 @@
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify, flash
 from flask_login import login_required, current_user
-from app.models import User, MessageThread, FarmProfile, DirectMessage, db
+from app.models import User, MessageThread, FarmProfile, DirectMessage, FarmProductListing, GrowerBuyerTransaction, Product, db
 from datetime import datetime
+from collections import defaultdict
 
 messaging = Blueprint('messaging', __name__)
 
+
+# ── INBOX ─────────────────────────────────────────────────────
 @messaging.route('/messages')
 @login_required
 def inbox():
@@ -14,111 +17,90 @@ def inbox():
             flash("Please complete your farm profile setup first.", "info")
             return redirect(url_for('seller.seller_setup'))
 
-        threads = MessageThread.query.filter(
-            (MessageThread.buyer_id  == current_user.id) |
-            (MessageThread.seller_id == current_user.id)
-        ).order_by(MessageThread.updated_at.desc()).all()
-
-        return render_template('seller/dashboard.html',
-            threads=threads,
-            active_page='messages',
-            farm=farm,
-            listings=[],
-            orders=[],
-            product_earnings={},
-            monthly_labels=[],
-            monthly_amounts=[],
-            max_amount=1,
-            this_month_earnings='0',
-            total_gross='0',
-            pending_payout='0',
-            commission='0',
-            net_earnings='0',
-            unread_count=0,
-            has_listings=False,
-            has_orders=False
-        )
-        
-    # Buyer — no setup required, load normally
+    # Same query for both buyer and seller
     threads = MessageThread.query.filter(
         (MessageThread.buyer_id  == current_user.id) |
         (MessageThread.seller_id == current_user.id)
     ).order_by(MessageThread.updated_at.desc()).all()
 
-    return render_template('buyer/dashboard.html',
-        threads=threads,
-        active_page='messages'
-    )
+    return render_template('messaging/messages.html', threads=threads)
 
+
+# ── GET THREAD MESSAGES (AJAX) ────────────────────────────────
 @messaging.route('/api/messages/<int:thread_id>')
 @login_required
 def get_thread_messages(thread_id):
     thread = MessageThread.query.get_or_404(thread_id)
-    
-    # Security: Ensure current user belongs to this thread
+
     if current_user.id not in [thread.buyer_id, thread.seller_id]:
         return jsonify({"error": "Unauthorized"}), 403
-        
-    messages = []
-    # Check who the "other user" is relative to current_user
+
+    # Mark messages as read for current user
+    DirectMessage.query.filter_by(
+        thread_id=thread_id,
+        receiver_id=current_user.id,
+        is_read=False
+    ).update({"is_read": True})
+    db.session.commit()
+
     other_user = thread.seller if current_user.id == thread.buyer_id else thread.buyer
     other_name = other_user.first_name or other_user.email.split('@')[0]
-    
+
+    messages = []
     for msg in thread.messages:
         messages.append({
-            "id": msg.id,
-            "body": msg.body,
+            "id":        msg.id,
+            "body":      msg.body,
             "sender_id": msg.sender_id,
-            "is_mine": msg.sender_id == current_user.id,
-            "time": msg.created_at.strftime("%I:%M %p").lower()
+            "is_mine":   msg.sender_id == current_user.id,
+            "time":      msg.created_at.strftime("%I:%M %p").lower()
         })
-    
+
     return jsonify({
-        "other_user_name": other_user.email,
-        "messages": messages
+        "thread_id":       thread.id,
+        "other_user_name": other_name,
+        "other_user_id":   other_user.id,
+        "messages":        messages
     })
 
 
+# ── SEND MESSAGE (AJAX) ───────────────────────────────────────
 @messaging.route('/api/messages/<int:thread_id>/send', methods=['POST'])
 @login_required
 def send_message(thread_id):
     thread = MessageThread.query.get_or_404(thread_id)
-    
-    # Security: Ensure current user belongs to this thread
+
     if current_user.id not in [thread.buyer_id, thread.seller_id]:
         return jsonify({"error": "Unauthorized"}), 403
 
     data = request.get_json()
-    if not data or not data.get('body'):
+    if not data or not data.get('body', '').strip():
         return jsonify({"error": "Empty message"}), 400
 
-    # Dynamically compute receiver_id using your current database layout properties
     receiver_id = thread.seller_id if current_user.id == thread.buyer_id else thread.buyer_id
 
     new_msg = DirectMessage(
         thread_id=thread.id,
         sender_id=current_user.id,
-        receiver_id=receiver_id, # Safely satisfying model structural integrity constraint
-        body=data.get('body')
+        receiver_id=receiver_id,
+        body=data['body'].strip()
     )
-    
-    # Touch thread timestamp to pull it to top of inbox listings view panel
     thread.updated_at = datetime.utcnow()
-    
     db.session.add(new_msg)
     db.session.commit()
 
     return jsonify({
         "status": "success",
         "message": {
-            "body": new_msg.body,
-            "time": new_msg.created_at.strftime("%I:%M %p").lower()
+            "id":      new_msg.id,
+            "body":    new_msg.body,
+            "is_mine": True,
+            "time":    new_msg.created_at.strftime("%I:%M %p").lower()
         }
     })
 
 
 # ── START NEW THREAD ──────────────────────────────────────────
-# Called from marketplace "Message Grower" button
 @messaging.route('/api/messages/start', methods=['POST'])
 @login_required
 def start_thread():
@@ -133,11 +115,10 @@ def start_thread():
     if not seller_user:
         return jsonify({"error": "Seller not found"}), 404
 
-    # Prevent buyers from messaging themselves
     if current_user.id == seller_id:
         return jsonify({"error": "Cannot message yourself"}), 400
 
-    # Check if a thread already exists between these two users
+    # Find or create thread
     existing_thread = MessageThread.query.filter(
         (
             (MessageThread.buyer_id  == current_user.id) &
@@ -149,10 +130,8 @@ def start_thread():
     ).first()
 
     if existing_thread:
-        # Reuse existing thread
         thread = existing_thread
     else:
-        # Create a new thread
         thread = MessageThread(
             buyer_id=current_user.id,
             seller_id=seller_id
@@ -160,7 +139,6 @@ def start_thread():
         db.session.add(thread)
         db.session.flush()
 
-    # Add the opening message
     new_msg = DirectMessage(
         thread_id=thread.id,
         sender_id=current_user.id,
@@ -178,7 +156,7 @@ def start_thread():
     })
 
 
-# ── UNREAD COUNT (AJAX — for navbar badge) ────────────────────
+# ── UNREAD COUNT ──────────────────────────────────────────────
 @messaging.route('/api/messages/unread-count')
 @login_required
 def unread_count():
@@ -187,5 +165,3 @@ def unread_count():
         is_read=False
     ).count()
     return jsonify({"unread": count})
-# PYEOF
-# echo "messaging routes done"
