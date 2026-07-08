@@ -157,3 +157,54 @@ fetch(`/api/messages/${threadId}/send`, {
 function escapeHtml(str) {
 return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+
+/* ── EDIT LISTING MODAL ── */
+function openEditModal(listingId, name, price, stock, minOrder, description, varietal, process, roast, harvestDate, tastingNotes) {
+    document.getElementById('editListingForm').action = `/seller/edit-listing/${listingId}`;
+    document.getElementById('editName').value        = name        || '';
+    document.getElementById('editPrice').value       = price       || '';
+    document.getElementById('editStock').value       = stock       || '';
+    document.getElementById('editMinOrder').value    = minOrder    || 1;
+    document.getElementById('editDescription').value = description || '';
+    document.getElementById('editNotes').value       = tastingNotes || '';
+    document.getElementById('editHarvestDate').value = harvestDate  || '';
+    setSelect('editVarietal', varietal);
+    setSelect('editProcess',  process);
+    setSelect('editRoast',    roast);
+    document.getElementById('editModalOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+function setSelect(id, value) {
+    const s = document.getElementById(id);
+    if (!s || !value) return;
+    for (let o of s.options) { if (o.value === value) { o.selected = true; break; } }
+}
+function closeEditModal(e) { if (e.target === document.getElementById('editModalOverlay')) closeEditModalBtn(); }
+function closeEditModalBtn() { document.getElementById('editModalOverlay').classList.remove('open'); document.body.style.overflow = ''; }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeEditModalBtn(); });
+
+/* ── FILTER ORDERS BY LISTING ── */
+function filterOrdersByListing(listingId) {
+    const rows    = document.querySelectorAll('#ordersTable tbody tr');
+    const bar     = document.getElementById('ordersFilterBar');
+    let   visible = 0;
+
+    rows.forEach(row => {
+        const match = row.dataset.listingId == listingId;
+        row.style.display = match ? '' : 'none';
+        if (match) visible++;
+    });
+
+    if (bar) { bar.style.display = 'flex'; }
+    const count = document.getElementById('ordersShownCount');
+    if (count) count.textContent = visible;
+}
+
+function clearOrdersFilter() {
+    document.querySelectorAll('#ordersTable tbody tr').forEach(r => r.style.display = '');
+    const bar = document.getElementById('ordersFilterBar');
+    if (bar) bar.style.display = 'none';
+    const count = document.getElementById('ordersShownCount');
+    if (count) count.textContent = document.querySelectorAll('#ordersTable tbody tr').length;
+}

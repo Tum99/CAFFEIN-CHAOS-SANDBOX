@@ -81,7 +81,7 @@ function renderCards(data) {
                             onerror="this.style.display='none'">`
                         : ''
                     }
-                    <div class="listing-card-img-ph" style="${l.listing_image ? 'display:none' : ''}">☕</div>
+                    <div class="listing-card-img-ph" style="${l.listing_image ? 'display:none' : ''}"></div>
                     <div class="listing-img-overlay"></div>
                     <span class="card-varietal">${l.varietal || 'Premium'}</span>
                     <span class="card-process">${l.process || 'Washed'}</span>
