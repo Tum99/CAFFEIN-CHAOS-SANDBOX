@@ -277,6 +277,12 @@ function closeModalBtn() {
     document.body.style.overflow = '';
 }
 
+function closeModalOverlay(e) {
+  if (e.target === document.getElementById('modalOverlay')) {
+    closeModalBtn();
+  }
+}
+
 /* ══ INITIALIZATION MOUNT ENGINE ══ */
 function startMarketplaceEngine() {
     console.log("== Marketplace Core Pipeline Initializing ==");
@@ -307,43 +313,6 @@ if (document.readyState === 'loading') {
 }
 
 
-function handleOrderPlacement() {
-    if (!currentModal) return;
-    
-    const qtyInput = document.getElementById('modalQty');
-    const orderQuantity = qtyInput ? parseFloat(qtyInput.value) : 0;
-    
-    if (orderQuantity < currentModal.minimum_order_kg) {
-        alert(`Minimum order requirement for this coffee lot is ${currentModal.minimum_order_kg} kg.`);
-        return;
-    }
-
-    console.log(`Initiating M-Pesa STK Push for listing ID: ${currentModal.product_id}, Qty: ${orderQuantity}`);
-    
-    // Dispatch to your buyer purchase order processing route
-    fetch('/buyer/order/create', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': document.querySelector('input[name="csrf_token"]')?.value || ''
-        },
-        body: JSON.stringify({
-            product_id: currentModal.product_id,
-            quantity: orderQuantity
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            alert("M-Pesa payment request transmitted! Please check your mobile phone handset display to enter your PIN.");
-            closeModalBtn();
-        } else {
-            alert(data.message || "Transaction initialization error encountered.");
-        }
-    })
-    .catch(err => console.error("Checkout pipeline break:", err));
-}
-
 function handleGrowerMessage() {
     if (!currentModal) return;
     // Redirect buyer directly to their messaging conversation route thread with the grower
@@ -355,88 +324,6 @@ function handleGrowerMessage() {
    Add these functions to the BOTTOM of your existing marketplace.js
    They replace handleOrderPlacement() and handleGrowerMessage()
 ═══════════════════════════════════════════════════════════════ */
-
-/* ── PHONE NUMBER INPUT MODAL ── */
-// Shown before STK push so buyer can confirm/enter their phone
-function showPhoneModal(onConfirm) {
-  // Remove any existing phone modal
-  const existing = document.getElementById('phoneModal');
-  if (existing) existing.remove();
-
-  const modal = document.createElement('div');
-  modal.id = 'phoneModal';
-  modal.innerHTML = `
-    <div style="
-      position:fixed; inset:0; z-index:3000;
-      background:rgba(6,4,2,0.92); backdrop-filter:blur(12px);
-      display:flex; align-items:center; justify-content:center; padding:1.5rem;
-    ">
-      <div style="
-        background:#1C0F08; border:1px solid rgba(200,135,58,0.2);
-        padding:2rem; max-width:400px; width:100%;
-      ">
-        <div style="font-size:0.58rem;letter-spacing:0.22em;text-transform:uppercase;color:rgba(200,135,58,0.6);margin-bottom:0.5rem;">
-          M-Pesa Payment
-        </div>
-        <div style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:#FDFAF5;margin-bottom:0.4rem;">
-          Confirm your phone number
-        </div>
-        <div style="font-size:0.8rem;color:rgba(245,236,215,0.45);margin-bottom:1.4rem;line-height:1.6;">
-          We'll send an M-Pesa payment prompt to this number.
-        </div>
-        <input
-          id="phoneModalInput"
-          type="tel"
-          placeholder="e.g. 0712 345 678"
-          style="
-            width:100%; padding:0.75rem 1rem; margin-bottom:1rem;
-            background:rgba(200,135,58,0.06); border:1px solid rgba(200,135,58,0.15);
-            color:#F5ECD7; font-family:'Jost',sans-serif; font-size:0.9rem;
-            outline:none;
-          "
-        />
-        <div id="phoneModalError" style="color:#E06C75;font-size:0.75rem;margin-bottom:0.8rem;display:none;"></div>
-        <div style="display:flex;gap:0.8rem;">
-          <button onclick="document.getElementById('phoneModal').remove()" style="
-            flex:1; padding:0.75rem; background:transparent;
-            border:1px solid rgba(200,135,58,0.2); color:rgba(245,236,215,0.5);
-            font-family:'Jost',sans-serif; font-size:0.7rem;
-            letter-spacing:0.14em; text-transform:uppercase; cursor:pointer;
-          ">Cancel</button>
-          <button id="phoneModalConfirm" style="
-            flex:2; padding:0.75rem; background:#C8873A; color:#0A0604;
-            border:none; font-family:'Jost',sans-serif; font-size:0.7rem;
-            letter-spacing:0.14em; text-transform:uppercase; font-weight:600;
-            cursor:pointer;
-          ">Send M-Pesa Request →</button>
-        </div>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-
-  // Focus phone input
-  setTimeout(() => {
-    const input = document.getElementById('phoneModalInput');
-    if (input) input.focus();
-  }, 100);
-
-  // Confirm button
-  document.getElementById('phoneModalConfirm').addEventListener('click', () => {
-    const phone = document.getElementById('phoneModalInput').value.trim();
-    const errorEl = document.getElementById('phoneModalError');
-
-    if (!phone || phone.length < 9) {
-      errorEl.textContent = 'Please enter a valid Kenyan phone number.';
-      errorEl.style.display = 'block';
-      return;
-    }
-
-    document.getElementById('phoneModal').remove();
-    onConfirm(phone);
-  });
-}
 
 
 /* ── HANDLE ORDER (replaces handleOrderPlacement) ── */
@@ -638,14 +525,14 @@ function handleMessage() {
     sendBtn.disabled = true;
     sendBtn.textContent = 'Sending...';
 
-    fetch('/mpesa/message_grower', {
+    fetch('/mpesa/message-grower', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-CSRFToken':  getCsrfToken()
       },
       body: JSON.stringify({
-        seller_id:  listing.seller_id,
+        seller_id:  listing.grower_id,
         listing_id: listing.id,
         body:       body
       })

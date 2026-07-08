@@ -221,12 +221,13 @@ def marketplace():
         if ld.listing_image:
             image_file = f"uploads/{ld.listing_image}"
         else:
-            image_file = "images/default_coffee.jpg"
+            image_file = "images/logo1.png"
 
         formatted_listings.append({
             "id":               ld.id,
             "product_id":       p.id,
             "seller_id":        p.seller_id,
+            "grower_id":        ld.grower_id,
             "name":             p.name or f"{ld.varietal} {ld.process}",
             "farm_name":        farm_name,
             "varietal":         ld.varietal         or "Premium",

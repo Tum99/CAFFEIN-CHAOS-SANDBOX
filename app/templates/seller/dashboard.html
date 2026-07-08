@@ -36,7 +36,7 @@
         <a href="#" class="sidebar-link" onclick="showSection('listings', event)">
             <span class="sidebar-icon">☕</span>
             <span class="sidebar-link-text">My Listings</span>
-            <span class="sidebar-badge">4</span>
+            <span class="sidebar-badge">{{ listings|length }}</span>
         </a>
         <a href="#" class="sidebar-link" onclick="showSection('new-listing', event)">
             <span class="sidebar-icon">＋</span>
@@ -55,7 +55,7 @@
         <a href="#" class="sidebar-link" onclick="showSection('orders', event)">
             <span class="sidebar-icon">📋</span>
             <span class="sidebar-link-text">Orders Received</span>
-            <span class="sidebar-badge orange">2</span>
+            <span class="sidebar-badge orange">{{ total_orders }}</span>
         </a>
         <a href="#" class="sidebar-link" onclick="showSection('earnings', event)">
             <span class="sidebar-icon">💰</span>
@@ -66,7 +66,9 @@
         <a href="#" class="sidebar-link" onclick="showSection('messages', event)">
             <span class="sidebar-icon">💬</span>
             <span class="sidebar-link-text">Messages</span>
-            <span class="sidebar-badge red">3</span>
+            {% if unread_msg_count > 0 %}
+            <span class="sidebar-badge red">{{ unread_msg_count }}</span>
+            {% endif %}
         </a>
 
         <div class="sidebar-section-label">Account</div>
@@ -95,7 +97,7 @@
                         {% endif %}
                     <em>Farm</em> Dashboard</div>
                 </div>
-                <div class="dash-date">Wednesday, 15 April 2026</div>
+                <div class="dash-date">{{ current_date }}</div>
             </div>
 
             <div class="stats-grid">
@@ -108,7 +110,7 @@
                 <div class="stat-card">
                     <div class="stat-label">Active Listings</div>
                     <div class="stat-value">{{ listings|length }}</div>
-                    <div class="stat-sub">230 kg total stock</div>
+                    <div class="stat-sub">{{ total_stock_kg | int }} kg total stock available</div>
                     <div class="stat-icon">☕</div>
                 </div>
                 <div class="stat-card">
@@ -118,9 +120,9 @@
                     <div class="stat-icon">📋</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Messages</div>
-                    <div class="stat-value">0</div>
-                    <div class="stat-sub">Unread from buyers</div>
+                    <div class="stat-label">Unread Messages</div>
+                    <div class="stat-value">{{ unread_msg_count }}</div>
+                    <div class="stat-sub">From buyers</div>
                     <div class="stat-icon">💬</div>
                 </div>
             </div>
@@ -387,44 +389,28 @@
 
         <!-- ── MESSAGES ── -->
         <div class="content-section" id="sec-messages">
-            <div class="dash-header"><div><div class="dash-greeting">Communication</div><div class="dash-title">My <em>Messages</em></div></div></div>
+            <div class="dash-header">
+                <div>
+                    <div class="dash-greeting">Communication</div>
+                    <div class="dash-title">My <em>Messages</em></div>
+                </div>
+            </div>
             <div class="panel">
-                <div class="panel-head"><div class="panel-title">Inbox</div></div>
-                <div class="panel-body" style="padding:0">
-                    <div class="message-layout">
-                        <div class="message-threads">
-                            {% for thread in threads %}
-                                {% set other_user = thread.seller if current_user.id == thread.buyer_id else thread.buyer %}
-                                <div class="thread-item" data-thread-id="{{ thread.id }}">
-                                    <div class="thread-avatar">{{ other_user.username[:2].upper() if other_user.username else 'BY' }}</div>
-                                    <div class="thread-info">
-                                        <div class="thread-name">{{ other_user.username }}</div>
-                                        <div class="thread-preview">
-                                            {{ thread.messages[-1].body if thread.messages else 'No messages yet...' }}
-                                        </div>
-                                    </div>
-                                    <div class="thread-meta">
-                                        <div class="thread-time">{{ thread.updated_at.strftime('%H:%M') }}</div>
-                                    </div>
-                                </div>
-                            {% else %}
-                                <div style="padding: 20px; color: var(--gray)">No conversations found yet.</div>
-                            {% endfor %}
-                        </div>
-
-                        <div class="message-chat" id="chatWindow" style="display: none;">
-                            <div class="chat-head">
-                                <div class="chat-head-avatar" id="chatHeadAvatar">--</div>
-                                <div><div class="chat-head-name" id="chatHeadName">Select a thread</div><div class="chat-head-status">● Online</div></div>
-                            </div>
-                            <div class="chat-messages" id="chatMessagesContainer">
-                                </div>
-                            <div class="chat-input-area">
-                                <input class="chat-input" id="chatInputField" placeholder="Reply..." autocomplete="off"/>
-                                <button class="chat-send" id="chatSendButton">Send</button>
-                            </div>
-                        </div>
+                <div class="panel-body" style="padding:3rem; text-align:center;">
+                    <div style="font-size:2rem; margin-bottom:1rem;">💬</div>
+                    <div style="font-family:'Cormorant Garamond',serif; font-size:1.4rem; color:var(--white); margin-bottom:0.5rem;">
+                        Your Inbox
                     </div>
+                    <div style="font-size:0.82rem; color:rgba(245,236,215,0.4); margin-bottom:1.5rem; line-height:1.7;">
+                        View and reply to all your conversations in one place.
+                    </div>
+                    <a href="{{ url_for('messaging.inbox') }}" style="
+                        display:inline-block; padding:0.8rem 2rem;
+                        background:var(--crema); color:var(--espresso);
+                        font-family:'Jost',sans-serif; font-size:0.72rem;
+                        letter-spacing:0.16em; text-transform:uppercase; font-weight:500;
+                        text-decoration:none;
+                    ">Open Messages →</a>
                 </div>
             </div>
         </div>

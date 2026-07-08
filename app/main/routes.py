@@ -1,10 +1,36 @@
-from flask import Blueprint, render_template, flash, redirect, request, url_for
+from flask import Blueprint, render_template, flash, redirect, jsonify, request, url_for
 from flask_login import login_required, current_user
 from app.auth.routes import redirect_by_role
 from app.models import FarmProductListing, FarmProfile, db
 import json
 
 main = Blueprint('main', __name__)
+# Add temporarily to any routes.py
+@main.route('/debug-messages')
+@login_required
+def debug_messages():
+    from app.models import MessageThread
+    threads = MessageThread.query.filter(
+        (MessageThread.buyer_id  == current_user.id) |
+        (MessageThread.seller_id == current_user.id)
+    ).all()
+    
+    result = []
+    for t in threads:
+        result.append({
+            'thread_id': t.id,
+            'buyer_id':  t.buyer_id,
+            'seller_id': t.seller_id,
+            'current_user_id': current_user.id,
+            'messages': len(t.messages)
+        })
+    
+    return jsonify({
+        'current_user_id':    current_user.id,
+        'current_user_email': current_user.email,
+        'threads_found':      len(threads),
+        'threads':            result
+    })
 
 @main.route('/test-flash')
 def test_flash():

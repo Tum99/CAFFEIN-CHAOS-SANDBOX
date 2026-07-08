@@ -35,22 +35,22 @@ else:
 # ══════════════════════════════════════════════════════
 # 2. GROWER USER
 # ══════════════════════════════════════════════════════
-grower_email    = "julyia.grower@testing.com"
-grower_password = "password123"
+# grower_email    = "julyia.grower@testing.com"
+# grower_password = "password123"
 
-grower_user = User.query.filter_by(email=grower_email).first()
-if not grower_user:
-    grower_user = User(
-        email=grower_email,
-        phone=722000001,
-        password=generate_password_hash(grower_password, method="pbkdf2:sha256"),
-        role="seller"
-    )
-    db.session.add(grower_user)
-    db.session.commit()
-    print(f"✅ Grower user created: {grower_email}")
-else:
-    print("ℹ️  Grower user already exists")
+# grower_user = User.query.filter_by(email=grower_email).first()
+# if not grower_user:
+#     grower_user = User(
+#         email=grower_email,
+#         phone=722000001,
+#         password=generate_password_hash(grower_password, method="pbkdf2:sha256"),
+#         role="seller"
+#     )
+#     db.session.add(grower_user)
+#     db.session.commit()
+#     print(f"✅ Grower user created: {grower_email}")
+# else:
+#     print("ℹ️  Grower user already exists")
 
 
 # ══════════════════════════════════════════════════════
@@ -355,69 +355,69 @@ else:
 # FIX: Original was cut off mid-loop — completed here
 # FIX: FarmProductListing now includes grower_id (required column)
 # ══════════════════════════════════════════════════════
-farm_products_data = [
-    {
-        "product": {
-            "name": "Arabica Batian — 250g",
-            "price": 850,
-            "description": "Medium roast. Batian varietal. Notes of citrus with a molasses finish.",
-            "stock": 200
-        },
-        "listing": {
-            "varietal": "Batian",
-            "process": "Washed",
-            "roast_level": "Medium",
-            "harvest_date": date(2025, 10, 15),
-            "quantity_kg": 50.0,
-            "minimum_order_kg": 0.25,
-            "price_per_kg": 3400,
-            "tasting_notes": "Citrus, Molasses, Dark Berry",
-            "status": "available"
-        }
-    }
-]
+# farm_products_data = [
+#     {
+#         "product": {
+#             "name": "Arabica Batian — 250g",
+#             "price": 850,
+#             "description": "Medium roast. Batian varietal. Notes of citrus with a molasses finish.",
+#             "stock": 200
+#         },
+#         "listing": {
+#             "varietal": "Batian",
+#             "process": "Washed",
+#             "roast_level": "Medium",
+#             "harvest_date": date(2025, 10, 15),
+#             "quantity_kg": 50.0,
+#             "minimum_order_kg": 0.25,
+#             "price_per_kg": 3400,
+#             "tasting_notes": "Citrus, Molasses, Dark Berry",
+#             "status": "available"
+#         }
+#     }
+# ]
 
-for entry in farm_products_data:
-    p = entry["product"]
-    l = entry["listing"]
+# for entry in farm_products_data:
+#     p = entry["product"]
+#     l = entry["listing"]
 
-    existing = Product.query.filter_by(
-        name=p["name"],
-        product_type="farm"
-    ).first()
+#     existing = Product.query.filter_by(
+#         name=p["name"],
+#         product_type="farm"
+#     ).first()
 
-    if not existing:
-        product = Product(
-            seller_id=grower_user.id,
-            name=p["name"],
-            price=p["price"],
-            stock=p["stock"],
-            description=p["description"],
-            category_id=None,
-            product_type="farm",
-            is_available=True
-        )
-        db.session.add(product)
-        db.session.flush()  # get product.id before the listing needs it
+#     if not existing:
+#         product = Product(
+#             seller_id=grower_user.id,
+#             name=p["name"],
+#             price=p["price"],
+#             stock=p["stock"],
+#             description=p["description"],
+#             category_id=None,
+#             product_type="farm",
+#             is_available=True
+#         )
+#         db.session.add(product)
+#         db.session.flush()  # get product.id before the listing needs it
 
-        listing = FarmProductListing(
-            product_id=product.id,
-            farm_id=farm.id,
-            grower_id=grower_user.id,   # FIX: required field that was missing
-            varietal=l["varietal"],
-            process=l["process"],
-            roast_level=l["roast_level"],
-            harvest_date=l["harvest_date"],
-            quantity_kg=l["quantity_kg"],
-            minimum_order_kg=l["minimum_order_kg"],
-            price_per_kg=l["price_per_kg"],
-            tasting_notes=l["tasting_notes"],
-            status=l["status"]
-        )
-        db.session.add(listing)
+#         listing = FarmProductListing(
+#             product_id=product.id,
+#             farm_id=farm.id,
+#             grower_id=grower_user.id,   # FIX: required field that was missing
+#             varietal=l["varietal"],
+#             process=l["process"],
+#             roast_level=l["roast_level"],
+#             harvest_date=l["harvest_date"],
+#             quantity_kg=l["quantity_kg"],
+#             minimum_order_kg=l["minimum_order_kg"],
+#             price_per_kg=l["price_per_kg"],
+#             tasting_notes=l["tasting_notes"],
+#             status=l["status"]
+#         )
+#         db.session.add(listing)
 
-db.session.commit()
-print("✅ Farm products and listings added")
+# db.session.commit()
+# print("✅ Farm products and listings added")
 
 
 # ══════════════════════════════════════════════════════
