@@ -36,25 +36,104 @@ body::before {
 
 /* ══ PAGE HERO ══ */
 .page-hero {
-    padding: 8rem 4rem 3.5rem;
-    display: flex; align-items: flex-end; justify-content: space-between;
-    border-bottom: 1px solid rgba(200,135,58,0.1);
-    position: relative; overflow: hidden;
+    padding: 9rem 4rem 3rem;
+    display: flex; 
+    align-items: flex-end; 
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(200, 135, 58, 0.1);
+    /* Crucial: Keeps the absolute pseudo-element contained inside the hero */
+    position: relative; 
+    overflow: hidden; 
 }
 .page-hero::before {
-    content: ''; position: absolute; top: -40px; right: -80px;
-    width: 500px; height: 500px;
-    background: radial-gradient(circle, rgba(122,182,72,0.06) 0%, transparent 70%);
-    border-radius: 50%; pointer-events: none;
+    content: ""; /* Required: Pseudo-elements will not render without content */
+    position: absolute; /* Changed from relative to overlay correctly */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    
+    background-image: url('/static/images/page-hero-img.jpg');
+    background-size: cover;       
+    background-position: center;   
+    background-repeat: no-repeat;
+    
+    z-index: -1; /* Pushes the image behind your text and marketplace cards */
+    opacity: 0.25; /* Dial this down to your preferred lower opacity value */
 }
-.hero-eyebrow { font-size: 0.6rem; letter-spacing: 0.32em; text-transform: uppercase; color: var(--green); margin-bottom: 0.7rem; display: flex; align-items: center; gap: 0.7rem; }
-.hero-eyebrow::before { content: ''; display: block; width: 20px; height: 1px; background: var(--green); }
-.hero-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(2.5rem, 5vw, 4.5rem); font-weight: 300; color: var(--white); line-height: 0.95; }
-.hero-title em { font-style: italic; color: var(--green); }
-.hero-desc { font-size: 0.85rem; color: rgba(245,236,215,0.45); line-height: 1.85; max-width: 400px; margin-top: 1rem; }
-.hero-right { text-align: right; }
-.hero-stats { display: flex; gap: 2.5rem; justify-content: flex-end; }
-.hero-stat-num { font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; font-weight: 300; color: rgba(122,182,72,0.25); line-height: 1; }
+.hero-eyebrow { font-size: 0.8rem; letter-spacing: 0.32em; text-transform: uppercase; color: var(--crema); margin-bottom: 0.7rem; display: flex; align-items: center; gap: 0.7rem; }
+.hero-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(3rem, 5vw, 5.5rem); font-weight: 300; color: var(--white); line-height: 0.95; }
+.hero-title em { font-family: 'Cormorant Garamond'; color: var(--crema); font-weight: bold;}
+.hero-desc { font-size: 1.2rem; color: rgba(249, 249, 249, 0.45); line-height: 1.85; max-width: 600px; margin-top: 1.5rem; }
+.hero-right { text-align: right; display: flex; flex-direction: row; align-items: flex-end; gap: 1.5rem; }
+
+/* target the container cards directly */
+.img-card.img-delay-1 {
+  width: 220px;
+  height: 380px;
+}
+
+.img-card.img-delay-2 {
+  width: 340px;
+  height: 440px;
+}
+
+.img-card.img-delay-3 {
+  width: 380px;
+  height: 500px;
+}
+
+/* Ensure the underlying image tags conform cleanly to your new dimensions */
+.img-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+@layer utilities {
+  .img-card {
+    opacity: 0;
+    /* Combines the slide-in entry and the infinite pulse loop */
+    animation: 
+      slideInLeft 1s cubic-bezier(0.25, 1, 0.5, 1) forwards, 
+      pulseEmphasis 4s ease-in-out infinite alternate;
+    /* Ensures the scale pulse happens from the bottom base line */
+    transform-origin: bottom center; 
+  }
+
+  /* Staggered delay classes so they don't pop in all at once */
+  .img-delay-1 { animation-delay: 0.1s, 1.1s; }
+  .img-delay-2 { animation-delay: 0.3s, 1.3s; }
+  .img-delay-3 { animation-delay: 0.5s, 1.5s; }
+
+  /* Phase 1: Entry Slide from Left */
+  @keyframes slideInLeft {
+    0% {
+      opacity: 0;
+      transform: translateX(-150px) scale(0.9);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+  }
+
+  /* Phase 2: Gentle sizing loop for continuous emphasis */
+  @keyframes pulseEmphasis {
+    0% {
+        transform: translateX(0) scale(1);
+        filter: brightness(0.95);
+    }
+    100% {
+        transform: translateX(0) scale(1.04);
+        filter: brightness(1.1);
+        box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.5);
+    }
+  }
+}
+.hero-left { display: flex; flex-direction: column; gap: 1.5rem; top: 0;}
+
+.hero-stats { display: flex; gap: 2.5rem; }
+.hero-stat-num { font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; font-weight: 300; color: var(--crema); line-height: 1; }
 .hero-stat-lbl { font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(245,236,215,0.25); margin-top: 0.2rem; }
  
  /* ══ TICKER ══ */

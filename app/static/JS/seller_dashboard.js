@@ -68,3 +68,215 @@ function confirmNotificationUpdate(event) {
     }
     return true;
 }
+
+function loadThread(threadId, name, initial) {
+// Mark thread as active
+document.querySelectorAll('.thread-item').forEach(el => {
+    el.classList.toggle('active-thread', parseInt(el.dataset.threadId) === threadId);
+});
+
+// Show chat inner, hide empty state
+document.getElementById('chatEmpty').style.display  = 'none';
+document.getElementById('chatInner').style.display  = 'flex';
+
+// Update header
+document.getElementById('chatHeadAvatar').textContent = initial;
+document.getElementById('chatHeadName').textContent   = name;
+
+// Load messages
+const container = document.getElementById('chatMessagesContainer');
+container.innerHTML = '<div style="padding:1rem;font-size:0.75rem;color:rgba(245,236,215,0.3);">Loading...</div>';
+
+fetch(`/api/messages/${threadId}`)
+    .then(r => r.json())
+    .then(data => {
+        if (!data.messages.length) {
+            container.innerHTML = '<div style="padding:1.5rem;font-size:0.78rem;color:rgba(245,236,215,0.25);text-align:center;">No messages yet.</div>';
+            return;
+        }
+        container.innerHTML = data.messages.map(m => `
+            <div class="msg ${m.is_mine ? 'sent' : 'received'}">
+                <div class="msg-bubble">${escapeHtml(m.body)}</div>
+                <div class="msg-time">${m.time}</div>
+            </div>
+        `).join('');
+        container.scrollTop = container.scrollHeight;
+    })
+    .catch(() => {
+        container.innerHTML = '<div style="color:#E06C75;padding:1rem;font-size:0.8rem;">Failed to load messages.</div>';
+    });
+}
+
+// Auto-load first thread if any exist
+document.addEventListener('DOMContentLoaded', () => {
+const first = document.querySelector('.thread-item');
+if (first) first.click();
+});
+
+// Send button
+document.getElementById('chatSendButton')?.addEventListener('click', sendReply);
+document.getElementById('chatInputField')?.addEventListener('keydown', e => {
+if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); }
+});
+
+function sendReply() {
+const input     = document.getElementById('chatInputField');
+const activeThread = document.querySelector('.thread-item.active-thread');
+if (!input || !activeThread) return;
+
+const body     = input.value.trim();
+const threadId = parseInt(activeThread.dataset.threadId);
+if (!body || !threadId) return;
+
+fetch(`/api/messages/${threadId}/send`, {
+    method:  'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken':  document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+    },
+    body: JSON.stringify({ body })
+})
+.then(r => r.json())
+.then(data => {
+    if (data.status === 'success') {
+        input.value = '';
+        const container = document.getElementById('chatMessagesContainer');
+        const msgEl = document.createElement('div');
+        msgEl.className = 'msg sent';
+        msgEl.innerHTML = `
+            <div class="msg-bubble">${escapeHtml(data.message.body)}</div>
+            <div class="msg-time">${data.message.time}</div>
+        `;
+        container.appendChild(msgEl);
+        container.scrollTop = container.scrollHeight;
+    }
+})
+.catch(() => alert('Failed to send. Please try again.'));
+}
+
+function escapeHtml(str) {
+return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+
+/* ── EDIT LISTING MODAL ── */
+function openEditModal(listingId, name, price, stock, minOrder, description, varietal, process, roast, harvestDate, tastingNotes) {
+    document.getElementById('editListingForm').action = `/seller/edit-listing/${listingId}`;
+    document.getElementById('editName').value        = name        || '';
+    document.getElementById('editPrice').value       = price       || '';
+    document.getElementById('editStock').value       = stock       || '';
+    document.getElementById('editMinOrder').value    = minOrder    || 1;
+    document.getElementById('editDescription').value = description || '';
+    document.getElementById('editNotes').value       = tastingNotes || '';
+    document.getElementById('editHarvestDate').value = harvestDate  || '';
+    setSelect('editVarietal', varietal);
+    setSelect('editProcess',  process);
+    setSelect('editRoast',    roast);
+    document.getElementById('editModalOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+function setSelect(id, value) {
+    const s = document.getElementById(id);
+    if (!s || !value) return;
+    for (let o of s.options) { if (o.value === value) { o.selected = true; break; } }
+}
+function closeEditModal(e) { if (e.target === document.getElementById('editModalOverlay')) closeEditModalBtn(); }
+function closeEditModalBtn() { document.getElementById('editModalOverlay').classList.remove('open'); document.body.style.overflow = ''; }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeEditModalBtn(); });
+
+/* ── FILTER ORDERS BY LISTING ── */
+function filterOrdersByListing(listingId) {
+    const rows    = document.querySelectorAll('#ordersTable tbody tr');
+    const bar     = document.getElementById('ordersFilterBar');
+    let   visible = 0;
+
+    rows.forEach(row => {
+        const match = row.dataset.listingId == listingId;
+        row.style.display = match ? '' : 'none';
+        if (match) visible++;
+    });
+
+    if (bar) { bar.style.display = 'flex'; }
+    const count = document.getElementById('ordersShownCount');
+    if (count) count.textContent = visible;
+}
+
+function clearOrdersFilter() {
+    document.querySelectorAll('#ordersTable tbody tr').forEach(r => r.style.display = '');
+    const bar = document.getElementById('ordersFilterBar');
+    if (bar) bar.style.display = 'none';
+    const count = document.getElementById('ordersShownCount');
+    if (count) count.textContent = document.querySelectorAll('#ordersTable tbody tr').length;
+}
+
+
+function previewPhoto(input) {
+  if (!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    let img = document.getElementById('photoPreviewImg');
+    const preview = img ? img.parentElement : document.querySelector('.profile-photo-preview');
+    if (!img) {
+      img = document.createElement('img');
+      img.id = 'photoPreviewImg';
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%;';
+      preview.innerHTML = '';
+      preview.appendChild(img);
+    }
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+
+/* ── ROUTING ANCHOR HANDLING ── */
+document.addEventListener("DOMContentLoaded", () => {
+    // Check if the landing path configuration has a hash layout key (e.g., #sec-listings)
+    const hash = window.location.hash;
+    
+    if (hash) {
+        // Strip out the framework's DOM ID prefix string
+        const sectionName = hash.replace('#sec-', '').replace('#', '');
+        
+        // Find if an associated sidebar navigation node control element exists
+        // (This lets us pass the current element target context safely)
+        const matchedSidebarLink = Array.from(document.querySelectorAll('.sidebar-link'))
+            .find(link => {
+                const clickAttr = link.getAttribute('onclick');
+                return clickAttr && clickAttr.includes(`'${sectionName}'`);
+            });
+
+        // Instantiate a synthetic mock interface container object if needed
+        const artificialEvent = matchedSidebarLink ? {
+            currentTarget: matchedSidebarLink,
+            preventDefault: () => {}
+        } : null;
+
+        // Try using the main toggle handler system safely
+        try {
+            // Wait slightly for DOM attributes to render completely before running
+            setTimeout(() => {
+                // Fetch the actual target structure item to ensure it exists on the layout
+                const targetEl = document.getElementById(`sec-${sectionName}`);
+                if (targetEl) {
+                    showSection(sectionName, artificialEvent);
+                }
+            }, 50);
+        } catch (error) {
+            console.warn("Routing layout transition failed:", error);
+        }
+    }
+});
+
+function openLogout() {
+  document.getElementById('logoutOverlay').classList.add('open');
+}
+
+function closeLogout() {
+  document.getElementById('logoutOverlay').classList.remove('open');
+}
+
+// Also close if user clicks the dark background outside the box
+document.getElementById('logoutOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeLogout();
+});

@@ -160,8 +160,8 @@
                             <span class="earning-val" style="font-size:1.4rem">KES {{ "{:,.0f}".format(net_earnings) }}</span>
                         </div>
                     {% else %}
-                        <div class="zero-state-mini" style="padding: 2rem; text-align: center; color: var(--tan); opacity: 0.6;">
-                            <p>No sales data available yet.</p>
+                        <div style="padding:2rem;text-align:center;opacity:0.5;font-size:0.95rem;">
+                            No sales data yet.
                         </div>
                     {% endif %}
                 </div>
@@ -201,9 +201,18 @@
 
         <!-- ── MY LISTINGS ── -->
         <div class="content-section" id="sec-listings">
-            <div class="dash-header"><div><div class="dash-greeting">My Farm</div>
-            <div class="dash-title">My <em>Listings</em></div></div><button 
-            class="panel-action" onclick="showSection('new-listing')" style="font-size:0.78rem;background:var(--green);color:var(--espresso);padding:0.6rem 1.4rem;border:none;letter-spacing:0.14em;text-transform:uppercase;font-weight:500;cursor:none">+ New Listing</button></div>
+            <div class="dash-header">
+                <div>
+                    <div class="dash-greeting">My Farm</div>
+                    <div class="dash-title">My <em>Listings</em></div>
+                </div>
+                <button class="panel-action"
+                    onclick="showSection('new-listing', event)"
+                    style="font-size:0.78rem;background:var(--crema);color:var(--espresso);padding:0.6rem 1.4rem;border:none;letter-spacing:0.14em;text-transform:uppercase;font-weight:500;cursor:pointer">
+                    + New Listing
+                </button>
+            </div>
+
             <div class="listings-grid">
                 {% if listings %}
                     {% for item in listings %}
@@ -264,17 +273,23 @@
 
          <!-- ── FARM PROFILE ── -->
         <div class="content-section" id="sec-farm-profile">
-            <div class="dash-header"><div><div class="dash-greeting">My Farm</div><div class="dash-title">Farm <em>Profile</em></div></div></div>
-            <div class="farm-profile-grid">
-                <div class="farm-status-toggle">
-                    <div class="status-label">Marketplace Status</div>
-                    <form action="{{ url_for('seller.toggle_live') }}" method="POST">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                        <button type="submit" class="status-pill {{ 'active' if farm and farm.is_live else 'offline' }}">
-                            {{ '● LIVE ON MARKET' if farm and farm.is_live else '○ OFFLINE' }}
-                        </button>
-                    </form>
+            <div class="dash-header">
+                <div>
+                    <div class="dash-greeting">My Farm</div>
+                    <div class="dash-title">Farm <em>Profile</em></div>
                 </div>
+            </div>
+            {% if farm %}
+            <div class="farm-status-toggle">
+                <div class="status-label">Marketplace Status</div>
+                <form action="{{ url_for('seller.toggle_live') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="status-pill {{ 'active' if farm and farm.is_live else 'offline' }}">
+                        {{ '● LIVE ON MARKET' if farm and farm.is_live else 'OFFLINE' }}
+                    </button>
+                </form>
+            </div>
+            <div class="farm-profile-grid">
                 <div class="farm-profile-card">
                     <div class="farm-img-area">
                         {% if farm.farm_image %}
@@ -389,41 +404,13 @@
         <div class="content-section" id="sec-messages">
             <div class="dash-header"><div><div class="dash-greeting">Communication</div><div class="dash-title">My <em>Messages</em></div></div></div>
             <div class="panel">
-                <div class="panel-head"><div class="panel-title">Inbox</div></div>
-                <div class="panel-body" style="padding:0">
-                    <div class="message-layout">
-                        <div class="message-threads">
-                            {% for thread in threads %}
-                                {% set other_user = thread.seller if current_user.id == thread.buyer_id else thread.buyer %}
-                                <div class="thread-item" data-thread-id="{{ thread.id }}">
-                                    <div class="thread-avatar">{{ other_user.username[:2].upper() if other_user.username else 'BY' }}</div>
-                                    <div class="thread-info">
-                                        <div class="thread-name">{{ other_user.username }}</div>
-                                        <div class="thread-preview">
-                                            {{ thread.messages[-1].body if thread.messages else 'No messages yet...' }}
-                                        </div>
-                                    </div>
-                                    <div class="thread-meta">
-                                        <div class="thread-time">{{ thread.updated_at.strftime('%H:%M') }}</div>
-                                    </div>
-                                </div>
-                            {% else %}
-                                <div style="padding: 20px; color: var(--gray)">No conversations found yet.</div>
-                            {% endfor %}
-                        </div>
-
-                        <div class="message-chat" id="chatWindow" style="display: none;">
-                            <div class="chat-head">
-                                <div class="chat-head-avatar" id="chatHeadAvatar">--</div>
-                                <div><div class="chat-head-name" id="chatHeadName">Select a thread</div><div class="chat-head-status">● Online</div></div>
-                            </div>
-                            <div class="chat-messages" id="chatMessagesContainer">
-                                </div>
-                            <div class="chat-input-area">
-                                <input class="chat-input" id="chatInputField" placeholder="Reply..." autocomplete="off"/>
-                                <button class="chat-send" id="chatSendButton">Send</button>
-                            </div>
-                        </div>
+                <div class="panel-body" style="padding:3rem;text-align:center;">
+                    <div style="font-size:2rem;margin-bottom:1rem;">💬</div>
+                    <div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;color:var(--white);margin-bottom:0.5rem;">
+                        Your Inbox
+                    </div>
+                    <div style="font-size:1rem;color:rgba(245,236,215,0.4);margin-bottom:1.5rem;line-height:1.7;">
+                        View and reply to all your conversations in one place.
                     </div>
                 </div>
             </div>
@@ -443,9 +430,41 @@
             {% endwith %} -->
             <div class="dash-header"><div><div class="dash-greeting">Account</div><div class="dash-title">Account <em>Settings</em></div></div></div>
             <div class="settings-grid">
-                <form action="{{ url_for('seller.update_profile') }}" method="POST" class="settings-panel" id="profileForm" onsubmit="return confirmProfileUpdate(event)">
+                <form action="{{ url_for('seller.update_profile') }}" method="POST" enctype="multipart/form-data" class="settings-panel">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <div class="settings-panel-title">Profile Photo</div>
+                    <div class="profile-photo-upload">
+                        <div class="profile-photo-preview" id="photoPreview">
+                        {% if current_user.profile_pic and current_user.profile_pic != 'logo1.png' %}
+                            <img src="{{ url_for('static', filename='uploads/' + current_user.profile_pic) }}"
+                                alt="Profile photo"
+                                id="photoPreviewImg"
+                                onerror="this.style.display='none'"/>
+                        {% else %}
+                            <div class="profile-photo-preview-initial" id="photoPreviewInitial">
+                            {{ (current_user.first_name or current_user.email)[0].upper() }}
+                            </div>
+                        {% endif %}
+                        </div>
+                    
+                        <div class="profile-photo-upload-btn">
+                        <label class="profile-photo-label" for="profilePhotoInput">
+                            📷 Choose Photo
+                        </label>
+                        <input type="file"
+                                id="profilePhotoInput"
+                                name="profile_photo"
+                                accept="image/*"
+                                style="display:none;"
+                                onchange="previewPhoto(this)"/>
+                        <div class="profile-photo-hint">JPG, PNG or WebP · Max 5MB</div>
+                        </div>
+                    </div>
+                    
+                    <button class="settings-save" type="submit">Save Photo</button>
+                </form>
+                <form action="{{ url_for('seller.update_profile') }}" method="POST" class="settings-panel" enctype="multipart/form-data">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
                     <div class="settings-panel-title">Personal Information</div>
                     <div class="settings-field">
                         <label>First Name</label>
@@ -542,8 +561,8 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/seller_dashboard.js') }}"></script>
-<script src="{{ url_for('static', filename='js/logout_base.js') }}"></script>
-<script src="{{ url_for('static', filename='js/messaging.js') }}"></script>
+<script src="{{ url_for('static', filename='js/seller_dashboard.js') }}?v={{ config.VERSION }}"></script>
+<script src="{{ url_for('static', filename='js/base.js') }}?v={{ config.VERSION }}"></script>
+<script src="{{ url_for('static', filename='js/messaging.js') }}?v={{ config.VERSION }}"></script>
 
 {% endblock %}

@@ -113,29 +113,45 @@
 
 <!-- ══ PAGE HERO ══ -->
 <div class="page-hero">
-  <div>
-    <div class="hero-eyebrow">Direct from the Farm</div>
-    <h1 class="hero-title">Coffee<br /><em>Marketplace</em></h1>
+  <div class="hero-left">
+    <div class="hero-stats">
+      <div class="hero-eyebrow">Caffeine & Chaos</div>
+    </div>
+
+    <h1 class="hero-title">The<br /><em>MARKETPLACE</em></h1>
     <p class="hero-desc">
       Buy directly from verified Kenyan coffee growers. No middlemen, full
       traceability, exceptional quality. Secure payments via M-Pesa.
     </p>
   </div>
-  <div class="hero-right">
-    <div class="hero-stats">
-      <div>
-        <div class="hero-stat-num">{{ stats.total_farms if stats else 0 }}</div>
-        <div class="hero-stat-lbl">Active Farms</div>
-      </div>
-      <!-- <div>
-        <div class="hero-stat-num">{{ stats.total_listings if stats else 0 }}</div>
-        <div class="hero-stat-lbl">Coffee Lots</div>
-      </div> -->
-      <div>
-        <div class="hero-stat-num">{{ stats.total_counties if stats else 0 }}</div>
-        <div class="hero-stat-lbl">Counties</div>
-      </div>
+  <!-- <div class="hero-right flex flex-row items-end justify-end gap-4 min-w-[350px] h-[300px] relative">
+    <div class="img-card flex-shrink-0 img-delay-1 w-20 h-40 rounded-lg shadow-xl border border-amber-900/30 overflow-hidden relative">
+      <img src="{{ url_for('static', filename='images/mp1.png') }}" 
+           alt="Kenyan Coffee Farm" 
+           class="w-full h-full object-cover brightness-90 contrast-105"
+      />
+      <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
     </div>
+
+    <div class="img-card flex-shrink-0 img-delay-2 w-24 h-40 rounded-lg shadow-xl border border-amber-900/30 overflow-hidden relative">
+      <img src="{{ url_for('static', filename='images/mp2.png') }}" 
+           alt="Kenyan Coffee Farm" 
+           class="w-full h-full object-cover brightness-90 contrast-105"
+      />
+      <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+    </div>
+
+    <div class="img-card flex-shrink-0 img-delay-3 w-24 h-40 rounded-lg shadow-xl border border-amber-900/30 overflow-hidden relative">
+      <img src="{{ url_for('static', filename='images/mp3.png') }}" 
+           alt="Kenyan Coffee Farm" 
+           class="w-full h-full object-cover brightness-90 contrast-105"/>
+      <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+    </div> -->
+
+
+
+
+    
   </div>
 </div>
 
