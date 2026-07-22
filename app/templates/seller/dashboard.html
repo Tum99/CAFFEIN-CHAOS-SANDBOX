@@ -604,8 +604,46 @@
                 </div>
             </div>
             <div class="settings-grid">
-                <form action="{{ url_for('seller.update_profile') }}" method="POST" class="settings-panel">
+                <form action="{{ url_for('seller.update_profile') }}" method="POST" class="settings-panel" enctype="multipart/form-data">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <form action="{{ url_for('seller.update_profile') }}"
+                            method="POST"
+                            enctype="multipart/form-data"
+                            class="settings-panel">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        
+                        <div class="settings-panel-title">Profile Photo</div>
+                        
+                        <div class="profile-photo-upload">
+                            <div class="profile-photo-preview" id="photoPreview">
+                            {% if current_user.profile_pic and current_user.profile_pic != 'logo1.png' %}
+                                <img src="{{ url_for('static', filename='uploads/' + current_user.profile_pic) }}"
+                                    alt="Profile photo"
+                                    id="photoPreviewImg"
+                                    onerror="this.style.display='none'"/>
+                            {% else %}
+                                <div class="profile-photo-preview-initial" id="photoPreviewInitial">
+                                {{ (current_user.first_name or current_user.email)[0].upper() }}
+                                </div>
+                            {% endif %}
+                            </div>
+                        
+                            <div class="profile-photo-upload-btn">
+                            <label class="profile-photo-label" for="profilePhotoInput">
+                                📷 Choose Photo
+                            </label>
+                            <input type="file"
+                                    id="profilePhotoInput"
+                                    name="profile_photo"
+                                    accept="image/*"
+                                    style="display:none;"
+                                    onchange="previewPhoto(this)"/>
+                            <div class="profile-photo-hint">JPG, PNG or WebP · Max 5MB</div>
+                            </div>
+                        </div>
+                        
+                        <button class="settings-save" type="submit">Save Photo</button>
+                    </form>
                     <div class="settings-panel-title">Personal Information</div>
                     <div class="settings-field"><label>First Name</label><input type="text" name="first_name" value="{{ current_user.first_name or '' }}"/></div>
                     <div class="settings-field"><label>Last Name</label><input type="text" name="last_name" value="{{ current_user.last_name or '' }}"/></div>

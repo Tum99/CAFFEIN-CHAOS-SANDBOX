@@ -10,3 +10,26 @@ function showSection(name, event) {
     event.currentTarget.classList.add('active');
     event.preventDefault();
 }
+
+
+function previewPhoto(input) {
+  if (!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    let img = document.getElementById('photoPreviewImg');
+    const preview = img ? img.parentElement : document.querySelector('.profile-photo-preview');
+    if (!img) {
+      img = document.createElement('img');
+      img.id = 'photoPreviewImg';
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%;';
+      preview.innerHTML = '';
+      preview.appendChild(img);
+    }
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+
+
+

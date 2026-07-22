@@ -73,7 +73,7 @@ function renderCards(data) {
 
         return `
             <div class="listing-card" data-id="${l.id}"
-                style="opacity:0; transform:translateY(18px); transition:opacity 0.45s ease, transform 0.45s cubic-bezier(0.22,1,0.36,1)">
+                style="opacity:1; transform:translateY(18px); transition:opacity 0.45s ease, transform 0.45s cubic-bezier(0.22,1,0.36,1)">
                 <div class="listing-card-img">
                     ${l.listing_image 
                         ? `<img src="/static/${l.listing_image}" alt="${l.name}" 

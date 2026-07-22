@@ -113,28 +113,43 @@
 
 <!-- ══ PAGE HERO ══ -->
 <div class="page-hero">
-  <div>
-    <div class="hero-eyebrow">Direct from the Farm</div>
-    <h1 class="hero-title">Coffee<br /><em>Marketplace</em></h1>
+  <div class="hero-left">
+    
+    <h1 class="hero-title">The<br /><em>MARKETPLACE</em></h1>
     <p class="hero-desc">
       Buy directly from verified Kenyan coffee growers. No middlemen, full
       traceability, exceptional quality. Secure payments via M-Pesa.
     </p>
   </div>
-  <div class="hero-right">
+  <!-- <div class="hero-right flex flex-row items-end justify-end gap-4 min-w-[350px] h-[300px] relative">
+    <div class="img-card flex-shrink-0 img-delay-1 w-20 h-40 rounded-lg shadow-xl border border-amber-900/30 overflow-hidden relative">
+      <img src="{{ url_for('static', filename='images/mp1.png') }}" 
+           alt="Kenyan Coffee Farm" 
+           class="w-full h-full object-cover brightness-90 contrast-105"
+      />
+      <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+    </div>
+
+    <div class="img-card flex-shrink-0 img-delay-2 w-24 h-40 rounded-lg shadow-xl border border-amber-900/30 overflow-hidden relative">
+      <img src="{{ url_for('static', filename='images/mp2.png') }}" 
+           alt="Kenyan Coffee Farm" 
+           class="w-full h-full object-cover brightness-90 contrast-105"
+      />
+      <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+    </div>
+
+    <div class="img-card flex-shrink-0 img-delay-3 w-24 h-40 rounded-lg shadow-xl border border-amber-900/30 overflow-hidden relative">
+      <img src="{{ url_for('static', filename='images/mp3.png') }}" 
+           alt="Kenyan Coffee Farm" 
+           class="w-full h-full object-cover brightness-90 contrast-105"/>
+      <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+    </div> -->
+
+
+
+
     <div class="hero-stats">
-      <div>
-        <div class="hero-stat-num">{{ stats.total_farms if stats else 0 }}</div>
-        <div class="hero-stat-lbl">Active Farms</div>
-      </div>
-      <!-- <div>
-        <div class="hero-stat-num">{{ stats.total_listings if stats else 0 }}</div>
-        <div class="hero-stat-lbl">Coffee Lots</div>
-      </div> -->
-      <div>
-        <div class="hero-stat-num">{{ stats.total_counties if stats else 0 }}</div>
-        <div class="hero-stat-lbl">Counties</div>
-      </div>
+      <div class="hero-eyebrow">Direct from the Farm</div>
     </div>
   </div>
 </div>
@@ -194,7 +209,7 @@
 </div> -->
 
 <!-- ══ MAIN LAYOUT ══ -->
-<div class="page-wrap">
+<div class="page-wrap-mkt">
   <!-- ══ FILTER SIDEBAR ══ -->
   <aside class="filter-sidebar">
     <div class="filter-search">
@@ -202,7 +217,7 @@
       <input
         type="text"
         id="searchInput"
-        placeholder="Search farms or varietals..."
+        placeholder="Search..."
         oninput="filterListings()"
       />
     </div>
@@ -534,17 +549,29 @@
     <!-- ══ REPLACED FEATURED STRIP WITH DASHBOARD ACTION BANNER ══ -->
     <div class="marketplace-dashboard-banner">
       <div class="banner-left">
-        <div class="results-count">
-          <strong id="resultsCount">{{ stats.total_farms if stats else 0 }}</strong> active listings available
-        </div>
+        <div class="hero-stat-num">{{ stats.total_farms if stats else 0 }}</div>
+        <div class="hero-stat-lbl">Active Listings Available</div>
         <div class="active-filters" id="activeFilters"></div>
+      </div>
+
+      <div>
+        <div class="hero-stat-num">{{ stats.total_farms if stats else 0 }}</div>
+        <div class="hero-stat-lbl">Active Farms</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">{{ stats.total_listings if stats else 0 }}</div>
+        <div class="hero-stat-lbl">Coffee Lots</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">{{ stats.total_counties if stats else 0 }}</div>
+        <div class="hero-stat-lbl">Counties</div>
       </div>
       
       {# Render button if current user is logged in as a grower #}
       {% if current_user.is_authenticated and current_user.role == 'seller' %}
         <div class="banner-right">
-          <a href="{{ url_for('seller.dashboard') }}" class="view-my-listings-btn">
-            🚜 View My Listings →
+          <a href="{{ url_for('seller.listings') }}" class="view-my-listings-btn">
+            View My Listings →
           </a>
         </div>
       {% endif %}

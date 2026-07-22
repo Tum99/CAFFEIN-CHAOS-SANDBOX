@@ -208,3 +208,62 @@ function clearOrdersFilter() {
     const count = document.getElementById('ordersShownCount');
     if (count) count.textContent = document.querySelectorAll('#ordersTable tbody tr').length;
 }
+
+
+function previewPhoto(input) {
+  if (!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    let img = document.getElementById('photoPreviewImg');
+    const preview = img ? img.parentElement : document.querySelector('.profile-photo-preview');
+    if (!img) {
+      img = document.createElement('img');
+      img.id = 'photoPreviewImg';
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%;';
+      preview.innerHTML = '';
+      preview.appendChild(img);
+    }
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+
+/* ── ROUTING ANCHOR HANDLING ── */
+document.addEventListener("DOMContentLoaded", () => {
+    // Check if the landing path configuration has a hash layout key (e.g., #sec-listings)
+    const hash = window.location.hash;
+    
+    if (hash) {
+        // Strip out the framework's DOM ID prefix string
+        const sectionName = hash.replace('#sec-', '').replace('#', '');
+        
+        // Find if an associated sidebar navigation node control element exists
+        // (This lets us pass the current element target context safely)
+        const matchedSidebarLink = Array.from(document.querySelectorAll('.sidebar-link'))
+            .find(link => {
+                const clickAttr = link.getAttribute('onclick');
+                return clickAttr && clickAttr.includes(`'${sectionName}'`);
+            });
+
+        // Instantiate a synthetic mock interface container object if needed
+        const artificialEvent = matchedSidebarLink ? {
+            currentTarget: matchedSidebarLink,
+            preventDefault: () => {}
+        } : null;
+
+        // Try using the main toggle handler system safely
+        try {
+            // Wait slightly for DOM attributes to render completely before running
+            setTimeout(() => {
+                // Fetch the actual target structure item to ensure it exists on the layout
+                const targetEl = document.getElementById(`sec-${sectionName}`);
+                if (targetEl) {
+                    showSection(sectionName, artificialEvent);
+                }
+            }, 50);
+        } catch (error) {
+            console.warn("Routing layout transition failed:", error);
+        }
+    }
+});

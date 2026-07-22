@@ -392,6 +392,9 @@ def add_next_listing():
 @seller_required
 def listings():
     farm = FarmProfile.query.filter_by(user_id=current_user.id).first()
+    if farm and farm.is_setup_complete:
+        return redirect(url_for('seller.dashboard', _anchor='sec-listings'))
+        
     my_listings = FarmProductListing.query.filter_by(farm_id=farm.id)\
                   .order_by(FarmProductListing.listed_at.desc()).all()
 
@@ -561,6 +564,20 @@ def update_profile():
         current_user.last_name = request.form.get('last_name').strip()
         current_user.email = request.form.get('email').strip()
         current_user.phone = request.form.get('phone').strip()
+
+        file = request.files.get('profile_photo')
+        if file and file.filename:
+            allowed = {'jpg', 'jpeg', 'png', 'webp'}
+            ext = file.filename.rsplit('.', 1)[-1].lower()
+            if ext in allowed:
+                filename    = secure_filename(f"avatar_{current_user.id}.{ext}")
+                upload_path = os.path.join(current_app.root_path, 'static', 'uploads')
+                os.makedirs(upload_path, exist_ok=True)
+                file.save(os.path.join(upload_path, filename))
+                current_user.profile_pic = filename
+            else:
+                flash('Please upload a JPG, PNG or WebP image.', 'error')
+                return redirect(url_for('seller.dashboard'))
         
         db.session.commit()
         flash('Personal information updated successfully!', 'success')

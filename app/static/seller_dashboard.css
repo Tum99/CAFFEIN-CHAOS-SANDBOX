@@ -70,7 +70,7 @@ body::before {
     transition: background 0.2s, border-color 0.2s; 
 }
 .sidebar-link:hover { background: rgba(122,182,72,0.06); border-left-color: rgba(122,182,72,0.25); }
-.sidebar-link.active { background: rgba(122,182,72,0.1); border-left-color: var(--green); }
+.sidebar-link.active { background: rgba(122,182,72,0.1); border-left-color: var(--crema); } 
 .sidebar-icon { font-size: 1rem; width: 20px; text-align: center; }
 .sidebar-link-text { font-size: 0.8rem; color: rgba(245,236,215,0.55); transition: color 0.2s; }
 .sidebar-link:hover .sidebar-link-text, .sidebar-link.active .sidebar-link-text { color: var(--cream); }
