@@ -212,7 +212,7 @@ font-size: 0.65rem; color: rgba(245,236,215,0.28);
 .sidebar::-webkit-scrollbar-thumb { background: rgba(200,135,58,0.2); border-radius: 2px; }
 
 .sidebar-heading {
-    font-size: 0.6rem;
+    font-size: 0.8rem;
     letter-spacing: 0.3em;
     text-transform: uppercase;
     color: var(--muted);
@@ -231,7 +231,7 @@ font-size: 0.65rem; color: rgba(245,236,215,0.28);
     border: 1px solid rgba(200,135,58,0.15);
     color: var(--cream);
     font-family: 'Jost', sans-serif;
-    font-size: 0.8rem;
+    font-size: 1rem;
     padding: 0.6rem 0.9rem 0.6rem 2.2rem;
     outline: none;
     border-radius: 2px;
@@ -244,7 +244,7 @@ font-size: 0.65rem; color: rgba(245,236,215,0.28);
     position: absolute;
     left: 0.75rem; top: 50%;
     transform: translateY(-50%);
-    font-size: 0.75rem;
+    font-size: 0.9rem;
     opacity: 0.35;
 }
 
@@ -277,7 +277,7 @@ font-size: 0.65rem; color: rgba(245,236,215,0.28);
 }
 
  .cat-link-name {
-    font-size: 0.83rem;
+    font-size: 1rem;
     color: rgba(245,236,215,0.6);
     letter-spacing: 0.04em;
     transition: color 0.25s;

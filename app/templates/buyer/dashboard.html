@@ -224,53 +224,28 @@
 
     <!-- ── MESSAGES ── -->
     <div class="content-section" id="sec-messages">
-        <div class="dash-header"><div><div class="dash-greeting">Communication</div><div class="dash-title">My <em>Messages</em></div></div></div>
+        <div class="dash-header">
+            <div>
+                <div class="dash-greeting">Communication</div>
+                <div class="dash-title">My <em>Messages</em></div>
+            </div>
+        </div>
         <div class="panel">
-            <div class="panel-head"><div class="panel-title">Inbox</div></div>
-            <div class="panel-body" style="padding:0">
-                <div class="message-layout">
-                    <div class="message-threads">
-                        {% for thread in threads %}
-                            <div class="thread-item" data-thread-id="{{ thread.id }}">
-                                <div class="thread-avatar">
-                                    {% if thread.seller.first_name %}
-                                        {{ thread.seller.first_name[:2].upper() }}
-                                    {% else %}
-                                        {{ thread.seller.username[:2].upper() if thread.seller.username else 'GR' }}
-                                    {% endif %}
-                                </div>
-                                <div class="thread-info">
-                                    <div class="thread-name">
-                                        {% if thread.seller.first_name %}
-                                            {{ thread.seller.first_name }} {{ thread.seller.last_name }}
-                                        {% else %}
-                                            {{ thread.seller.username }}
-                                        {% endif %}
-                                    </div>
-                                    <div class="thread-preview">{{ thread.messages[-1].body if thread.messages else 'No messages yet' }}</div>
-                                </div>
-                                <div class="thread-meta">
-                                    <div class="thread-time">{{ thread.updated_at.strftime('%H:%M') }}</div>
-                                </div>
-                            </div>
-                        {% else %}
-                            <div style="padding: 20px; color: var(--gray)">No conversations found yet.</div>
-                        {% endfor %}
-                    </div>
-
-                    <div class="message-chat" id="chatWindow" style="display: none;">
-                        <div class="chat-head">
-                            <div class="chat-head-avatar" id="chatHeadAvatar">--</div>
-                            <div><div class="chat-head-name" id="chatHeadName">Select a thread</div><div class="chat-head-status">● Online</div></div>
-                        </div>
-                        <div class="chat-messages" id="chatMessagesContainer">
-                            </div>
-                        <div class="chat-input-area">
-                            <input class="chat-input" id="chatInputField" placeholder="Reply..." autocomplete="off"/>
-                            <button class="chat-send" id="chatSendButton">Send</button>
-                        </div>
-                    </div>
+            <div class="panel-body" style="padding:3rem; text-align:center;">
+                <div style="font-size:2rem; margin-bottom:1rem;">💬</div>
+                <div style="font-family:'Cormorant Garamond',serif; font-size:1.4rem; color:var(--white); margin-bottom:0.5rem;">
+                    Your Inbox
                 </div>
+                <div style="font-size:0.82rem; color:rgba(245,236,215,0.4); margin-bottom:1.5rem; line-height:1.7;">
+                    View and reply to all your conversations in one place.
+                </div>
+                <a href="{{ url_for('messaging.inbox') }}" style="
+                    display:inline-block; padding:0.8rem 2rem;
+                    background:var(--crema); color:var(--espresso);
+                    font-family:'Jost',sans-serif; font-size:0.72rem;
+                    letter-spacing:0.16em; text-transform:uppercase; font-weight:500;
+                    text-decoration:none;
+                ">Open Messages →</a>
             </div>
         </div>
     </div>
@@ -313,8 +288,46 @@
     <div class="content-section" id="sec-settings">
         <div class="dash-header"><div><div class="dash-greeting">Account</div><div class="dash-title">Account <em>Settings</em></div></div></div>
         <div class="settings-grid">
-            <form action="{{ url_for('buyer.update_profile') }}" method="POST" class="settings-panel" onsubmit="return confirm('Save updates to profile entries?')">
+            <form action="{{ url_for('buyer.update_profile') }}" method="POST" class="settings-panel" enctype="multipart/form-data" onsubmit="return confirm('Save updates to profile entries?')">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <form action="{{ url_for('buyer.update_profile') }}"
+                        method="POST"
+                        enctype="multipart/form-data"
+                        class="settings-panel">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    
+                    <div class="settings-panel-title">Profile Photo</div>
+                    
+                    <div class="profile-photo-upload">
+                        <div class="profile-photo-preview" id="photoPreview">
+                        {% if current_user.profile_pic and current_user.profile_pic != 'default_user.jpg' %}
+                            <img src="{{ url_for('static', filename='uploads/' + current_user.profile_pic) }}"
+                                alt="Profile photo"
+                                id="photoPreviewImg"
+                                onerror="this.style.display='none'"/>
+                        {% else %}
+                            <div class="profile-photo-preview-initial" id="photoPreviewInitial">
+                            {{ (current_user.first_name or current_user.email)[0].upper() }}
+                            </div>
+                        {% endif %}
+                        </div>
+                    
+                        <div class="profile-photo-upload-btn">
+                        <label class="profile-photo-label" for="profilePhotoInput">
+                            📷 Choose Photo
+                        </label>
+                        <input type="file"
+                                id="profilePhotoInput"
+                                name="profile_photo"
+                                accept="image/*"
+                                style="display:none;"
+                                onchange="previewPhoto(this)"/>
+                        <div class="profile-photo-hint">JPG, PNG or WebP · Max 5MB</div>
+                        </div>
+                    </div>
+                    
+                    <button class="settings-save" type="submit">Save Photo</button>
+                </form>
                 <div class="settings-panel-title">Personal Information</div>
                 <div class="settings-field"><label>First Name</label><input type="text" name="first_name" value="{{ current_user.first_name or '' }}"/></div>
                 <div class="settings-field"><label>Last Name</label><input type="text" name="last_name" value="{{ current_user.last_name or '' }}"/></div>

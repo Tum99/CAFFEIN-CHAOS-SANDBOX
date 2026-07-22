@@ -11,7 +11,6 @@ import os
 
 seller = Blueprint('seller', __name__, url_prefix='/seller')
 
-
 @seller.route('/setup', methods=['GET', 'POST'])
 @login_required
 @seller_required
@@ -120,69 +119,93 @@ def skip_onboarding():
 @login_required
 @seller_required
 def dashboard():
-    # Check if this seller has a farm profile yet and any listings
     farm = FarmProfile.query.filter_by(user_id=current_user.id).first()
-
+ 
     if not farm or not farm.is_setup_complete:
         return redirect(url_for('seller.seller_setup'))
-
-    orders = transactions.query.join(FarmProductListing).filter(FarmProductListing.grower_id == current_user.id).all()
-
-    listings = FarmProductListing.query.filter_by(farm_id=farm.id).all()
-
-    # 1. Get all completed/paid transactions
+ 
+    orders   = transactions.query.join(FarmProductListing).filter(
+        FarmProductListing.grower_id == current_user.id
+    ).all()
+ 
+    listings       = FarmProductListing.query.filter_by(farm_id=farm.id).all()
+    total_stock_kg = sum(l.quantity_kg for l in listings if l.quantity_kg and l.status == 'available')
+ 
     completed_orders = [o for o in orders if o.status in ['paid', 'completed']]
-    pending_orders = [o for o in orders if o.status == 'pending']
-
-    # 2. Calculate earnings per product
+    pending_orders   = [o for o in orders if o.status == 'pending']
+ 
     product_earnings = {}
     this_month_gross = 0.0
-
-    current_month = datetime.utcnow().month
-    current_year = datetime.utcnow().year
-
+    current_month    = datetime.utcnow().month
+    current_year     = datetime.utcnow().year
+ 
     for order in completed_orders:
-        listing = order.listing 
-
-        if listing:
-            display_name = f"{listing.varietal} ({listing.process})"
-        else:
-            display_name = "Unknown Coffee Batch"   
-
+        listing     = order.listing
+        display_name = f"{listing.varietal} ({listing.process})" if listing else "Unknown Batch"
         product_earnings[display_name] = product_earnings.get(display_name, 0) + order.total_amount
-
-        # Check if the transaction happened within the current calendar month
         if order.created_at.month == current_month and order.created_at.year == current_year:
             this_month_gross += order.total_amount
-
-    # 3. Calculate Commission (5%)
-    total_gross = sum(product_earnings.values())
+ 
+    total_gross    = sum(product_earnings.values())
     pending_payout = sum(o.total_amount for o in pending_orders)
-    commission = total_gross * 0.05
-    net_earnings = total_gross - commission
-        
-
-    earnings = sum(
-        t.total_amount for t in orders
-        if t.status in ['paid', 'completed']
-    )
-
+    commission     = total_gross * 0.05
+    net_earnings   = total_gross - commission
+ 
+    unread_msg_count = DirectMessage.query.filter_by(
+        receiver_id=current_user.id, is_read=False
+    ).count()
+ 
+    threads = MessageThread.query.filter(
+        (MessageThread.buyer_id  == current_user.id) |
+        (MessageThread.seller_id == current_user.id)
+    ).order_by(MessageThread.updated_at.desc()).all()
+ 
+    # ── Monthly chart data ──
+    try:
+        from dateutil.relativedelta import relativedelta
+        from collections import defaultdict
+        monthly_data = defaultdict(float)
+        now = datetime.utcnow()
+        for i in range(5, -1, -1):
+            month_dt  = now - relativedelta(months=i)
+            month_key = month_dt.strftime('%b')
+            monthly_data[month_key] = 0.0
+        for o in completed_orders:
+            key = o.created_at.strftime('%b')
+            if key in monthly_data:
+                monthly_data[key] += o.total_amount
+        monthly_labels  = list(monthly_data.keys())
+        monthly_amounts = list(monthly_data.values())
+        max_amount      = max(monthly_amounts) if any(monthly_amounts) else 1
+    except Exception:
+        monthly_labels  = []
+        monthly_amounts = []
+        max_amount      = 1
+ 
     return render_template('seller/dashboard.html',
         active_page='dashboard',
         body_class='page-dashboard',
         farm=farm,
         listings=listings,
+        total_stock_kg=total_stock_kg,
+        unread_msg_count=unread_msg_count,
         orders=orders,
+        total_orders=len(orders),                   # FIX: added for sidebar badge
+        threads=threads,
         this_month_earnings=f"{this_month_gross:,.0f}",
         total_gross=f"{total_gross:,.0f}",
         pending_payout=f"{pending_payout:,.0f}",
         commission=f"{commission:,.0f}",
         net_earnings=f"{net_earnings:,.0f}",
         product_earnings=product_earnings,
-        is_new_seller=(farm is None),  # ← True if brand new
+        monthly_labels=monthly_labels,              # FIX: added for chart
+        monthly_amounts=monthly_amounts,            # FIX: added for chart
+        max_amount=max_amount,                      # FIX: added for chart
+        current_date=datetime.now().strftime("%A, %d %B %Y"),  # FIX: added
+        is_new_seller=(farm is None),
         has_listings=len(listings) > 0,
         has_orders=len(orders) > 0
-        )
+    )
 
 @seller.route('/<int:seller_id>')
 @login_required
@@ -369,6 +392,9 @@ def add_next_listing():
 @seller_required
 def listings():
     farm = FarmProfile.query.filter_by(user_id=current_user.id).first()
+    if farm and farm.is_setup_complete:
+        return redirect(url_for('seller.dashboard', _anchor='sec-listings'))
+        
     my_listings = FarmProductListing.query.filter_by(farm_id=farm.id)\
                   .order_by(FarmProductListing.listed_at.desc()).all()
 
@@ -391,79 +417,69 @@ def listings():
 @login_required
 @seller_required
 def marketplace():
-    """
-    Seller/Grower-facing market inspection view.
-    Allows growers to review competing farm lots, look up average price trends, etc.
-    """
     search_query = request.args.get('search', '').strip()
-    query = Product.query.filter_by(product_type='farm')
-    
+
+    # FIX 1: Add live/setup filters so only published listings show
+    # FIX 2: Simplified query — farm_listing is uselist=False, never a list
+    query = Product.query.join(Product.farm_listing)\
+                         .join(FarmProductListing.farm)\
+                         .filter(
+                             Product.is_available == True,
+                             FarmProfile.is_live == True,
+                             FarmProfile.is_setup_complete == True
+                         )
+
     if search_query:
-        query = Product.query.filter_by(product_type='farm')
-        
+        query = query.filter(Product.name.ilike(f"%{search_query}%"))
+
     farm_products = query.order_by(Product.price.desc()).all()
 
     formatted_listings = []
     for p in farm_products:
-        listing_details = None
-        if hasattr(p, 'farm_listing') and p.farm_listing:
-            # If it's a list/collection, snatch the first entry safely
-            if isinstance(p.farm_listing, list) or hasattr(p.farm_listing, '__len__'):
-                listing_details = p.farm_listing[0] if len(p.farm_listing) > 0 else None
-            else:
-                listing_details = p.farm_listing
+        # FIX 3: farm_listing is uselist=False — always single object or None
+        ld = p.farm_listing
+        if ld is None:
+            continue
 
-        # Determine fallback name fields safely
-        farm_name = "Verified Grower"
-        county = "Kenya Origin"
-        varietal = "Premium"
-        process = "Washed"
-        roast_level = "Medium"
-        harvest_date_str = "Recent"
-        quantity = float(p.stock or 0)
-        min_order = 1.0
-        tasting_notes = "Clean, balanced single-origin profile"
-    
-        if listing_details:
-            farm_name = listing_details.farm.farm_name if listing_details.farm else farm_name
-            county = listing_details.farm.county if listing_details.farm else county
-            varietal = listing_details.varietal or varietal
-            process = listing_details.process or process
-            roast_level = listing_details.roast_level or roast_level
-            harvest_date_str = listing_details.harvest_date.strftime('%B %Y') if listing_details.harvest_date else harvest_date_str
-            quantity = listing_details.quantity_kg or quantity
-            min_order = listing_details.minimum_order_kg or min_order
-            tasting_notes = listing_details.tasting_notes or tasting_notes
+        farm = ld.farm
+
+        # FIX 4: Build image path with uploads/ prefix — consistent with buyer route
+        if ld.listing_image:
+            image_file = f"uploads/{ld.listing_image}"
+        else:
+            image_file = "images/cup2.jpg"
 
         formatted_listings.append({
-            "id": listing_details.id if listing_details else p.id,
-            "product_id": p.id,
-            "name": p.name or f"{varietal} {process}",
-            "farm_name": farm_name,
-            "varietal": varietal,
-            "process": process,
-            "roast_level": roast_level,
-            "harvest_date": harvest_date_str,
-            "quantity_kg": quantity,
-            "minimum_order_kg": min_order,
-            "price_per_kg": float(p.price or 0.0),
-            "tasting_notes": tasting_notes,
-            "county": county,
-            "altitude": "1,600m - 1,950m"
+            "id":               ld.id,
+            "product_id":       p.id,
+            "seller_id":        p.seller_id,
+            "grower_id":        ld.grower_id,  # FIX 5: added for message grower button
+            "name":             p.name or f"{ld.varietal} {ld.process}",
+            "farm_name":        farm.farm_name if farm else "Verified Grower",
+            "varietal":         ld.varietal         or "Premium",
+            "process":          ld.process           or "Washed",
+            "roast_level":      ld.roast_level       or "Medium",
+            "harvest_date":     ld.harvest_date.strftime('%B %Y') if ld.harvest_date else "Recent",
+            "quantity_kg":      ld.quantity_kg        or float(p.stock or 0),
+            "minimum_order_kg": ld.minimum_order_kg   or 1.0,
+            "price_per_kg":     float(p.price         or 0.0),
+            "tasting_notes":    ld.tasting_notes      or "Clean, balanced single-origin",
+            "county":           farm.county if farm else "Kenya",
+            "altitude":         f"{farm.altitude_masl}m" if farm and farm.altitude_masl else "1,600m - 1,950m",
+            "listing_image":    image_file             # FIX 4: now has uploads/ prefix
         })
 
-    # 3. Calculate dynamic Hero Stats over verified, live growers
     live_farms = FarmProfile.query.filter_by(is_live=True, is_setup_complete=True).all()
     stats = {
-        "total_listings": len(farm_products),
-        "total_farms": len(live_farms),
+        "total_listings": len(formatted_listings),
+        "total_farms":    len(live_farms),
         "total_counties": len({f.county for f in live_farms if f.county})
     }
-    
+
     return render_template(
         'marketplace/marketplace.html',
         products=farm_products,
-        listings=farm_products, # Map to listings variant to avoid template UndefinedErrors
+        listings=farm_products,
         json_payload=json.dumps(formatted_listings),
         stats=stats,
         search_query=search_query
@@ -548,6 +564,20 @@ def update_profile():
         current_user.last_name = request.form.get('last_name').strip()
         current_user.email = request.form.get('email').strip()
         current_user.phone = request.form.get('phone').strip()
+
+        file = request.files.get('profile_photo')
+        if file and file.filename:
+            allowed = {'jpg', 'jpeg', 'png', 'webp'}
+            ext = file.filename.rsplit('.', 1)[-1].lower()
+            if ext in allowed:
+                filename    = secure_filename(f"avatar_{current_user.id}.{ext}")
+                upload_path = os.path.join(current_app.root_path, 'static', 'uploads')
+                os.makedirs(upload_path, exist_ok=True)
+                file.save(os.path.join(upload_path, filename))
+                current_user.profile_pic = filename
+            else:
+                flash('Please upload a JPG, PNG or WebP image.', 'error')
+                return redirect(url_for('seller.dashboard'))
         
         db.session.commit()
         flash('Personal information updated successfully!', 'success')
@@ -621,27 +651,26 @@ def update_notifications():
     return redirect(url_for('seller.dashboard', _anchor='sec-settings'))
 
 
-@seller.route('/edit-listing/<int:listing_id>', methods=['GET', 'POST'])
+
+@seller.route('/edit-listing/<int:listing_id>', methods=['POST'])
 @login_required
 @seller_required
 def edit_listing(listing_id):
     listing = FarmProductListing.query.get_or_404(listing_id)
-
-    # Security — make sure this listing belongs to the current user
+ 
     if listing.grower_id != current_user.id:
         flash("You don't have permission to edit this listing.", "error")
-        return redirect(url_for('seller.seller_setup'))
-
-    farm = FarmProfile.query.filter_by(user_id=current_user.id).first()
-
-    if request.method == 'POST':
-        # Update the product
-        listing.product.name        = request.form.get('name', '').strip()
-        listing.product.description = request.form.get('description', '').strip()
-        listing.product.price       = float(request.form.get('price', 0))
-        listing.product.stock       = int(float(request.form.get('stock', 0)))
-
-        # Update the listing details
+        return redirect(url_for('seller.dashboard'))
+ 
+    try:
+        # Update Product
+        if listing.product:
+            listing.product.name        = request.form.get('name', '').strip()
+            listing.product.description = request.form.get('description', '').strip()
+            listing.product.price       = float(request.form.get('price', 0))
+            listing.product.stock       = int(float(request.form.get('stock', 0)))
+ 
+        # Update Listing
         listing.varietal         = request.form.get('varietal')
         listing.process          = request.form.get('process')
         listing.roast_level      = request.form.get('roast')
@@ -649,28 +678,29 @@ def edit_listing(listing_id):
         listing.quantity_kg      = float(request.form.get('stock', 0))
         listing.price_per_kg     = float(request.form.get('price', 0))
         listing.minimum_order_kg = float(request.form.get('min_order', 1.0))
-
-        harvest_date_str = request.form.get('harvest_date')
+ 
+        harvest_date_str = request.form.get('harvest_date', '').strip()
         if harvest_date_str:
             try:
-                listing.harvest_date = datetime.strptime(
-                    harvest_date_str, '%Y-%m-%d'
-                ).date()
+                listing.harvest_date = datetime.strptime(harvest_date_str, '%Y-%m-%d').date()
             except ValueError:
                 pass
-
+ 
+        # Handle new image upload
+        file = request.files.get('listing_image')
+        if file and file.filename:
+            filename    = secure_filename(file.filename)
+            upload_path = os.path.join(current_app.root_path, 'static', 'uploads')
+            os.makedirs(upload_path, exist_ok=True)
+            file.save(os.path.join(upload_path, filename))
+            listing.listing_image = filename
+ 
         db.session.commit()
         flash("Listing updated successfully!", "success")
-
-        # Send them back to Step 3 to review and publish
-        return redirect(url_for('seller.seller_setup', section='step3'))
-
-    # GET — render the setup page with the listing pre-filled
-    return render_template('seller/new_seller.html',
-        farm=farm,
-        listings=[listing],
-        editing_listing=listing,  # ← tells the template to pre-fill fields
-        active_section='step2',   # ← opens on Step 2
-        body_class='page-setup',
-        active_page='dashboard'
-    )
+ 
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Edit listing error: {e}")
+        flash("Something went wrong. Please try again.", "error")
+ 
+    return redirect(url_for('seller.dashboard'))

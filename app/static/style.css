@@ -303,12 +303,6 @@ nav.scrolled {
   align-items: center;
   gap: 1rem;
 }
-.hero-eyebrow::before {
-  content: '';
-  display: block;
-  width: 40px; height: 1px;
-  background: var(--crema);
-}
 
 .hero-title {
 font-family: 'Cormorant Garamond', serif;
@@ -1103,6 +1097,162 @@ footer { background: #050302; padding: 5rem 1rem 2.5rem; border-top: 1px solid r
   to { opacity: 0; transform: translateX(10px); pointer-events: none; }
 }
 
+
+/* ── Unread badge on Messages nav link ── */
+.nav-msg-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: #E06C75; color: #fff;
+  font-size: 0.55rem; font-weight: 700;
+  margin-left: 0.3rem; vertical-align: middle;
+}
+ 
+/* ── Avatar wrapper ── */
+.nav-avatar-wrap {
+  position: relative;
+  display: flex; align-items: center; gap: 0.45rem;
+}
+ 
+/* ── Circular avatar button ── */
+.nav-avatar-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--crema); border: 2px solid rgba(200,135,58,0.4);
+  overflow: hidden; cursor: pointer; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: border-color 0.25s, transform 0.2s;
+}
+.nav-avatar-btn:hover { border-color: var(--crema); transform: scale(1.06); }
+ 
+.nav-avatar-img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.nav-avatar-initials {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.95rem; font-weight: 600;
+  color: var(--espresso);
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 100%;
+}
+ 
+/* ── Name + chevron button ── */
+.nav-avatar-name-btn {
+  display: flex; align-items: center; gap: 0.25rem;
+  background: none; border: none; cursor: pointer;
+  padding: 0;
+}
+.nav-avatar-name {
+  font-family: 'Jost', sans-serif; font-size: 0.75rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(245,236,215,0.7);
+  transition: color 0.2s;
+}
+.nav-avatar-name-btn:hover .nav-avatar-name { color: var(--cream); }
+.nav-avatar-chevron {
+  font-size: 0.65rem; color: rgba(245,236,215,0.4);
+  transition: transform 0.25s;
+}
+ 
+/* ── Dropdown panel ── */
+.nav-avatar-dropdown {
+  position: absolute; top: calc(100% + 0.8rem); right: 0;
+  min-width: 220px;
+  background: var(--roast);
+  border: 1px solid rgba(200,135,58,0.15);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  opacity: 0; pointer-events: none; transform: translateY(-6px);
+  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.22,1,0.36,1);
+  z-index: 1100;
+}
+.nav-avatar-dropdown.open {
+  opacity: 1; pointer-events: all; transform: translateY(0);
+}
+ 
+/* Header — name/email/role */
+.avatar-dropdown-header { padding: 1rem 1.2rem; }
+.avatar-dropdown-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1rem; font-weight: 400; color: var(--white);
+  margin-bottom: 0.15rem;
+}
+.avatar-dropdown-email {
+  font-size: 0.7rem; color: rgba(245,236,215,0.4);
+  margin-bottom: 0.2rem; word-break: break-all;
+}
+.avatar-dropdown-role {
+  display: inline-block; font-size: 0.55rem;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  background: rgba(200,135,58,0.12); color: var(--crema);
+  padding: 0.12rem 0.5rem; margin-top: 0.2rem;
+}
+ 
+/* Divider */
+.avatar-dropdown-divider {
+  height: 1px; background: rgba(200,135,58,0.08); margin: 0;
+}
+ 
+/* Items */
+.avatar-dropdown-item {
+  display: flex; align-items: center; gap: 0.65rem;
+  padding: 0.78rem 1.2rem;
+  font-family: 'Jost', sans-serif; font-size: 0.78rem;
+  color: rgba(245,236,215,0.6); text-decoration: none;
+  background: none; border: none; width: 100%; text-align: left;
+  cursor: pointer; transition: background 0.2s, color 0.2s;
+}
+.avatar-dropdown-item:hover {
+  background: rgba(200,135,58,0.07); color: var(--cream);
+}
+.avatar-dropdown-badge {
+  margin-left: auto; width: 18px; height: 18px; border-radius: 50%;
+  background: #E06C75; color: #fff;
+  font-size: 0.58rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+ 
+/* Logout item — red tint */
+.avatar-dropdown-logout { color: rgba(224,108,117,0.6); }
+.avatar-dropdown-logout:hover {
+  background: rgba(224,108,117,0.08); color: #E06C75;
+}
+ 
+/* ── PROFILE PHOTO UPLOAD (in settings forms) ── */
+.profile-photo-upload {
+  display: flex; align-items: center; gap: 1.4rem;
+  margin-bottom: 1.2rem;
+}
+.profile-photo-preview {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--crema); overflow: hidden; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid rgba(200,135,58,0.25);
+}
+.profile-photo-preview img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.profile-photo-preview-initial {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.6rem; color: var(--espresso); font-weight: 600;
+}
+.profile-photo-upload-btn {
+  display: flex; flex-direction: column; gap: 0.3rem;
+}
+.profile-photo-label {
+  display: inline-block; padding: 0.5rem 1.2rem;
+  border: 1px solid rgba(200,135,58,0.25); color: var(--crema);
+  font-family: 'Jost', sans-serif; font-size: 0.68rem;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.2s;
+}
+.profile-photo-label:hover { background: rgba(200,135,58,0.08); border-color: var(--crema); }
+.profile-photo-hint {
+  font-size: 0.65rem; color: rgba(245,236,215,0.3);
+}
+ 
+/* Mobile avatar adjustments */
+@media (max-width: 768px) {
+  .nav-avatar-name-btn { display: none; }
+  .nav-avatar-dropdown { right: -0.5rem; min-width: 190px; }
+}
 
 
 

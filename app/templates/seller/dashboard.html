@@ -1,29 +1,26 @@
 {% extends "base.html" %}
+{% block title %}Seller Dashboard | Caffeine & Chaos{% endblock %}
 
-{% block title %}Seller Dashboard | Caffein & Chaos{% endblock %}
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='seller_dashboard.css') }}?v={{ config.VERSION }}"/>
+{% endblock %}
 
 {% block content %}
 <div class="cursor-seller" id="cursor"></div>
 <div class="cursor-seller-ring" id="cursorRing"></div>
 
-{% block extra_css %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='seller_dashboard.css') }}"/>
-{% endblock %}
-
 <div class="dash-layout">
 
-    <!-- SIDEBAR -->
+    <!-- ══ SIDEBAR ══ -->
     <aside class="dash-sidebar">
         <div class="sidebar-section-label">Overview</div>
 
         {% if is_new_seller %}
         <div class="sidebar-progress-wrap">
-        <div class="sidebar-progress-label">
-            Setup Progress <span>0%</span>
-        </div>
-        <div class="progress-bar-track">
-            <div class="progress-bar-fill" style="width:0%"></div>
-        </div>
+            <div class="sidebar-progress-label">Setup Progress <span>0%</span></div>
+            <div class="progress-bar-track">
+                <div class="progress-bar-fill" style="width:0%"></div>
+            </div>
         </div>
         {% endif %}
 
@@ -36,7 +33,7 @@
         <a href="#" class="sidebar-link" onclick="showSection('listings', event)">
             <span class="sidebar-icon">☕</span>
             <span class="sidebar-link-text">My Listings</span>
-            <span class="sidebar-badge">4</span>
+            <span class="sidebar-badge">{{ listings|length }}</span>
         </a>
         <a href="#" class="sidebar-link" onclick="showSection('new-listing', event)">
             <span class="sidebar-icon">＋</span>
@@ -48,14 +45,16 @@
         </a>
 
         <div class="sidebar-section-label">Business</div>
-        <a href="{{ url_for('main.marketplace') }}" class="sidebar-link">
-            <span class="sidebar-icon">📋</span>
+        <a href="{{ url_for('seller.marketplace') }}" class="sidebar-link">
+            <span class="sidebar-icon">🛒</span>
             <span class="sidebar-link-text">The Marketplace</span>
         </a>
         <a href="#" class="sidebar-link" onclick="showSection('orders', event)">
             <span class="sidebar-icon">📋</span>
             <span class="sidebar-link-text">Orders Received</span>
-            <span class="sidebar-badge orange">2</span>
+            {% if orders %}
+            <span class="sidebar-badge orange">{{ orders|length }}</span>
+            {% endif %}
         </a>
         <a href="#" class="sidebar-link" onclick="showSection('earnings', event)">
             <span class="sidebar-icon">💰</span>
@@ -66,7 +65,9 @@
         <a href="#" class="sidebar-link" onclick="showSection('messages', event)">
             <span class="sidebar-icon">💬</span>
             <span class="sidebar-link-text">Messages</span>
-            <span class="sidebar-badge red">3</span>
+            {% if unread_msg_count and unread_msg_count > 0 %}
+            <span class="sidebar-badge red">{{ unread_msg_count }}</span>
+            {% endif %}
         </a>
 
         <div class="sidebar-section-label">Account</div>
@@ -77,65 +78,67 @@
 
         <div class="sidebar-divider"></div>
         <button class="sidebar-logout" onclick="openLogout()">← Logout</button>
-
     </aside>
 
     <main class="dash-main">
-        
-        <!-- ── OVERVIEW ── -->
+
+        <!-- ══ OVERVIEW ══ -->
         <div class="content-section active" id="sec-overview">
             <div class="dash-header">
                 <div>
-                    <div class="dash-greeting">Good morning, {{ current_user.first_name or current_user.email }}</div>
+                    <div class="dash-greeting">Good morning, {{ current_user.first_name or current_user.email.split('@')[0] | capitalize }}</div>
                     <div class="dash-title">
-                        {% if farm %}
-                            {{ farm.farm_name }} 
-                        {% else %}
-                            New Seller
-                        {% endif %}
-                    <em>Farm</em> Dashboard</div>
+                        {% if farm %}{{ farm.farm_name }}{% else %}New Seller{% endif %}
+                        <em>Farm</em> Dashboard
+                    </div>
                 </div>
-                <div class="dash-date">Wednesday, 15 April 2026</div>
+                <div class="dash-date">{{ current_date }}</div>
             </div>
 
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-label">Total Earnings</div>
                     <div class="stat-value">KES {{ total_gross }}</div>
-                    <div class="stat-trend">Last 30 days</div>
+                    <div class="stat-trend">All time</div>
                     <div class="stat-icon">💰</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Active Listings</div>
                     <div class="stat-value">{{ listings|length }}</div>
-                    <div class="stat-sub">230 kg total stock</div>
+                    {# FIX: was item.stock_qty — use total_stock_kg from route #}
+                    <div class="stat-sub">{{ total_stock_kg|int }} kg total stock</div>
                     <div class="stat-icon">☕</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-label">Orders Received</div>
                     <div class="stat-value">{{ orders|length }}</div>
-                    <div class="stat-sub">{{ orders|selectattr('status', 'equalto', 'pending')|list|length }} awaiting action</div>
+                    <div class="stat-sub">
+                        {{ orders|selectattr('status','equalto','pending')|list|length }} awaiting action
+                    </div>
                     <div class="stat-icon">📋</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Messages</div>
-                    <div class="stat-value">0</div>
-                    <div class="stat-sub">Unread from buyers</div>
+                    <div class="stat-label">Unread Messages</div>
+                    <div class="stat-value">{{ unread_msg_count or 0 }}</div>
+                    <div class="stat-sub">From buyers</div>
                     <div class="stat-icon">💬</div>
                 </div>
             </div>
 
-            <!-- earnings + recent orders -->
+            <!-- Earnings chart + breakdown -->
             <div class="earnings-grid">
                 <div class="chart-area">
                     <div class="chart-title">Monthly Earnings (KES)</div>
                     <div class="bar-chart">
-                        {% set months = ['Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr'] %}
-                        {% for month in months %}
+                        {% for i in range(monthly_labels|length) %}
+                            {% set amount = monthly_amounts[i] if monthly_amounts else 0 %}
+                            {% set height = ((amount / max_amount) * 100)|int if max_amount > 0 else 5 %}
                             <div class="bar-wrap">
-                                {% set height = 5 if earnings == 0 else 40 %}
-                                <div class="bar" style="height:40%"></div>
-                                <div class="bar-label">{{ month }}</div>
+                                <div class="bar {% if loop.last %}current{% endif %}"
+                                     style="height:{{ [height, 5]|max }}%"
+                                     title="KES {{ '{:,.0f}'.format(amount) }}">
+                                </div>
+                                <div class="bar-label">{{ monthly_labels[i] }}</div>
                             </div>
                         {% endfor %}
                     </div>
@@ -145,19 +148,17 @@
                     {% if product_earnings %}
                         {% for name, amount in product_earnings.items() %}
                         <div class="earning-row">
-                            <span class="earning-label">{{ name }} sales</span>
+                            <span class="earning-label">{{ name }}</span>
                             <span class="earning-val">KES {{ "{:,.0f}".format(amount) }}</span>
                         </div>
                         {% endfor %}
-
                         <div class="earning-row">
                             <span class="earning-label">Platform commission (5%)</span>
-                            <span class="earning-val" style="color:#E06C75">−KES {{ "{:,.0f}".format(commission) }}</span>
+                            <span class="earning-val" style="color:#E06C75">−KES {{ commission }}</span>
                         </div>
-
-                        <div class="earning-row" style="border-top: 1px solid rgba(122,182,72,0.15); padding-top:0.8rem">
+                        <div class="earning-row" style="border-top:1px solid rgba(122,182,72,0.15);padding-top:0.8rem">
                             <span class="earning-label" style="color:var(--cream)">Net Earnings</span>
-                            <span class="earning-val" style="font-size:1.4rem">KES {{ "{:,.0f}".format(net_earnings) }}</span>
+                            <span class="earning-val" style="font-size:1.4rem">KES {{ net_earnings }}</span>
                         </div>
                     {% else %}
                         <div style="padding:2rem;text-align:center;opacity:0.5;font-size:0.95rem;">
@@ -167,39 +168,64 @@
                 </div>
             </div>
 
-            <!-- recent orders preview -->
+            <!-- Recent orders preview -->
             <div class="panel">
-                <div class="panel-head"><div class="panel-title">Recent Orders</div><button class="panel-action" onclick="showSection('orders')">View All →</button></div>
+                <div class="panel-head">
+                    <div class="panel-title">Recent Orders</div>
+                    <button class="panel-action" onclick="showSection('orders', event)">View All →</button>
+                </div>
                 <div class="panel-body">
                     {% if orders %}
                         <table class="orders-table">
-                            <thead><tr><th>Order</th><th>Buyer</th><th>Product</th><th>Qty</th><th>Total</th><th>Status</th></tr></thead>
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Buyer</th>
+                                    <th>Coffee Lot</th>
+                                    <th>Qty</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
                             <tbody>
+                                {# FIX: correct field names — buyer.first_name/email, listing.varietal, quantity_kg #}
                                 {% for order in orders[:5] %}
                                 <tr>
-                                    <td>#{{ order.id }}</td>
-                                    <td>{{ order.buyer.username }}</td>
-                                    <td>{{ order.product.name }}</td>
-                                    <td>{{ order.quantity }}kg</td>
+                                    <td>#ORD-{{ "%03d"|format(order.id) }}</td>
+                                    <td>
+                                        {% if order.buyer %}
+                                            {{ order.buyer.first_name or order.buyer.email.split('@')[0] | capitalize }}
+                                        {% else %}—{% endif %}
+                                    </td>
+                                    <td>
+                                        {% if order.listing %}
+                                            {{ order.listing.varietal or 'Coffee Lot' }}
+                                            {% if order.listing.process %}({{ order.listing.process }}){% endif %}
+                                        {% else %}—{% endif %}
+                                    </td>
+                                    <td>{{ order.quantity_kg }} kg</td>
                                     <td>KES {{ "{:,.0f}".format(order.total_amount) }}</td>
-                                    <td><span class="order-status status-{{ order.status }}">{{ order.status|capitalize }}</span></td>
+                                    <td>
+                                        <span class="order-status status-{{ order.status|lower }}">
+                                            {{ order.status|capitalize }}
+                                        </span>
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     {% else %}
-                        <div class="zero-state-msg" style="text-align:center; padding: 3rem; color: var(--tan);">
-                            <div style="font-size: 2rem; margin-bottom: 1rem;">📦</div>
-                            <p>No orders received yet. Once a buyer makes a purchase, it will appear here.</p>
+                        <div style="text-align:center;padding:3rem;color:rgba(245,236,215,0.4);">
+                            <div style="font-size:2rem;margin-bottom:1rem;">📦</div>
+                            <p>No orders yet. Once a buyer places an order it will appear here.</p>
                         </div>
                     {% endif %}
                 </div>
             </div>
-
         </div>
 
 
-        <!-- ── MY LISTINGS ── -->
+        <!-- ══ MY LISTINGS ══ -->
         <div class="content-section" id="sec-listings">
             <div class="dash-header">
                 <div>
@@ -218,65 +244,140 @@
                     {% for item in listings %}
                         <div class="listing-card">
                             <div class="listing-card-img">
-                                <img src="{{ url_for('static', filename='uploads/' + (item.listing_image if item.listing_image else 'default_coffee.jpg')) }}" style="width:100%; height:100%; object-fit:cover;">                            </div>
+                                {% if item.listing_image %}
+                                    <img src="{{ url_for('static', filename='uploads/' + item.listing_image) }}"
+                                         style="width:100%;height:100%;object-fit:cover;"
+                                         onerror="this.style.display='none'">
+                                {% else %}
+                                    <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:var(--bark);">☕</div>
+                                {% endif %}
+                            </div>
                             <div class="listing-varietal">{{ item.varietal }} • {{ item.process }}</div>
-                            <div class="listing-name">{{ item.product.name }}</div>
-                            <div class="listing-details"><span class="listing-pill">{{ item.roast_level }}</span><span class="listing-pill">{{ item.harvest_date.strftime('%b %Y') if item.harvest_date else 'N/A' }}</span></div>
-                            <div class="listing-footer"><div><div class="listing-price">KES {{ "{:,.0f}".format(item.price_per_kg | default(0)) }}/kg</div><div class="listing-stock">{{ item.stock_qty }} kg remaining</div></div><span class="listing-status status-active">Active</span></div>
-                            <div class="listing-actions"><button class="listing-btn">Edit</button><button class="listing-btn primary">View Orders</button></div>
+                            <div class="listing-name">{{ item.product.name if item.product else 'Coffee Lot' }}</div>
+                            <div class="listing-details">
+                                <span class="listing-pill">{{ item.roast_level }}</span>
+                                <span class="listing-pill">{{ item.harvest_date.strftime('%b %Y') if item.harvest_date else 'N/A' }}</span>
+                            </div>
+                            <div class="listing-footer">
+                                <div>
+                                    <div class="listing-price">KES {{ "{:,.0f}".format(item.price_per_kg or 0) }}/kg</div>
+                                    {# FIX: was item.stock_qty which doesn't exist — use quantity_kg #}
+                                    <div class="listing-stock">{{ item.quantity_kg or 0 }} kg remaining</div>
+                                </div>
+                                <span class="listing-status status-{{ item.status|lower }}">
+                                    {{ item.status|capitalize }}
+                                </span>
+                            </div>
+                            <div class="listing-actions">
+                                {# FIX: Edit button — pre-fills modal with listing data #}
+                                {% set harvest_str = item.harvest_date.strftime('%Y-%m-%d') if item.harvest_date else '' %}
+                                {% set item_name = (item.product.name if item.product else '') | replace("'", "") %}
+                                {% set item_desc = (item.product.description if item.product else '') | replace("'", "") | replace('\n', ' ') %}
+                                {% set item_notes = (item.tasting_notes or '') | replace("'", "") %}
+
+                                <button class="listing-btn" onclick="openEditModal(
+                                    '{{ item.id }}',
+                                    '{{ item_name }}',
+                                    '{{ item.price_per_kg or 0 }}',
+                                    '{{ item.quantity_kg or 0 }}',
+                                    '{{ item.minimum_order_kg or 1 }}',
+                                    '{{ item_desc }}',
+                                    '{{ item.varietal }}',
+                                    '{{ item.process }}',
+                                    '{{ item.roast_level}}',
+                                    '{{ harvest_str }}',
+                                    '{{ item_notes }}'
+                                )">Edit</button>
+
+                                {# FIX: View Orders — filters orders section by this listing #}
+                                <button class="listing-btn primary"
+                                    onclick="showSection('orders', event); filterOrdersByListing('{{ item.id }}')">
+                                    View Orders
+                                </button>
+                            </div>
                         </div>
                     {% endfor %}
                 {% else %}
-                    <div class="zero-state-msg" style="grid-column: 1/-1; text-align:center; padding: 4rem; border: 1px dashed rgba(122,182,72,0.3);">
-                        <p>You haven't listed any coffee yet.</p>
-                        <button class="form-submit" onclick="showSection('new-listing')" style="width:auto; padding: 0.8rem 2rem; margin-top: 1rem;">Create Your First Listing</button>
+                    <div style="grid-column:1/-1;text-align:center;padding:4rem;border:1px dashed rgba(122,182,72,0.3);">
+                        <div style="font-size:2.5rem;margin-bottom:1rem;">☕</div>
+                        <p style="color:rgba(245,236,215,0.4);margin-bottom:1.5rem;">You haven't listed any coffee yet.</p>
+                        <button class="form-submit" onclick="showSection('new-listing', event)"
+                            style="width:auto;padding:0.8rem 2rem;">
+                            Create Your First Listing
+                        </button>
                     </div>
                 {% endif %}
-
             </div>
-
         </div>
 
-         <!-- ── NEW LISTING ── -->
+
+        <!-- ══ NEW LISTING ══ -->
         <div class="content-section" id="sec-new-listing">
-            <div class="dash-header"><div><div class="dash-greeting">My Farm</div><div class="dash-title">Add New <em>Listing</em></div></div></div>
+            <div class="dash-header">
+                <div>
+                    <div class="dash-greeting">My Farm</div>
+                    <div class="dash-title">Add New <em>Listing</em></div>
+                </div>
+            </div>
             <div class="new-listing-form">
-                <form action="{{ url_for('seller.add_next_listing') }}" method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-            
+                <form action="{{ url_for('seller.add_next_listing') }}" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <div class="form-panel">
                         <div class="form-panel-title">Product Details</div>
-                        <div class="form-field"><label>Product Name</label><input name="name" type="text" placeholder="e.g. Arabica Batian — 500g"/></div>
-                        <div class="form-field"><label>Price per kg (KES)</label><input name="price" type="number" placeholder="e.g. 2800"/></div>
-                        <div class="form-field"><label>Total stock available (kg)</label><input name="stock" type="number" placeholder="e.g. 50"/></div>
+                        <div class="form-field"><label>Product Name</label><input name="name" type="text" placeholder="e.g. Arabica Batian — 500g" required/></div>
+                        <div class="form-field"><label>Price per kg (KES)</label><input name="price" type="number" placeholder="e.g. 2800" required/></div>
+                        <div class="form-field"><label>Total stock available (kg)</label><input name="stock" type="number" placeholder="e.g. 50" required/></div>
                         <div class="form-field"><label>Minimum order (kg)</label><input name="min_order" type="number" placeholder="e.g. 1"/></div>
                         <div class="form-field"><label>Description</label><textarea name="description" placeholder="Describe your coffee..."></textarea></div>
                         <div class="form-field">
                             <label>Product Listing Image</label>
-                            <input name="listing_image" type="file" accept="image/*" style="border: 1px solid #2e2a24; padding: 0.5rem; background: #1c1917; color: #f5ecd7; font-size: 0.85rem; width: 100%;"/>
+                            <input name="listing_image" type="file" accept="image/*"
+                                style="border:1px solid #2e2a24;padding:0.5rem;background:#1c1917;color:#f5ecd7;font-size:0.85rem;width:100%;"/>
                         </div>
                     </div>
                     <div class="form-panel">
                         <div class="form-panel-title">Coffee Specifications</div>
-                        <div class="form-field"><label>Varietal</label><select name="varietal"><option>Batian</option><option>SL28</option><option>SL34</option><option>Ruiru 11</option><option>K7</option></select></div>
-                        <div class="form-field"><label>Process</label><select name="process"><option>Washed</option><option>Natural</option><option>Honey</option></select></div>
-                        <div class="form-field"><label>Roast Level</label><select name="roast"><option>Light</option><option>Medium</option><option>Dark</option></select></div>
+                        <div class="form-field"><label>Varietal</label>
+                            <select name="varietal">
+                                <option>Batian</option><option>SL28</option><option>SL34</option>
+                                <option>Ruiru 11</option><option>K7</option>
+                            </select>
+                        </div>
+                        <div class="form-field"><label>Process</label>
+                            <select name="process"><option>Washed</option><option>Natural</option><option>Honey</option></select>
+                        </div>
+                        <div class="form-field"><label>Roast Level</label>
+                            <select name="roast"><option>Light</option><option>Medium</option><option>Dark</option></select>
+                        </div>
                         <div class="form-field"><label>Harvest Date</label><input type="date" name="harvest_date"/></div>
-                        <div class="form-field"><label>Tasting Notes (comma separated)</label><input name="notes" type="text" placeholder="e.g. Citrus, Molasses, Berry"/></div>
+                        <div class="form-field"><label>Tasting Notes (comma separated)</label>
+                            <input name="notes" type="text" placeholder="e.g. Citrus, Molasses, Berry"/>
+                        </div>
                         <button class="form-submit" type="submit">Publish Listing →</button>
                     </div>
-                </form> 
+                </form>
             </div>
-
         </div>
 
 
-         <!-- ── FARM PROFILE ── -->
+        <!-- ══ FARM PROFILE ══ -->
         <div class="content-section" id="sec-farm-profile">
             <div class="dash-header">
                 <div>
                     <div class="dash-greeting">My Farm</div>
                     <div class="dash-title">Farm <em>Profile</em></div>
+                </div>
+            </div>
+            {% if farm %}
+            <div class="farm-profile-grid">
+                <div class="farm-status-toggle">
+                    <div class="status-label">Marketplace Status</div>
+                    <form action="{{ url_for('seller.toggle_live') }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="status-pill {{ 'active' if farm and farm.is_live else 'offline' }}">
+                            {{ '● LIVE ON MARKET' if farm and farm.is_live else '○ OFFLINE' }}
+                        </button>
+                    </form>
                 </div>
             </div>
             {% if farm %}
@@ -293,116 +394,201 @@
                 <div class="farm-profile-card">
                     <div class="farm-img-area">
                         {% if farm.farm_image %}
-                            <img src="{{ url_for('static', filename='uploads/' + farm.farm_image) }}" style="width:100%; height:100%; object-fit:cover;">
+                            <img src="{{ url_for('static', filename='uploads/' + farm.farm_image) }}"
+                                 style="width:100%;height:100%;object-fit:cover;">
                         {% else %}
-                            🌿 
+                            <div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:3rem;">🌿</div>
                         {% endif %}
                     </div>
                     <div class="farm-verified">
-                        {% if farm.is_verified %}
-                            ✓ Verified Farm
-                        {% else %}
-                            ⌛ Verification Pending
-                        {% endif %}
+                        {{ '✓ Verified Farm' if farm.is_verified else '⌛ Verification Pending' }}
                     </div>
-                    <div class="farm-name">{{ farm.farm_name | default('Unnamed Farm') }}</div>
-                    <div class="farm-location">📍 {{ farm.location }}, {{ farm.county }} County</div>
+                    <div class="farm-name">{{ farm.farm_name or 'Unnamed Farm' }}</div>
+                    <div class="farm-location">📍 {{ farm.location or '' }}, {{ farm.county or '' }} County</div>
                     <div class="farm-specs">
-                        <div><div class="farm-spec-label">Farm Size</div><div class="farm-spec-value">{{ farm.farm_size_acres | default('0') }} acres</div></div>
-                        <div><div class="farm-spec-label">Altitude</div><div class="farm-spec-value">{{ farm.altitude_masl | default('0') }} masl</div></div>
-                        <div><div class="farm-spec-label">Certifications</div><div class="farm-spec-value">{{ farm.certifications | default('None') }}</div></div>
-                        <div><div class="farm-spec-label">Member Since</div><div class="farm-spec-value">{{ current_user.created_at.year if current_user.created_at else '2026' }}</div></div>
+                        <div><div class="farm-spec-label">Farm Size</div><div class="farm-spec-value">{{ farm.farm_size_acres or '—' }} acres</div></div>
+                        <div><div class="farm-spec-label">Altitude</div><div class="farm-spec-value">{{ farm.altitude_masl or '—' }} masl</div></div>
+                        <div><div class="farm-spec-label">Certifications</div><div class="farm-spec-value">{{ farm.certifications or 'None' }}</div></div>
+                        <div><div class="farm-spec-label">Member Since</div><div class="farm-spec-value">2026</div></div>
                     </div>
                 </div>
                 <div class="farm-edit-form">
                     <div class="farm-edit-title">Edit Farm Details</div>
-                    <div class="form-field"><label>Farm Name</label><input type="text" value="{{ farm.farm_name | default('Unnamed Farm') }}"/></div>
-                    <div class="form-field"><label>Location</label><input type="text" value="{{ farm.location }}"/></div>
-                    <div class="form-field"><label>County</label><input type="text" value="{{ farm.county }} County"/></div>
-                    <div class="form-field"><label>Farm Size (acres)</label><input type="number" value="{{ farm.farm_size_acres | default('0') }}"/></div>
-                    <div class="form-field"><label>Altitude (masl)</label><input type="number" value="{{ farm.altitude_masl | default('0') }}"/></div>
-                    <div class="form-field"><label>Certifications</label><input type="text" value="{{ farm.certifications | default('None') }}"/></div>
-                    <div class="form-field"><label>Bio</label><textarea>{{ farm.bio if farm else '' }}</textarea></div>
-                    <button class="form-submit">Update Profile →</button>
+                    <form action="{{ url_for('seller.seller_setup') }}" method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <div class="form-field"><label>Farm Name</label><input type="text" name="farm_name" value="{{ farm.farm_name or '' }}"/></div>
+                        <div class="form-field"><label>Location</label><input type="text" name="location" value="{{ farm.location or '' }}"/></div>
+                        <div class="form-field"><label>County</label><input type="text" name="county" value="{{ farm.county or '' }}"/></div>
+                        <div class="form-field"><label>Farm Size (acres)</label><input type="number" name="farm_size" value="{{ farm.farm_size_acres or '' }}"/></div>
+                        <div class="form-field"><label>Altitude (masl)</label><input type="number" name="altitude" value="{{ farm.altitude_masl or '' }}"/></div>
+                        <div class="form-field"><label>Certifications</label><input type="text" name="certifications" value="{{ farm.certifications or '' }}"/></div>
+                        <div class="form-field"><label>Bio</label><textarea name="bio">{{ farm.bio or '' }}</textarea></div>
+                        <button class="form-submit" type="submit">Update Profile →</button>
+                    </form>
                 </div>
             </div>
-
+            {% else %}
+                <div style="text-align:center;padding:3rem;color:rgba(245,236,215,0.4);">
+                    <p>No farm profile yet. <a href="{{ url_for('seller.seller_setup') }}" style="color:var(--green)">Set up your farm →</a></p>
+                </div>
+            {% endif %}
         </div>
 
 
-        <!-- ── ORDERS RECEIVED ── -->
+        <!-- ══ ORDERS RECEIVED ══ -->
         <div class="content-section" id="sec-orders">
-            <div class="dash-header"><div><div class="dash-greeting">Business</div><div class="dash-title">Orders <em>Received</em></div></div></div>
+            <div class="dash-header">
+                <div>
+                    <div class="dash-greeting">Business</div>
+                    <div class="dash-title">Orders <em>Received</em></div>
+                </div>
+                {% if orders %}
+                <div style="font-size:0.72rem;color:rgba(245,236,215,0.35);">
+                    Showing <span id="ordersShownCount">{{ orders|length }}</span> orders
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Filter bar — shown when "View Orders" is clicked from a listing card -->
+            <div id="ordersFilterBar" style="display:none;margin-bottom:1rem;padding:0.8rem 1.2rem;background:rgba(122,182,72,0.08);border:1px solid rgba(122,182,72,0.2);display:none;align-items:center;gap:1rem;">
+                <span style="font-size:0.72rem;color:var(--green);">🔍 Filtered by listing</span>
+                <button onclick="clearOrdersFilter()" style="background:none;border:none;color:rgba(245,236,215,0.4);font-size:0.7rem;cursor:pointer;letter-spacing:0.1em;text-transform:uppercase;">
+                    ✕ Show all orders
+                </button>
+            </div>
+
             <div class="panel">
                 <div class="panel-head"><div class="panel-title">All Orders</div></div>
                 <div class="panel-body">
-                    {% if transactions %}
-                        <table class="orders-table">
-                            <thead><tr><th>Order ID</th><th>Buyer</th><th>Product</th><th>Qty</th><th>Total</th><th>M-Pesa Ref</th><th>Status</th></tr></thead>
+                    {% if orders %}
+                        <table class="orders-table" id="ordersTable">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Buyer</th>
+                                    <th>Coffee Lot</th>
+                                    <th>Qty</th>
+                                    <th>Total (KES)</th>
+                                    <th>M-Pesa Ref</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
                             <tbody>
-                                {% for order in transactions %}
-                                    <tr>
-                                        <td>#ORD-{{ "%03d" | format(order.id) }}</td><td>{{ order.buyer.name }}</td><td>{{ order.listing.name }}</td><td>{{ order.quantity_kg }}kg</td><td>KES {{ "{:,}".format(order.total_amount) }}</td>
-                                        <td>{{ order.mpesa_reference if order.mpesa_reference else '—' }}</td><td><span class="order-status status-{{ order.status | lower }}">{{ order.status | capitalize }}</span></td>
-                                    </tr>
-                                    <tr><td>#ORD-087</td><td>Brian O.</td><td>Ruiru 11</td><td>3kg</td><td>KES 8,400</td><td>—</td><td><span class="order-status status-pending">Pending</span></td></tr>
-                                    <!-- <tr><td>#ORD-085</td><td>James K.</td><td>SL28 Natural</td><td>2kg</td><td>KES 7,600</td><td>QA78HJ2K</td><td><span class="order-status status-confirmed">Confirmed</span></td></tr>
-                                    <tr><td>#ORD-081</td><td>Amina W.</td><td>Batian 1kg</td><td>10kg</td><td>KES 28,000</td><td>PL23MX9R</td><td><span class="order-status status-completed">Completed</span></td></tr>
-                                    <tr><td>#ORD-076</td><td>Peter M.</td><td>Batian 250g</td><td>4kg</td><td>KES 11,200</td><td>NB56QW4T</td><td><span class="order-status status-completed">Completed</span></td></tr> -->
+                                {# FIX: correct field names throughout #}
+                                {% for order in orders %}
+                                <tr data-listing-id="{{ order.listing_id }}">
+                                    <td>#ORD-{{ "%03d"|format(order.id) }}</td>
+                                    <td>
+                                        {% if order.buyer %}
+                                            {{ order.buyer.first_name or order.buyer.email.split('@')[0] | capitalize }}
+                                        {% else %}—{% endif %}
+                                    </td>
+                                    <td>
+                                        {% if order.listing %}
+                                            {{ order.listing.varietal or 'Coffee Lot' }}
+                                            {% if order.listing.process %} · {{ order.listing.process }}{% endif %}
+                                        {% else %}—{% endif %}
+                                    </td>
+                                    <td>{{ order.quantity_kg }} kg</td>
+                                    <td>{{ "{:,.0f}".format(order.total_amount) }}</td>
+                                    <td style="font-family:monospace;font-size:0.78rem;">
+                                        {{ order.mpesa_reference or '—' }}
+                                    </td>
+                                    <td>
+                                        <span class="order-status status-{{ order.status|lower }}">
+                                            {{ order.status|capitalize }}
+                                        </span>
+                                    </td>
+                                </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     {% else %}
-                        <div style="text-align: center; padding: 3rem; color: rgba(245, 236, 215, 0.4);">
-                            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📦</div>
+                        <div style="text-align:center;padding:3rem;color:rgba(245,236,215,0.4);">
+                            <div style="font-size:2rem;margin-bottom:0.5rem;">📦</div>
                             <p>No orders received yet. Your listings are live on the marketplace!</p>
                         </div>
                     {% endif %}
                 </div>
             </div>
-
         </div>
 
 
-        <!-- ── EARNINGS ── -->
+        <!-- ══ EARNINGS ══ -->
         <div class="content-section" id="sec-earnings">
-            <div class="dash-header"><div><div class="dash-greeting">Business</div><div class="dash-title">My <em>Earnings</em></div></div></div>
+            <div class="dash-header">
+                <div>
+                    <div class="dash-greeting">Business</div>
+                    <div class="dash-title">My <em>Earnings</em></div>
+                </div>
+            </div>
             <div class="stats-grid" style="margin-bottom:1.5px">
-                <div class="stat-card"><div class="stat-label">This Month</div><div class="stat-value">KES {{ this_month_earnings }}</div><div class="stat-trend">↑ 18% vs last month</div></div>
-                <div class="stat-card"><div class="stat-label">Total All Time</div><div class="stat-value">KES {{ total_gross }}</div><div class="stat-sub">Since joining</div></div>
-                <div class="stat-card"><div class="stat-label">Pending Payout</div><div class="stat-value">KES {{ pending_payout }}</div><div class="stat-sub">Orders pending payment</div></div>
-                <div class="stat-card"><div class="stat-label">Platform Fee (5%)</div><div class="stat-value">KES {{ commission }}</div><div class="stat-sub">Commission to C&C</div></div>
+                <div class="stat-card">
+                    <div class="stat-label">This Month</div>
+                    <div class="stat-value">KES {{ this_month_earnings }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total All Time</div>
+                    <div class="stat-value">KES {{ total_gross }}</div>
+                    <div class="stat-sub">Since joining</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Pending Payout</div>
+                    <div class="stat-value">KES {{ pending_payout }}</div>
+                    <div class="stat-sub">Orders pending payment</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Platform Fee (5%)</div>
+                    <div class="stat-value">KES {{ commission }}</div>
+                    <div class="stat-sub">Commission to C&C</div>
+                </div>
             </div>
             <div class="earnings-grid">
                 <div class="chart-area">
                     <div class="chart-title">Monthly Earnings (KES)</div>
                     <div class="bar-chart">
-                        <div class="bar-wrap"><div class="bar" style="height:40%"></div><div class="bar-label">Nov</div></div>
-                        <div class="bar-wrap"><div class="bar" style="height:55%"></div><div class="bar-label">Dec</div></div>
-                        <div class="bar-wrap"><div class="bar" style="height:35%"></div><div class="bar-label">Jan</div></div>
-                        <div class="bar-wrap"><div class="bar" style="height:65%"></div><div class="bar-label">Feb</div></div>
-                        <div class="bar-wrap"><div class="bar" style="height:50%"></div><div class="bar-label">Mar</div></div>
-                        <div class="bar-wrap"><div class="bar current" style="height:80%"></div><div class="bar-label">Apr</div></div>
+                        {% for i in range(monthly_labels|length) %}
+                            {% set amount = monthly_amounts[i] if monthly_amounts else 0 %}
+                            {% set height = ((amount / max_amount) * 100)|int if max_amount > 0 else 5 %}
+                            <div class="bar-wrap">
+                                <div class="bar {% if loop.last %}current{% endif %}"
+                                     style="height:{{ [height, 5]|max }}%"
+                                     title="KES {{ '{:,.0f}'.format(amount) }}">
+                                </div>
+                                <div class="bar-label">{{ monthly_labels[i] }}</div>
+                            </div>
+                        {% endfor %}
                     </div>
                 </div>
                 <div class="earnings-breakdown">
                     <div class="chart-title">By Product</div>
                     {% for product_name, amount in product_earnings.items() %}
-                    <div class="earning-row"><span class="earning-label">{{ product_name }}</span><span class="earning-val">KES {{ "{:,.0f}".format(amount) }}</span></div>
-                    {% endfor %}
-                    <div class="earning-row"><span class="earning-label">Commission (5%)</span><span class="earning-val" style="color:#E06C75">−KES {{ commission }}</span></div>
-                    <div class="earning-row"><span class="earning-label" style="color:var(--cream)">Net Total</span><span class="earning-val" style="font-size:1.4rem">KES {{ net_earnings }}</span></div>
-                    
+                    <div class="earning-row">
+                        <span class="earning-label">{{ product_name }}</span>
+                        <span class="earning-val">KES {{ "{:,.0f}".format(amount) }}</span>
                     </div>
-
+                    {% endfor %}
+                    <div class="earning-row">
+                        <span class="earning-label">Commission (5%)</span>
+                        <span class="earning-val" style="color:#E06C75">−KES {{ commission }}</span>
+                    </div>
+                    <div class="earning-row" style="border-top:1px solid rgba(122,182,72,0.15);padding-top:0.8rem">
+                        <span class="earning-label" style="color:var(--cream)">Net Total</span>
+                        <span class="earning-val" style="font-size:1.4rem">KES {{ net_earnings }}</span>
+                    </div>
+                </div>
             </div>
-
         </div>
 
 
-        <!-- ── MESSAGES ── -->
+        <!-- ══ MESSAGES ══ -->
         <div class="content-section" id="sec-messages">
-            <div class="dash-header"><div><div class="dash-greeting">Communication</div><div class="dash-title">My <em>Messages</em></div></div></div>
+            <div class="dash-header">
+                <div>
+                    <div class="dash-greeting">Communication</div>
+                    <div class="dash-title">My <em>Messages</em></div>
+                </div>
+            </div>
             <div class="panel">
                 <div class="panel-body" style="padding:3rem;text-align:center;">
                     <div style="font-size:2rem;margin-bottom:1rem;">💬</div>
@@ -412,23 +598,23 @@
                     <div style="font-size:1rem;color:rgba(245,236,215,0.4);margin-bottom:1.5rem;line-height:1.7;">
                         View and reply to all your conversations in one place.
                     </div>
+                    <a href="{{ url_for('messaging.inbox') }}"
+                       style="display:inline-block;padding:0.8rem 2rem;background:var(--crema);color:var(--espresso);font-family:'Jost',sans-serif;font-size:0.72rem;letter-spacing:0.16em;text-transform:uppercase;font-weight:500;text-decoration:none;">
+                        Open Messages →
+                    </a>
                 </div>
             </div>
         </div>
 
 
-        <!-- ── SETTINGS ── -->
+        <!-- ══ SETTINGS ══ -->
         <div class="content-section" id="sec-settings">
-            <!-- {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, msg in messages %}
-                        <div class="alert alert-{{ category }}" style="padding: 12px; margin-bottom: 20px; border-radius: 4px; border: 1px solid #a3be8c; background: #1c1917; color: #a3be8c;">
-                            ● {{ msg }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %} -->
-            <div class="dash-header"><div><div class="dash-greeting">Account</div><div class="dash-title">Account <em>Settings</em></div></div></div>
+            <div class="dash-header">
+                <div>
+                    <div class="dash-greeting">Account</div>
+                    <div class="dash-title">Account <em>Settings</em></div>
+                </div>
+            </div>
             <div class="settings-grid">
                 <form action="{{ url_for('seller.update_profile') }}" method="POST" enctype="multipart/form-data" class="settings-panel">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
@@ -466,96 +652,138 @@
                 <form action="{{ url_for('seller.update_profile') }}" method="POST" class="settings-panel" enctype="multipart/form-data">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="settings-panel-title">Personal Information</div>
-                    <div class="settings-field">
-                        <label>First Name</label>
-                        <input type="text" id="first_name" name="first_name" value="{{ current_user.first_name or '' }}"/>                    </div>
-                    <div class="settings-field">
-                        <label>Last Name</label>
-                        <input type="text" id="last_name" name="last_name" value="{{ current_user.last_name or '' }}"/>
-                    </div>
-                    <div class="settings-field">
-                        <label>Email</label>
-                        <input type="email" id="email" name="email" value="{{ current_user.email }}"/>
-                    </div>
-                    <div class="settings-field">
-                        <label>Phone (M-Pesa)</label>
-                        <input type="tel" id="phone" name="phone" value="{{ current_user.phone or '' }}"/>
-                    </div>
-                    <button class="settings-save">Save Changes</button>
+                    <div class="settings-field"><label>First Name</label><input type="text" name="first_name" value="{{ current_user.first_name or '' }}"/></div>
+                    <div class="settings-field"><label>Last Name</label><input type="text" name="last_name" value="{{ current_user.last_name or '' }}"/></div>
+                    <div class="settings-field"><label>Email</label><input type="email" name="email" value="{{ current_user.email }}"/></div>
+                    <div class="settings-field"><label>Phone (M-Pesa)</label><input type="tel" name="phone" value="{{ current_user.phone or '' }}"/></div>
+                    <button class="settings-save" type="submit">Save Changes</button>
                 </form>
 
-                <form action="{{ url_for('seller.update_payout') }}" method="POST" class="settings-panel" id="payoutForm" onsubmit="return confirmPayoutUpdate(event)">
+                <form action="{{ url_for('seller.update_payout') }}" method="POST" class="settings-panel">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="settings-panel-title">Payout Settings</div>
-                    
                     <div class="settings-field">
-                        <label for="payout_phone">M-Pesa Number for Payouts</label>
-                        <input type="tel" id="payout_phone" name="payout_phone" value="{{ current_user.payout_phone or current_user.phone or '' }}"/>
+                        <label>M-Pesa Number for Payouts</label>
+                        <input type="tel" name="payout_phone" value="{{ current_user.phone or '' }}"/>
                     </div>
                     <div class="settings-field">
-                        <label for="payout_frequency">Payout Frequency</label>
-                        <select id="payout_frequency" name="payout_frequency">
-                            <option value="weekly" {% if current_user.payout_frequency == 'weekly' %}selected{% endif %}>Weekly</option>
-                            <option value="monthly" {% if current_user.payout_frequency == 'monthly' %}selected{% endif %}>Monthly</option>
-                            <option value="on_request" {% if current_user.payout_frequency == 'on_request' or not current_user.payout_frequency %}selected{% endif %}>On request</option>
+                        <label>Payout Frequency</label>
+                        <select name="payout_frequency">
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="on_request" selected>On Request</option>
                         </select>
                     </div>
                     <button type="submit" class="settings-save">Save Payout Settings</button>
                 </form>
 
-                <form action="{{ url_for('seller.update_password') }}" method="POST" class="settings-panel" id="passwordForm" onsubmit="return confirmPasswordUpdate(event)">
+                <form action="{{ url_for('seller.update_password') }}" method="POST" class="settings-panel">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="settings-panel-title">Change Password</div>
-                    
-                    <div class="settings-field">
-                        <label for="current_password">Current Password</label>
-                        <input type="password" id="current_password" name="current_password" placeholder="••••••••" required/>
-                    </div>
-                    <div class="settings-field">
-                        <label for="new_password">New Password</label>
-                        <input type="password" id="new_password" name="new_password" placeholder="Min. 8 characters" required/>
-                    </div>
-                    <div class="settings-field">
-                        <label for="confirm_password">Confirm New Password</label>
-                        <input type="password" id="confirm_password" name="confirm_password" placeholder="••••••••" required/>
-                    </div>
+                    <div class="settings-field"><label>Current Password</label><input type="password" name="current_password" placeholder="••••••••" required/></div>
+                    <div class="settings-field"><label>New Password</label><input type="password" name="new_password" placeholder="Min. 8 characters" required/></div>
+                    <div class="settings-field"><label>Confirm New Password</label><input type="password" name="confirm_password" placeholder="••••••••" required/></div>
                     <button type="submit" class="settings-save">Update Password</button>
                 </form>
 
-                <form action="{{ url_for('seller.update_notifications') }}" method="POST" class="settings-panel" id="notificationsForm" onsubmit="return confirmNotificationUpdate(event)">
+                <form action="{{ url_for('seller.update_notifications') }}" method="POST" class="settings-panel">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="settings-panel-title">Notifications</div>
-                    
                     <div class="settings-field">
-                        <label for="order_alerts">New Order Alerts</label>
-                        <select id="order_alerts" name="order_alerts">
-                            <option value="all" {% if current_user.order_alerts == 'all' or not current_user.order_alerts %}selected{% endif %}>SMS + Email</option>
-                            <option value="sms" {% if current_user.order_alerts == 'sms' %}selected{% endif %}>SMS only</option>
-                            <option value="email" {% if current_user.order_alerts == 'email' %}selected{% endif %}>Email only</option>
+                        <label>New Order Alerts</label>
+                        <select name="order_alerts">
+                            <option value="all" selected>SMS + Email</option>
+                            <option value="sms">SMS only</option>
+                            <option value="email">Email only</option>
                         </select>
                     </div>
                     <div class="settings-field">
-                        <label for="payment_alerts">Payment Received</label>
-                        <select id="payment_alerts" name="payment_alerts">
-                            <option value="all" {% if current_user.payment_alerts == 'all' or not current_user.payment_alerts %}selected{% endif %}>SMS + Email</option>
-                            <option value="sms" {% if current_user.payment_alerts == 'sms' %}selected{% endif %}>SMS only</option>
+                        <label>Payment Received</label>
+                        <select name="payment_alerts">
+                            <option value="all" selected>SMS + Email</option>
+                            <option value="sms">SMS only</option>
                         </select>
                     </div>
                     <div class="settings-field">
-                        <label for="message_alerts">New Messages</label>
-                        <select id="message_alerts" name="message_alerts">
-                            <option value="on" {% if current_user.message_alerts == 'on' or current_user.message_alerts is not defined %}selected{% endif %}>On</option>
-                            <option value="off" {% if current_user.message_alerts == 'off' %}selected{% endif %}>Off</option>
+                        <label>New Messages</label>
+                        <select name="message_alerts">
+                            <option value="on" selected>On</option>
+                            <option value="off">Off</option>
                         </select>
                     </div>
                     <button type="submit" class="settings-save">Save Preferences</button>
                 </form>
             </div>
+        </div>
 
+
+        <!-- ══ EDIT LISTING MODAL ══ -->
+        <div class="edit-modal-overlay" id="editModalOverlay" onclick="closeEditModal(event)">
+            <div class="edit-modal-box">
+                <div class="edit-modal-head">
+                    <div>
+                        <div class="edit-modal-eyebrow">My Farm</div>
+                        <div class="edit-modal-title">Edit <em>Listing</em></div>
+                    </div>
+                    <button class="edit-modal-close" onclick="closeEditModalBtn()">✕</button>
+                </div>
+                <form id="editListingForm" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <div class="edit-modal-body">
+                        <div class="edit-modal-col">
+                            <div class="edit-modal-section-title">Product Details</div>
+                            <div class="edit-field"><label>Product Name</label><input type="text" name="name" id="editName" required/></div>
+                            <div class="edit-field"><label>Price per kg (KES)</label><input type="number" name="price" id="editPrice" min="0" step="0.01" required/></div>
+                            <div class="edit-field"><label>Total Stock (kg)</label><input type="number" name="stock" id="editStock" min="0" step="0.1" required/></div>
+                            <div class="edit-field"><label>Minimum Order (kg)</label><input type="number" name="min_order" id="editMinOrder" min="0" step="0.1"/></div>
+                            <div class="edit-field"><label>Description</label><textarea name="description" id="editDescription" rows="3"></textarea></div>
+                            <div class="edit-field">
+                                <label>Replace Image <span style="opacity:0.4;font-size:0.7rem;">(optional)</span></label>
+                                <input type="file" name="listing_image" id="editImage" accept="image/*"/>
+                            </div>
+                        </div>
+                        <div class="edit-modal-col">
+                            <div class="edit-modal-section-title">Coffee Specifications</div>
+                            <div class="edit-field"><label>Varietal</label>
+                                <select name="varietal" id="editVarietal">
+                                    <option value="Batian">Batian</option>
+                                    <option value="SL28">SL28</option>
+                                    <option value="SL34">SL34</option>
+                                    <option value="Ruiru 11">Ruiru 11</option>
+                                    <option value="K7">K7</option>
+                                </select>
+                            </div>
+                            <div class="edit-field"><label>Process</label>
+                                <select name="process" id="editProcess">
+                                    <option value="Washed">Washed</option>
+                                    <option value="Natural">Natural</option>
+                                    <option value="Honey">Honey</option>
+                                </select>
+                            </div>
+                            <div class="edit-field"><label>Roast Level</label>
+                                <select name="roast" id="editRoast">
+                                    <option value="Light">Light</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="Dark">Dark</option>
+                                </select>
+                            </div>
+                            <div class="edit-field"><label>Harvest Date</label>
+                                <input type="date" name="harvest_date" id="editHarvestDate"/>
+                            </div>
+                            <div class="edit-field"><label>Tasting Notes</label>
+                                <input type="text" name="notes" id="editNotes" placeholder="e.g. Citrus, Molasses, Berry"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="edit-modal-footer">
+                        <button type="button" class="edit-modal-cancel" onclick="closeEditModalBtn()">Cancel</button>
+                        <button type="submit" class="edit-modal-save">Save Changes →</button>
+                    </div>
+                </form>
+            </div>
         </div>
 
     </main>
-
 </div>
 
 {% endblock %}

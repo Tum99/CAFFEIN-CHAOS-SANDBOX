@@ -210,7 +210,7 @@
 </div> -->
 
 <!-- ══ MAIN LAYOUT ══ -->
-<div class="page-wrap">
+<div class="page-wrap-mkt">
   <!-- ══ FILTER SIDEBAR ══ -->
   <aside class="filter-sidebar">
     <div class="filter-search">
@@ -218,7 +218,7 @@
       <input
         type="text"
         id="searchInput"
-        placeholder="Search farms or varietals..."
+        placeholder="Search..."
         oninput="filterListings()"
       />
     </div>
@@ -550,17 +550,29 @@
     <!-- ══ REPLACED FEATURED STRIP WITH DASHBOARD ACTION BANNER ══ -->
     <div class="marketplace-dashboard-banner">
       <div class="banner-left">
-        <div class="results-count">
-          <strong id="resultsCount">{{ stats.total_farms if stats else 0 }}</strong> active listings available
-        </div>
+        <div class="hero-stat-num">{{ stats.total_farms if stats else 0 }}</div>
+        <div class="hero-stat-lbl">Active Listings Available</div>
         <div class="active-filters" id="activeFilters"></div>
+      </div>
+
+      <div>
+        <div class="hero-stat-num">{{ stats.total_farms if stats else 0 }}</div>
+        <div class="hero-stat-lbl">Active Farms</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">{{ stats.total_listings if stats else 0 }}</div>
+        <div class="hero-stat-lbl">Coffee Lots</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">{{ stats.total_counties if stats else 0 }}</div>
+        <div class="hero-stat-lbl">Counties</div>
       </div>
       
       {# Render button if current user is logged in as a grower #}
       {% if current_user.is_authenticated and current_user.role == 'seller' %}
         <div class="banner-right">
-          <a href="{{ url_for('seller.dashboard') }}" class="view-my-listings-btn">
-            🚜 View My Listings →
+          <a href="{{ url_for('seller.listings') }}" class="view-my-listings-btn">
+            View My Listings →
           </a>
         </div>
       {% endif %}

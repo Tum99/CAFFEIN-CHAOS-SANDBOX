@@ -1,9 +1,8 @@
 # seed_admin_menu.py
+from dotenv import load_dotenv
+load_dotenv()
 from app import create_app, db
-from app.models import (
-    User, Category, Product,
-    FarmProfile, FarmProductListing, Service
-)
+from app.models import (User, Category, Product, Service)
 from werkzeug.security import generate_password_hash
 from datetime import date
 
@@ -35,22 +34,22 @@ else:
 # ══════════════════════════════════════════════════════
 # 2. GROWER USER
 # ══════════════════════════════════════════════════════
-grower_email    = "julyia.grower@testing.com"
-grower_password = "password123"
+# grower_email    = "julyia.grower@testing.com"
+# grower_password = "password123"
 
-grower_user = User.query.filter_by(email=grower_email).first()
-if not grower_user:
-    grower_user = User(
-        email=grower_email,
-        phone=722000001,
-        password=generate_password_hash(grower_password, method="pbkdf2:sha256"),
-        role="seller"
-    )
-    db.session.add(grower_user)
-    db.session.commit()
-    print(f"✅ Grower user created: {grower_email}")
-else:
-    print("ℹ️  Grower user already exists")
+# grower_user = User.query.filter_by(email=grower_email).first()
+# if not grower_user:
+#     grower_user = User(
+#         email=grower_email,
+#         phone=722000001,
+#         password=generate_password_hash(grower_password, method="pbkdf2:sha256"),
+#         role="seller"
+#     )
+#     db.session.add(grower_user)
+#     db.session.commit()
+#     print(f"✅ Grower user created: {grower_email}")
+# else:
+#     print("ℹ️  Grower user already exists")
 
 
 # ══════════════════════════════════════════════════════
@@ -323,31 +322,32 @@ print("✅ Merch products added")
 # 7. FARM PROFILE
 # FIX: profile_image → farm_image (matches model field name)
 # ══════════════════════════════════════════════════════
-farm = FarmProfile.query.filter_by(user_id=grower_user.id).first()
-if not farm:
-    farm = FarmProfile(
-        user_id=grower_user.id,
-        farm_name="Jepng'etich Farm",
-        location="Ziwa, Uasingishu County",
-        county="Uasingishu",
-        farm_size_acres=12.5,
-        altitude_masl=1850,
-        certifications="Organic",
-        bio=(
-            "Family-run coffee farm in the highlands of Uasingishu County. "
-            "We grow Batian and SL28 varieties at 1,850m above sea level. "
-            "Our coffee is known for its premium citrus profile with a molasses finish."
-        ),
-        farm_image="images/farm/jepngetich-farm.jpg",  # FIX: was profile_image
-        is_verified=True,
-        is_live=True,
-        is_setup_complete=True
-    )
-    db.session.add(farm)
-    db.session.commit()
-    print("✅ Farm profile created")
-else:
-    print("ℹ️  Farm profile already exists")
+# grower_user = User.query.filter_by(email=grower_email).first()
+# farm = FarmProfile.query.filter_by(user_id=grower_user.id).first()
+# if not farm:
+#     farm = FarmProfile(
+#         user_id=grower_user.id,
+#         farm_name="Jepng'etich Farm",
+#         location="Ziwa, Uasingishu County",
+#         county="Uasingishu",
+#         farm_size_acres=12.5,
+#         altitude_masl=1850,
+#         certifications="Organic",
+#         bio=(
+#             "Family-run coffee farm in the highlands of Uasingishu County. "
+#             "We grow Batian and SL28 varieties at 1,850m above sea level. "
+#             "Our coffee is known for its premium citrus profile with a molasses finish."
+#         ),
+#         farm_image="images/farm/jepngetich-farm.jpg",  # FIX: was profile_image
+#         is_verified=True,
+#         is_live=True,
+#         is_setup_complete=True
+#     )
+#     db.session.add(farm)
+#     db.session.commit()
+#     print("✅ Farm profile created")
+# else:
+#     print("ℹ️  Farm profile already exists")
 
 
 # ══════════════════════════════════════════════════════
@@ -355,69 +355,69 @@ else:
 # FIX: Original was cut off mid-loop — completed here
 # FIX: FarmProductListing now includes grower_id (required column)
 # ══════════════════════════════════════════════════════
-farm_products_data = [
-    {
-        "product": {
-            "name": "Arabica Batian — 250g",
-            "price": 850,
-            "description": "Medium roast. Batian varietal. Notes of citrus with a molasses finish.",
-            "stock": 200
-        },
-        "listing": {
-            "varietal": "Batian",
-            "process": "Washed",
-            "roast_level": "Medium",
-            "harvest_date": date(2025, 10, 15),
-            "quantity_kg": 50.0,
-            "minimum_order_kg": 0.25,
-            "price_per_kg": 3400,
-            "tasting_notes": "Citrus, Molasses, Dark Berry",
-            "status": "available"
-        }
-    }
-]
+# farm_products_data = [
+#     {
+#         "product": {
+#             "name": "Arabica Batian — 250g",
+#             "price": 850,
+#             "description": "Medium roast. Batian varietal. Notes of citrus with a molasses finish.",
+#             "stock": 200
+#         },
+#         "listing": {
+#             "varietal": "Batian",
+#             "process": "Washed",
+#             "roast_level": "Medium",
+#             "harvest_date": date(2025, 10, 15),
+#             "quantity_kg": 50.0,
+#             "minimum_order_kg": 0.25,
+#             "price_per_kg": 3400,
+#             "tasting_notes": "Citrus, Molasses, Dark Berry",
+#             "status": "available"
+#         }
+#     }
+# ]
 
-for entry in farm_products_data:
-    p = entry["product"]
-    l = entry["listing"]
+# for entry in farm_products_data:
+#     p = entry["product"]
+#     l = entry["listing"]
 
-    existing = Product.query.filter_by(
-        name=p["name"],
-        product_type="farm"
-    ).first()
+#     existing = Product.query.filter_by(
+#         name=p["name"],
+#         product_type="farm"
+#     ).first()
 
-    if not existing:
-        product = Product(
-            seller_id=grower_user.id,
-            name=p["name"],
-            price=p["price"],
-            stock=p["stock"],
-            description=p["description"],
-            category_id=None,
-            product_type="farm",
-            is_available=True
-        )
-        db.session.add(product)
-        db.session.flush()  # get product.id before the listing needs it
+#     if not existing:
+#         product = Product(
+#             seller_id=grower_user.id,
+#             name=p["name"],
+#             price=p["price"],
+#             stock=p["stock"],
+#             description=p["description"],
+#             category_id=None,
+#             product_type="farm",
+#             is_available=True
+#         )
+#         db.session.add(product)
+#         db.session.flush()  # get product.id before the listing needs it
 
-        listing = FarmProductListing(
-            product_id=product.id,
-            farm_id=farm.id,
-            grower_id=grower_user.id,   # FIX: required field that was missing
-            varietal=l["varietal"],
-            process=l["process"],
-            roast_level=l["roast_level"],
-            harvest_date=l["harvest_date"],
-            quantity_kg=l["quantity_kg"],
-            minimum_order_kg=l["minimum_order_kg"],
-            price_per_kg=l["price_per_kg"],
-            tasting_notes=l["tasting_notes"],
-            status=l["status"]
-        )
-        db.session.add(listing)
+#         listing = FarmProductListing(
+#             product_id=product.id,
+#             farm_id=farm.id,
+#             grower_id=grower_user.id,   # FIX: required field that was missing
+#             varietal=l["varietal"],
+#             process=l["process"],
+#             roast_level=l["roast_level"],
+#             harvest_date=l["harvest_date"],
+#             quantity_kg=l["quantity_kg"],
+#             minimum_order_kg=l["minimum_order_kg"],
+#             price_per_kg=l["price_per_kg"],
+#             tasting_notes=l["tasting_notes"],
+#             status=l["status"]
+#         )
+#         db.session.add(listing)
 
-db.session.commit()
-print("✅ Farm products and listings added")
+# db.session.commit()
+# print("✅ Farm products and listings added")
 
 
 # ══════════════════════════════════════════════════════
@@ -505,11 +505,9 @@ print("")
 print("🎉 Seeding complete!")
 print("─────────────────────────────────────────")
 print(f"  Admin user    : {admin_email}")
-print(f"  Grower user   : {grower_email}")
 print(f"  Categories    : {len(category_names)}")
 print(f"  Menu items    : {sum(len(v) for v in products_data.values())}")
 print(f"  Apparel items : {len(apparel_products)}")
 print(f"  Merch items   : {len(merch_products)}")
-print(f"  Farm products : {len(farm_products_data)}")
 print(f"  Services      : {len(services_data)}")
 print("─────────────────────────────────────────")
