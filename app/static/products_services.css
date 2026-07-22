@@ -265,15 +265,6 @@ justify-content: center;
     display: flex; align-items: center; gap: 0.8rem;
 }
 
-
-.hero-eyebrow::before { 
-    content: ''; 
-    display: block; 
-    width: 24px; 
-    height: 1px; 
-    background: var(--crema); 
-}
-
 .hero-title em { 
     font-style: italic; 
     color: var(--crema); 

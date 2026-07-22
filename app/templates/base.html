@@ -1,73 +1,155 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
-    <title>{% block title %}Caffein & Chaos{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='menu.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='products_services.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='seller_dashboard.css') }}" />
-    {# Extra CSS per-page (dashboards, marketplace etc) #}
-    {% block extra_css %}{% endblock %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='mobile.css') }}"/>
-
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.9.0/fonts/remixicon.css" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Jost:wght@200;300;400;500;600&display=swap" rel="stylesheet" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Caffeine & Chaos{% endblock %}</title>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="csrf-token" content="{{ csrf_token() }}"/>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v={{ config.VERSION }}"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='menu.css') }}?v={{ config.VERSION }}"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='auth.css') }}?v={{ config.VERSION }}"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='products_services.css') }}?v={{ config.VERSION }}"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='seller_dashboard.css') }}?v={{ config.VERSION }}"/>
+    {% block extra_css %}{% endblock %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='mobile.css') }}?v={{ config.VERSION }}"/>
+
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.9.0/fonts/remixicon.css" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Jost:wght@200;300;400;500;600&display=swap" rel="stylesheet"/>
+    <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='images/Logo2.jpeg') }}"/>
   </head>
+
   <body class="{{ body_class | default('') }}">
-    <div class="cursor" id="cursor"></div>
+    <div class="cursor"      id="cursor"></div>
     <div class="cursor-ring" id="cursorRing"></div>
 
+    <!-- ══ NAVBAR ══ -->
     <nav id="navbar">
-      <a href="#" class="nav-logo">
+      <a href="{{ url_for('main.home') }}" class="nav-logo">
         <div class="nav-logo-icon">
-          <img src="/static/images/Logo2.jpeg" alt="company-logo" />
+          <img src="/static/images/Logo2.jpeg" alt="Caffeine & Chaos logo"/>
         </div>
-        <div class="nav-logo-text">Caffeine<br /><span>& Chaos</span></div>
+        <div class="nav-logo-text">Caffeine<br/><span>& Chaos</span></div>
       </a>
-      
-      <ul class="nav-links">
-        <li>
-          <a href="{{ url_for('main.home') }}" class="{{ 'active' if active_page == 'home' }}">Home</a>
-        </li>
-        <li>
-          <a href="{{ url_for('menu.main_menu') }}" class="{{ 'active' if active_page == 'menu' }}">Menu</a>
-        </li>
-        <li>
-          <a href="{{ url_for('products.list_products') }}" class="{{ 'active' if active_page == 'products' }}">Products</a>
-        </li>
+
+      {# Hamburger — visible on mobile only via mobile.css #}
+      <button class="nav-hamburger" id="navHamburger"
+              aria-label="Toggle navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="{{ url_for('main.home') }}"
+               class="{{ 'active' if active_page == 'home' }}">Home</a></li>
+        <li><a href="{{ url_for('menu.main_menu') }}"
+               class="{{ 'active' if active_page == 'menu' }}">Menu</a></li>
+        <li><a href="{{ url_for('products.list_products') }}"
+               class="{{ 'active' if active_page == 'products' }}">Products</a></li>
 
         {% if current_user.is_authenticated %}
 
           {# Marketplace — hidden for sellers mid-setup #}
           {% if current_user.role == 'seller' and seller_setup_complete %}
-            <li>
-              <a href="{{ url_for('seller.marketplace') }}">Marketplace (Seller)</a>
-            </li>
+            <li><a href="{{ url_for('seller.marketplace') }}"
+                   class="{{ 'active' if active_page == 'marketplace' }}">
+              Marketplace (Seller)</a></li>
           {% elif current_user.role == 'buyer' %}
-            <li>
-              <a href="{{ url_for('buyer.marketplace') }}">Marketplace</a>
-            </li>
+            <li><a href="{{ url_for('buyer.marketplace') }}"
+                   class="{{ 'active' if active_page == 'marketplace' }}">
+              Marketplace</a></li>
           {% endif %}
 
-          {# Dashboard — always visible once logged in #}
+          {# Dashboard #}
           {% if current_user.role == 'seller' %}
-            <li><a href="{{ url_for('seller.dashboard') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('seller.dashboard') }}"
+                   class="{{ 'active' if active_page == 'dashboard' }}">Dashboard</a></li>
           {% elif current_user.role == 'buyer' %}
-            <li><a href="{{ url_for('buyer.dashboard') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('buyer.dashboard') }}"
+                   class="{{ 'active' if active_page == 'dashboard' }}">Dashboard</a></li>
+          {% elif current_user.role == 'admin' %}
+            <li><a href="{{ url_for('admin.dashboard') }}"
+                   class="{{ 'active' if active_page == 'dashboard' }}">Admin</a></li>
           {% endif %}
 
           {# Messages — hidden for sellers mid-setup #}
           {% if current_user.role != 'seller' or seller_setup_complete %}
             <li>
-              <a href="/messages">Messages ({{ unread_msg_count }})</a>
+              <a href="{{ url_for('messaging.inbox') }}"
+                 class="{{ 'active' if active_page == 'messages' }}">
+                Messages
+                {% set unread = unread_msg_count | default(0) %}
+                {% if unread > 0 %}
+                  <span class="nav-msg-badge">{{ unread }}</span>
+                {% endif %}
+              </a>
             </li>
           {% endif %}
 
-          <li>
-            <button class="btn-ghost" onclick="openLogout()">Logout</button>
+          {# ── AVATAR DROPDOWN ── #}
+          <li class="nav-avatar-wrap" id="navAvatarWrap">
+            <button class="nav-avatar-btn" id="navAvatarBtn"
+                    onclick="toggleAvatarDropdown(event)" aria-expanded="false">
+              {# Profile photo or initials fallback #}
+              {% if current_user.profile_pic and current_user.profile_pic != 'default_user.jpg' %}
+                <img src="{{ url_for('static', filename='uploads/' + current_user.profile_pic) }}"
+                     alt="{{ current_user.first_name or 'User' }}"
+                     class="nav-avatar-img"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"/>
+                <span class="nav-avatar-initials" style="display:none;">
+                  {{ (current_user.first_name or current_user.email)[0].upper() }}
+                </span>
+              {% else %}
+                <span class="nav-avatar-initials">
+                  {{ (current_user.first_name or current_user.email)[0].upper() }}
+                </span>
+              {% endif %}
+            </button>
+
+            {# Display name + role tag beside avatar #}
+            <button class="nav-avatar-name-btn" onclick="toggleAvatarDropdown(event)">
+              <span class="nav-avatar-name">
+                {{ current_user.first_name or current_user.email.split('@')[0] | capitalize }}
+              </span>
+              <span class="nav-avatar-chevron" id="avatarChevron">▾</span>
+            </button>
+
+            {# Dropdown menu #}
+            <div class="nav-avatar-dropdown" id="avatarDropdown">
+              <div class="avatar-dropdown-header">
+                <div class="avatar-dropdown-name">
+                  {{ current_user.first_name or current_user.email.split('@')[0] | capitalize }}
+                  {% if current_user.last_name %} {{ current_user.last_name }}{% endif %}
+                </div>
+                <div class="avatar-dropdown-email">{{ current_user.email }}</div>
+                <div class="avatar-dropdown-role">{{ current_user.role | capitalize }}</div>
+              </div>
+
+              <div class="avatar-dropdown-divider"></div>
+
+              <a class="avatar-dropdown-item" href="
+                {%- if current_user.role == 'seller' -%}
+                  {{ url_for('seller.dashboard') }}#sec-settings
+                {%- elif current_user.role == 'buyer' -%}
+                  {{ url_for('buyer.dashboard') }}#sec-settings
+                {%- else -%}#
+                {%- endif -%}">
+                <span>⚙️</span> Account Settings
+              </a>
+
+              <a class="avatar-dropdown-item" href="{{ url_for('messaging.inbox') }}">
+                <span>💬</span> Messages
+                {% if unread_msg_count | default(0) > 0 %}
+                  <span class="avatar-dropdown-badge">{{ unread_msg_count }}</span>
+                {% endif %}
+              </a>
+
+              <div class="avatar-dropdown-divider"></div>
+
+              <button class="avatar-dropdown-item avatar-dropdown-logout"
+                      onclick="openLogout()">
+                <span>↩</span> Log Out
+              </button>
+            </div>
           </li>
 
         {% else %}
@@ -76,6 +158,7 @@
       </ul>
     </nav>
 
+
     {# ── FLASH MESSAGES ── #}
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -83,11 +166,10 @@
           {% for category, message in messages %}
             <div class="flash flash-{{ category }}">
               <span class="flash-icon">
-                {% if category == 'error'   %}✕
+                {% if category == 'error' %}✕
                 {% elif category == 'success' %}✓
                 {% elif category == 'warning' %}⚠
-                {% else %}ℹ
-                {% endif %}
+                {% else %}ℹ{% endif %}
               </span>
               <span class="flash-text">{{ message }}</span>
               <button class="flash-close" onclick="this.parentElement.remove()">✕</button>
@@ -97,14 +179,15 @@
       {% endif %}
     {% endwith %}
 
+
+    {# ── LOGOUT OVERLAY ── #}
     {% if current_user.is_authenticated %}
     <div class="logout-overlay" id="logoutOverlay">
       <div class="logout-box">
         <div class="logout-icon">☕</div>
         <div class="logout-title">Leaving so soon?</div>
         <div class="logout-subtitle">
-          You'll be signed out of your account.<br />
-          Your session will be ended.
+          You'll be signed out of your account.<br/>Your session will be ended.
         </div>
         <div class="logout-actions">
           <button class="logout-cancel" onclick="closeLogout()">Stay Logged In</button>
@@ -118,47 +201,13 @@
     </div>
     {% endif %}
 
-    {% block content %}
-      <!-- Page content goes here -->
-    {% endblock %} 
+
+    {% block content %}{% endblock %}
+
 
     {% block scripts %}
-    <script src="{{ url_for('static', filename='js/logout_base.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/mobile_nav.js') }}"></script>
-    <script>
-      const cursor = document.getElementById('cursor');
-      const ring   = document.getElementById('cursorRing');
-      let mx = 0, my = 0, rx = 0, ry = 0;
-      let started = false;
-
-      if (cursor && ring) {
-        /* Hide until mouse moves for the first time */
-        cursor.style.opacity = '0';
-        ring.style.opacity   = '0';
-
-        document.addEventListener('mousemove', e => {
-          mx = e.clientX; my = e.clientY;
-
-          /* Show on first move */
-          if (!started) {
-            cursor.style.opacity = '1';
-            ring.style.opacity   = '1';
-            started = true;
-          }
-
-          cursor.style.left = mx + 'px';
-          cursor.style.top  = my + 'px';
-        });
-
-        (function animRing() {
-          rx += (mx - rx) * 0.12;
-          ry += (my - ry) * 0.12;
-          ring.style.left = rx + 'px';
-          ring.style.top  = ry + 'px';
-          requestAnimationFrame(animRing);
-        })();
-      }
-    </script>
+    <script src="{{ url_for('static', filename='js/base.js') }}?v={{ config.VERSION }}"></script>
+    <script src="{{ url_for('static', filename='js/mobile_nav.js') }}?v={{ config.VERSION }}"></script>
     {% endblock %}
   </body>
 </html>
