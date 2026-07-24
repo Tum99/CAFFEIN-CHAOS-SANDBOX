@@ -161,7 +161,7 @@
                             <span class="earning-val" style="font-size:1.4rem">KES {{ net_earnings }}</span>
                         </div>
                     {% else %}
-                        <div style="padding:2rem;text-align:center;opacity:0.5;font-size:0.95rem;">
+                        <div style="padding:2rem;text-align:center;opacity:0.5;font-size:1rem;">
                             No sales data yet.
                         </div>
                     {% endif %}
@@ -369,24 +369,12 @@
                 </div>
             </div>
             {% if farm %}
-            <div class="farm-profile-grid">
-                <div class="farm-status-toggle">
-                    <div class="status-label">Marketplace Status</div>
-                    <form action="{{ url_for('seller.toggle_live') }}" method="POST">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                        <button type="submit" class="status-pill {{ 'active' if farm and farm.is_live else 'offline' }}">
-                            {{ '● LIVE ON MARKET' if farm and farm.is_live else '○ OFFLINE' }}
-                        </button>
-                    </form>
-                </div>
-            </div>
-            {% if farm %}
             <div class="farm-status-toggle">
-                <div class="status-label">Marketplace Status</div>
+                <div class="status-label">Status</div>
                 <form action="{{ url_for('seller.toggle_live') }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    <button type="submit" class="status-pill {{ 'active' if farm and farm.is_live else 'offline' }}">
-                        {{ '● LIVE ON MARKET' if farm and farm.is_live else 'OFFLINE' }}
+                    <button type="submit" class="status-pill {{ 'active' if farm and farm.is_live else '○ offline' }}">
+                        {{ '● LIVE' if farm and farm.is_live else '○ OFFLINE' }}
                     </button>
                 </form>
             </div>
@@ -416,13 +404,13 @@
                     <div class="farm-edit-title">Edit Farm Details</div>
                     <form action="{{ url_for('seller.seller_setup') }}" method="POST" enctype="multipart/form-data">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                        <div class="form-field"><label>Farm Name</label><input type="text" name="farm_name" value="{{ farm.farm_name or '' }}"/></div>
-                        <div class="form-field"><label>Location</label><input type="text" name="location" value="{{ farm.location or '' }}"/></div>
-                        <div class="form-field"><label>County</label><input type="text" name="county" value="{{ farm.county or '' }}"/></div>
-                        <div class="form-field"><label>Farm Size (acres)</label><input type="number" name="farm_size" value="{{ farm.farm_size_acres or '' }}"/></div>
-                        <div class="form-field"><label>Altitude (masl)</label><input type="number" name="altitude" value="{{ farm.altitude_masl or '' }}"/></div>
-                        <div class="form-field"><label>Certifications</label><input type="text" name="certifications" value="{{ farm.certifications or '' }}"/></div>
-                        <div class="form-field"><label>Bio</label><textarea name="bio">{{ farm.bio or '' }}</textarea></div>
+                        <div class="form-field"><label style="font-size: 0.8rem;">Farm Name</label><input style="font-size: 0.9rem;" type="text" name="farm_name" value="{{ farm.farm_name or '' }}"/></div>
+                        <div class="form-field"><label style="font-size: 0.8rem;">Location</label><input style="font-size: 0.9rem;" type="text" name="location" value="{{ farm.location or '' }}"/></div>
+                        <div class="form-field"><label style="font-size: 0.8rem;">County</label><input style="font-size: 0.9rem;" type="text" name="county" value="{{ farm.county or '' }}"/></div>
+                        <div class="form-field"><label style="font-size: 0.8rem;">Farm Size (acres)</label><input style="font-size: 0.9rem;" type="number" name="farm_size" value="{{ farm.farm_size_acres or '' }}"/></div>
+                        <div class="form-field"><label style="font-size: 0.8rem;">Altitude (masl)</label><input style="font-size: 0.9rem;" type="number" name="altitude" value="{{ farm.altitude_masl or '' }}"/></div>
+                        <div class="form-field"><label style="font-size: 0.8rem;">Certifications</label><input style="font-size: 0.9rem;" type="text" name="certifications" value="{{ farm.certifications or '' }}"/></div>
+                        <div class="form-field"><label style="font-size: 0.8rem;">Bio</label><textarea style="font-size: 0.9rem;" name="bio">{{ farm.bio or '' }}</textarea></div>
                         <button class="form-submit" type="submit">Update Profile →</button>
                     </form>
                 </div>
@@ -522,7 +510,7 @@
                     <div class="dash-title">My <em>Earnings</em></div>
                 </div>
             </div>
-            <div class="stats-grid" style="margin-bottom:1.5px">
+            <div class="stats-grid" style="margin-bottom:2.5rem">
                 <div class="stat-card">
                     <div class="stat-label">This Month</div>
                     <div class="stat-value">KES {{ this_month_earnings }}</div>
@@ -592,7 +580,7 @@
             <div class="panel">
                 <div class="panel-body" style="padding:3rem;text-align:center;">
                     <div style="font-size:2rem;margin-bottom:1rem;">💬</div>
-                    <div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;color:var(--white);margin-bottom:0.5rem;">
+                    <div style="font-family:'Cormorant Garamond',serif;font-size:2.2rem;color:var(--white);margin-bottom:0.5rem;">
                         Your Inbox
                     </div>
                     <div style="font-size:1rem;color:rgba(245,236,215,0.4);margin-bottom:1.5rem;line-height:1.7;">
@@ -616,9 +604,14 @@
                 </div>
             </div>
             <div class="settings-grid">
-                <form action="{{ url_for('seller.update_profile') }}" method="POST" enctype="multipart/form-data" class="settings-panel">
+                <form action="{{ url_for('seller.update_profile') }}"
+                        method="POST"
+                        enctype="multipart/form-data"
+                        class="settings-panel">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    
                     <div class="settings-panel-title">Profile Photo</div>
+                    
                     <div class="profile-photo-upload">
                         <div class="profile-photo-preview" id="photoPreview">
                         {% if current_user.profile_pic and current_user.profile_pic != 'logo1.png' %}
