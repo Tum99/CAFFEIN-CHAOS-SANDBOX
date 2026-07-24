@@ -115,14 +115,14 @@
 <style>
   /* ── MESSAGES PAGE LAYOUT ── */
   .messages-page {
-    padding-top: 64px;
+    padding-top: 90px;
     min-height: 100vh;
     background: var(--espresso);
   }
   .messages-layout {
     display: grid;
     grid-template-columns: 300px 1fr;
-    height: calc(100vh - 64px);
+    height: calc(100vh - 90px);
   }
 
   /* ── THREAD SIDEBAR ── */
@@ -130,7 +130,7 @@
     background: var(--roast);
     border-right: 1px solid rgba(200,135,58,0.1);
     display: flex; flex-direction: column;
-    overflow: hidden;
+    overflow: hidden; 
   }
   .thread-sidebar-head {
     padding: 1.2rem 1.4rem;
@@ -139,10 +139,10 @@
   }
   .ts-title {
     font-family: 'Cormorant Garamond', serif;
-    font-size: 1.1rem; color: var(--white);
+    font-size: 1.5rem; color: var(--white);
   }
   .ts-count {
-    font-size: 0.65rem; letter-spacing: 0.12em; color: rgba(245,236,215,0.3);
+    font-size: 0.8rem; letter-spacing: 0.12em; color: rgba(245,236,215,0.3);
   }
   .thread-list {
     flex: 1; overflow-y: auto;
@@ -165,7 +165,7 @@
   }
   .thread-info { flex: 1; min-width: 0; }
   .thread-name {
-    font-size: 0.8rem; color: var(--cream); margin-bottom: 0.15rem;
+    font-size: 1.2rem; color: var(--cream); margin-bottom: 0.15rem;
     display: flex; align-items: center; gap: 0.4rem;
   }
   .thread-role-tag {
@@ -174,11 +174,11 @@
     padding: 0.08rem 0.35rem;
   }
   .thread-preview {
-    font-size: 0.7rem; color: rgba(245,236,215,0.35);
+    font-size: 0.9rem; color: rgba(245,236,215,0.35);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .thread-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; flex-shrink: 0; }
-  .thread-time   { font-size: 0.6rem; color: rgba(245,236,215,0.22); }
+  .thread-time   { font-size: 0.7rem; color: rgba(245,236,215,0.22); }
   .thread-unread {
     width: 18px; height: 18px; border-radius: 50%;
     background: var(--crema); color: var(--espresso);
@@ -213,25 +213,41 @@
     display: flex; align-items: center; gap: 0.8rem; flex-shrink: 0;
   }
   .chat-head-avatar {
-    width: 36px; height: 36px; border-radius: 50%;
+    width: 46px; height: 46px; border-radius: 50%;
     background: var(--crema); color: var(--espresso);
     display: flex; align-items: center; justify-content: center;
     font-size: 0.8rem; font-weight: 700;
   }
-  .chat-head-name   { font-size: 0.85rem; color: var(--cream); }
+  .chat-head-name   { font-size: 1.3rem; color: var(--cream); }
   .chat-head-status { font-size: 0.62rem; color: #7AB648; }
   .chat-messages {
     flex: 1; overflow-y: auto; padding: 1.2rem;
     display: flex; flex-direction: column; gap: 1rem;
     scrollbar-width: thin; scrollbar-color: rgba(200,135,58,0.08) transparent;
+    position: relative; z-index: 1;
+  }
+  .chat-messages::before {
+    content: ""; /* Required: Pseudo-elements will not render without content */
+    position: absolute; /* Changed from relative to overlay correctly */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('/static/images/ms-bg3.jpg');
+    background-size: cover;       
+    background-position: center;   
+    background-repeat: no-repeat;
+    
+    z-index: -1; /* Pushes the image behind your text and marketplace cards */
+    opacity: 0.3; /* Dial this down to your preferred lower opacity value */
   }
   .msg          { max-width: 70%; }
   .msg.sent     { align-self: flex-end; }
   .msg.received { align-self: flex-start; }
-  .msg-bubble   { padding: 0.75rem 1rem; font-size: 0.82rem; line-height: 1.55; }
+  .msg-bubble   { padding: 0.75rem 1rem; font-size: 1rem; line-height: 1.55; border-radius: 200px;}
   .msg.sent     .msg-bubble { background: var(--crema); color: var(--espresso); }
   .msg.received .msg-bubble { background: var(--roast);  color: var(--cream);   }
-  .msg-time { font-size: 0.6rem; color: rgba(245,236,215,0.25); margin-top: 0.25rem; }
+  .msg-time { font-size: 0.8rem; color: rgba(245,236,215,0.25); margin-top: 0.25rem; }
   .msg.sent .msg-time { text-align: right; }
   .chat-input-row {
     padding: 1rem 1.2rem;
@@ -242,7 +258,7 @@
     flex: 1; padding: 0.7rem 1rem;
     background: rgba(200,135,58,0.06); border: 1px solid rgba(200,135,58,0.12);
     color: var(--cream); font-family: 'Jost', sans-serif; font-size: 0.82rem;
-    outline: none; transition: border-color 0.3s;
+    outline: none; transition: border-color 0.3s; border-radius: 200px;
   }
   .chat-input:focus { border-color: rgba(200,135,58,0.35); }
   .chat-input::placeholder { color: rgba(245,236,215,0.2); }
@@ -251,7 +267,7 @@
     background: var(--crema); color: var(--espresso);
     font-family: 'Jost', sans-serif; font-size: 0.72rem;
     letter-spacing: 0.14em; text-transform: uppercase; font-weight: 500;
-    border: none; cursor: pointer; transition: background 0.2s;
+    border: none; cursor: pointer; transition: background 0.2s; border-radius: 200px;
   }
   .chat-send:hover { background: var(--gold); }
 

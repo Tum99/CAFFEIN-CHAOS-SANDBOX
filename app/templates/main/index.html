@@ -18,15 +18,14 @@
     </div>
   </div> -->
   <div class="hero-bg"></div>
-  <div class="hero-cup-visual"></div>
   <div class="hero-content">
     <div class="hero-eyebrow">Kenyan Specialty Coffee</div>
     <h1 class="hero-title">Caffeine<br><em>&amp; Chaos</em></h1>
     <p class="hero-sub">From the highlands of Kenya to your cup — we connect growers, inspire buyers, and brew the extraordinary.</p>
-    <!-- <div class="hero-actions">
-      <a href="#" class="btn-primary">Explore the Menu</a>
-      <a href="#" class="btn-outline">Take a Step →</a>
-    </div> -->
+    <div class="hero-actions">
+      <a href="{{ url_for('menu.main_menu') }}" class="btn-primary">Explore the Menu</a>
+      <a href="{{ url_for('auth.login') }}" class="btn-outline">Take a Step →</a>
+    </div>
   </div>
   <div class="hero-scroll">
     <div class="hero-scroll-line"></div>
@@ -157,8 +156,7 @@
         </div>
       </div>
     </div>
-    <!-- <div class="menu-cta"><a href="#" class="btn-primary">Order Now</a></div> -->
-     <div class="menu-cta"><p class="btn-primary">Available for order soon</p></div>
+    <div class="menu-cta"><a href="{{ url_for('menu.main_menu') }}" class="btn-primary">Order Now</a></div>
   </div>
 </section>
 
@@ -238,16 +236,14 @@
       <div class="connect-label">For Growers</div>
       <h3 class="connect-title">Sell your harvest.<br>Reach the world.</h3>
       <p class="connect-desc">List your farm's coffee directly on our platform. Connect with verified buyers, negotiate fair prices, and grow your business — all without leaving your farm.</p>
-      <!-- <a href="#" class="connect-btn">Join as a Grower</a> -->
-       <p class="connect-btn">Coming Soon</p>
+      <a href="{{ url_for('auth.login') }}" class="connect-btn">Join as a Grower</a>
     </div>
     <div class="connect-card buyer">
       <span class="connect-icon">☕</span>
       <div class="connect-label">For Buyers</div>
       <h3 class="connect-title">Source directly.<br>Taste the <em>origin.</em></h3>
       <p class="connect-desc">Browse farm profiles, verify quality, and purchase directly from Kenyan growers. No middlemen. Full traceability. Exceptional coffee.</p>
-      <!-- <a href="#" class="connect-btn">Join as a Buyer</a> -->
-       <p class="connect-btn">Coming Soon</p>
+      <a href="{{ url_for('auth.login') }}" class="connect-btn">Join as a Buyer</a>
     </div>
   </div>
 </div>
