@@ -34,29 +34,66 @@ if (cursor && ring) {
 }
 
 /* ── AVATAR DROPDOWN ── */
-function toggleAvatarDropdown(e) {
-  e.stopPropagation();
-  const dropdown = document.getElementById('avatarDropdown');
-  const chevron  = document.getElementById('avatarChevron');
-  const btn      = document.getElementById('navAvatarBtn');
-  const isOpen   = dropdown.classList.toggle('open');
-  if (chevron) chevron.textContent = isOpen ? '▴' : '▾';
-  if (btn) btn.setAttribute('aria-expanded', isOpen);
+// 1. Instant Profile Photo Preview Logic
+function previewPhoto(input) {
+    const previewContainer = document.getElementById('photoPreview');
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            // Check if an img element already exists
+            let img = document.getElementById('photoPreviewImg');
+            
+            if (!img) {
+                // If the user had initials displaying, clear them and create an img tag
+                previewContainer.innerHTML = '';
+                img = document.createElement('img');
+                img.id = 'photoPreviewImg';
+                img.alt = 'Profile photo preview';
+                previewContainer.appendChild(img);
+            }
+            
+            // Assign the file data URL to the source view
+            img.src = e.target.result;
+            img.style.display = 'block';
+        };
+
+        reader.readAsDataURL(input.files[0]);
+    }
 }
 
-/* Close dropdown when clicking outside */
-document.addEventListener('click', e => {
-  const wrap = document.getElementById('navAvatarWrap');
-  if (wrap && !wrap.contains(e.target)) {
-    document.getElementById('avatarDropdown')?.classList.remove('open');
+// 2. Navigation Avatar Dropdown Toggle logic
+function toggleAvatarDropdown(event) {
+    event.stopPropagation(); // Prevents instant closing via window click listener
+    const dropdown = document.getElementById('avatarDropdown');
     const chevron = document.getElementById('avatarChevron');
-    if (chevron) chevron.textContent = '▾';
-  }
-});
+    const btn = document.getElementById('navAvatarBtn');
+    
+    const isOpen = dropdown.classList.contains('active');
+    
+    // Toggle current state
+    if (isOpen) {
+        dropdown.classList.remove('active');
+        if (chevron) chevron.style.transform = 'rotate(0deg)';
+        btn.setAttribute('aria-expanded', 'false');
+    } else {
+        dropdown.classList.add('active');
+        if (chevron) chevron.style.transform = 'rotate(180deg)';
+        btn.setAttribute('aria-expanded', 'true');
+    }
+}
 
-/* Close dropdown on Escape */
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    document.getElementById('avatarDropdown')?.classList.remove('open');
-  }
+// Close the dropdown automatically if clicking outside of its area
+window.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('avatarDropdown');
+    const chevron = document.getElementById('avatarChevron');
+    const btn = document.getElementById('navAvatarBtn');
+    
+    if (dropdown && dropdown.classList.contains('active')) {
+        if (!dropdown.contains(e.target) && !e.target.closest('.nav-avatar-btn') && !e.target.closest('.nav-avatar-name-btn')) {
+            dropdown.classList.remove('active');
+            if (chevron) chevron.style.transform = 'rotate(0deg)';
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+        }
+    }
 });
