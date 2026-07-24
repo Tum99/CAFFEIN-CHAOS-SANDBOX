@@ -80,7 +80,7 @@ body::before {
 .sidebar-badge.red { background: #E06C75; color: #fff; }
 .sidebar-badge.orange { background: var(--crema); color: var(--espresso); }
 .sidebar-divider { height: 1px; background: rgba(122,182,72,0.08); margin: 1rem 1.5rem; }
-.sidebar-logout { margin: 1.5rem 1.5rem 0; padding: 0.65rem 1rem; background: transparent; border: 1px solid rgba(224,108,117,0.2); color: rgba(224,108,117,0.6); font-family: 'Jost', sans-serif; font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; width: calc(100% - 3rem); cursor: none; transition: all 0.25s; }
+.sidebar-logout { margin: 1.5rem 1.5rem 0; padding: 0.65rem 1rem; background: transparent; border: 2px solid rgba(255, 0, 0, 0.271); color: rgba(253, 57, 57, 0.617); font-family: 'Jost', sans-serif; font-size: 0.9rem; letter-spacing: 0.12em; text-transform: uppercase; width: calc(100% - 3rem); cursor: none; transition: all 0.25s; font-weight: 400;}
 .sidebar-logout:hover { background: rgba(224,108,117,0.1); color: #E06C75; border-color: rgba(224,108,117,0.4); }
  
 
