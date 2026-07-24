@@ -290,11 +290,11 @@ justify-content: center;
 }
 
 .hero-desc {
-    font-size: 1.1rem; color: rgba(245,236,215,0.5); line-height: 1.85;
-    max-width: 520px; margin-top: 1.5rem;
+    font-size: 1.2rem; color: rgba(245,236,215,0.5); line-height: 1.85;
+    max-width: 520px;
 }
 
-.hero-right { text-align: right; }
+.hero-right { display: flex; flex-direction: column; text-align: right; align-items: flex-end; gap: 2rem;}
 .hero-tagline {
     font-family: 'Cormorant Garamond', serif;
     font-size: 1.6rem; font-style: italic; font-weight: 300;

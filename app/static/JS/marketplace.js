@@ -215,7 +215,23 @@ function openModal(l) {
     const mTitle = document.getElementById('modalTitle');
     
     if (mFarm) mFarm.textContent = '🌿 ' + l.farm_name + ' — ' + l.county;
-    if (mTitle) mTitle.innerHTML = `${l.varietal || 'Premium Coffee'} <em style="font-style: italic; color: var(--green)">${l.process || 'Washed'} Process</em>`;
+    if (mTitle) mTitle.innerHTML = `${l.varietal || 'Premium Coffee'} <em style="font-style: italic; color: var(--crema)">${l.process || 'Washed'} Process</em>`;
+
+    const imgPlaceholder = document.getElementById('modalImgPh');
+    if (imgPlaceholder) {
+        if (l.listing_image) {
+            // Replicates the same clean card-rendering engine framework
+            imgPlaceholder.innerHTML = `
+                <img src="/static/${l.listing_image}" 
+                     alt="${l.name || 'Listing Image'}" 
+                     style="width:100%; height:100%; object-fit:cover; display:block;"
+                     onerror="this.style.display='none'">
+            `;
+        } else {
+            // Standard fallback icon if no image path exists in DB payload
+            imgPlaceholder.innerHTML = `☕`; 
+        }
+    }
     
     const setEl = (id, text) => { const el = document.getElementById(id); if(el) el.textContent = text; };
     setEl('mVarietal', l.varietal || 'Premium');
