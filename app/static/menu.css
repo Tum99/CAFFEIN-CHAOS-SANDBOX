@@ -74,8 +74,8 @@ transition: opacity 0.3s ease;
 .menu-modal-box {
 background: var(--roast);
 border: 1px solid rgba(200,135,58,0.18);
-max-width: 560px; width: 100%;
-max-height: 90vh; overflow-y: auto;
+max-width: 650px; width: 100%;
+height: 750px; overflow-y: auto;
 position: relative;
 transform: translateY(24px) scale(0.97);
 transition: transform 0.4s cubic-bezier(0.22,1,0.36,1);
@@ -100,7 +100,7 @@ transition: all 0.2s;
 
 /* Image */
 .menu-modal-img-wrap {
-position: relative; height: 240px; overflow: hidden;
+position: relative; height: 450px; overflow: hidden;
 background: var(--bark);
 }
 .menu-modal-img {
@@ -115,7 +115,7 @@ background: linear-gradient(to top, rgba(10,6,4,0.8) 0%, transparent 55%);
 }
 .menu-modal-cat {
 position: absolute; bottom: 1rem; left: 1.4rem;
-font-size: 0.58rem; letter-spacing: 0.22em; text-transform: uppercase;
+font-size: 0.68rem; letter-spacing: 0.22em; text-transform: uppercase;
 color: var(--crema); background: rgba(10,6,4,0.6);
 backdrop-filter: blur(4px);
 padding: 0.2rem 0.6rem; border: 1px solid rgba(200,135,58,0.2);
@@ -126,13 +126,13 @@ padding: 0.2rem 0.6rem; border: 1px solid rgba(200,135,58,0.2);
 
 .menu-modal-name {
 font-family: 'Cormorant Garamond', serif;
-font-size: 1.7rem; font-weight: 400;
+font-size: 1.9rem; font-weight: 400;
 color: var(--white); line-height: 1.1;
 margin-bottom: 0.4rem;
 }
 .menu-modal-price {
 font-family: 'Cormorant Garamond', serif;
-font-size: 1.2rem; color: var(--crema);
+font-size: 1.5rem; color: var(--crema);
 margin-bottom: 1.1rem;
 }
 .menu-modal-divider {
@@ -140,11 +140,11 @@ height: 1px; background: rgba(200,135,58,0.1);
 margin-bottom: 1.1rem;
 }
 .menu-modal-desc-label {
-font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase;
+font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase;
 color: rgba(245,236,215,0.35); margin-bottom: 0.5rem;
 }
 .menu-modal-desc {
-font-size: 0.85rem; color: rgba(245,236,215,0.6);
+font-size: 1rem; color: rgba(245,236,215,0.6);
 line-height: 1.8; margin-bottom: 1.6rem;
 }
 
@@ -167,7 +167,7 @@ background: #7AB648; color: var(--espresso);
 }
 .menu-modal-mpesa {
 display: flex; align-items: center; gap: 0.4rem;
-font-size: 0.65rem; color: rgba(245,236,215,0.28);
+font-size: 0.7rem; color: rgba(245,236,215,0.28);
 }
 .mpesa-dot { width: 6px; height: 6px; border-radius: 50%; background: #4CAF50; }
 
@@ -186,7 +186,7 @@ font-size: 0.65rem; color: rgba(245,236,215,0.28);
     ══════════════════════════════ */
 .menu-page {
     display: flex;
-    padding: 120px 20px; /* navbar height */
+    padding: 80px 20px; /* navbar height */
     min-height: 100vh;
 }
 

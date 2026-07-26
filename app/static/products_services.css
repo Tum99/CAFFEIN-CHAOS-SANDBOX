@@ -128,8 +128,8 @@ transition: opacity 0.3s ease;
 .prod-modal-box {
 background: var(--roast);
 border: 1px solid rgba(200,135,58,0.18);
-max-width: 740px; width: 100%;
-max-height: 90vh;
+max-width: 860px; width: 100%;
+height: 700px;
 display: grid; grid-template-columns: 1fr 1fr;
 position: relative; overflow: hidden;
 transform: translateY(28px) scale(0.97);
@@ -183,22 +183,22 @@ display: flex; flex-direction: column;
 }
 .prod-modal-name {
 font-family: 'Cormorant Garamond', serif;
-font-size: 1.55rem; font-weight: 400;
+font-size: 1.8rem; font-weight: 400;
 color: var(--white); line-height: 1.15; margin-bottom: 0.4rem;
 }
 .prod-modal-price {
 font-family: 'Cormorant Garamond', serif;
-font-size: 1.2rem; color: var(--crema); margin-bottom: 1.1rem;
+font-size: 1.5rem; color: var(--crema); margin-bottom: 1.1rem;
 }
 .prod-modal-divider {
 height: 1px; background: rgba(200,135,58,0.1); margin-bottom: 1rem;
 }
 .prod-modal-desc-label {
-font-size: 0.57rem; letter-spacing: 0.2em; text-transform: uppercase;
+font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase;
 color: rgba(245,236,215,0.32); margin-bottom: 0.45rem;
 }
 .prod-modal-desc {
-font-size: 0.84rem; color: rgba(245,236,215,0.58);
+font-size: 1rem; color: rgba(245,236,215,0.58);
 line-height: 1.8; margin-bottom: 1.4rem; flex: 1;
 }
 
@@ -229,10 +229,10 @@ transition: background 0.25s, transform 0.2s;
 .prod-modal-add.added { background: #7AB648; color: var(--espresso); }
 .prod-modal-mpesa {
 display: flex; align-items: center; gap: 0.4rem;
-font-size: 0.63rem; color: rgba(245,236,215,0.25);
+font-size: 0.7rem; color: rgba(245,236,215,0.25);
 justify-content: center;
 }
-.mpesa-dot { width: 6px; height: 6px; border-radius: 50%; background: #4CAF50; }
+.mpesa-dot { width: 7px; height: 7px; border-radius: 50%; background: #4CAF50; }
 
   /* Mobile */
   @media (max-width: 640px) {
