@@ -90,12 +90,12 @@
         <span class="sidebar-link-text">The Marketplace</span>
         <span class="sidebar-lock">🔒</span>
       </a>
-      <a href="#" class="sidebar-link locked" id="ordersLink">
+      <a href="#" class="sidebar-link locked" id="ordersLink" onclick="showSection('orders', event)">
         <span class="sidebar-icon">📋</span>
         <span class="sidebar-link-text">Orders Received</span>
         <span class="sidebar-lock">🔒</span>
       </a>
-      <a href="#" class="sidebar-link locked" id="earningsLink">
+      <a href="#" class="sidebar-link locked" id="earningsLink" onclick="showSection('earnings', event)">
         <span class="sidebar-icon">💰</span>
         <span class="sidebar-link-text">Earnings</span>
         <span class="sidebar-lock">🔒</span>
@@ -181,7 +181,7 @@
             <div class="step-pill active">3. Go Live</div>
           </div>
           <div class="summary-action-card ready-state">
-            <div class="go-live-eyebrow" style="color:var(--green)">Step 3 of 3: Final Step</div>
+            <div class="go-live-eyebrow" style="color:var(--crema)">Step 3 of 3: Final Step</div>
             <div class="action-text">
               <h1 class="go-live-title" style="font-family:'Cormorant Garamond', serif;">You are ready to go <em>Live!</em></h1>
               <p class="go-live-desc">
@@ -198,7 +198,7 @@
                 <!-- Checkbox — seller confirms details are correct -->
                 <div style="margin-bottom:1.5rem; display:flex; align-items:flex-start; gap:0.8rem;">
                   <input type="checkbox" name="checkbox" id="confirmDetails" required
-                        style="margin-top:0.2rem; accent-color:var(--green); cursor:none;"/>
+                        style="margin-top:0.2rem; accent-color:var(--crema); cursor:none;"/>
                   <label for="confirmDetails"
                         style="font-size:0.9rem; color:rgba(245,236,215,0.5); line-height:1.7; cursor:none;">
                     I confirm that my farm profile and listing details are accurate.
@@ -395,7 +395,7 @@
                       <div><div class="farm-spec-label">Member Since</div><div class="farm-spec-value">{{ current_user.created_at.year if current_user.created_at else '2026' }}</div></div>
                   </div>
                   
-                  <button class="panel-action" onclick="showSection('listings')" style="width:100%; margin-top:2rem; background:var(--green); color:var(--espresso); border:none; padding:1rem; cursor:pointer; font-weight:600; letter-spacing:0.1em; text-transform:uppercase;">
+                  <button class="panel-action" onclick="showSection('listings')" style="width:100%; margin-top:2rem; background:var(--crema); color:var(--espresso); border:none; padding:1rem; cursor:pointer; font-weight:600; letter-spacing:0.1em; text-transform:uppercase;">
                       Continue to Step 2 →
                   </button>
               </div>
@@ -617,7 +617,7 @@
             onclick="showSection('new-listing')"
             style="
               font-size: 0.78rem;
-              background: var(--green);
+              background: var(--crema);
               color: var(--espresso);
               padding: 0.6rem 1.4rem;
               border: none;
@@ -633,7 +633,15 @@
         <div class="listings-grid">
           {% if listings %} {% for item in listings %}
           <div class="listing-card">
-            <div class="listing-card-img">☕</div>
+            <div class="listing-card-img">
+                {% if item.listing_image %}
+                    <img src="{{ url_for('static', filename='uploads/' + item.listing_image) }}"
+                          style="width:100%;height:100%;object-fit:cover;"
+                          onerror="this.style.display='none'">
+                {% else %}
+                    <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:var(--bark);">☕</div>
+                {% endif %}
+            </div>
             <div class="listing-varietal">
               {{ item.varietal }} • {{ item.process }}
             </div>
