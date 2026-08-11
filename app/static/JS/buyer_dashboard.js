@@ -4,12 +4,45 @@ document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.le
 (function loop(){rx+=(mx-rx)*0.12;ry+=(my-ry)*0.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(loop);})();
 
 function showSection(name, event) {
-    document.querySelectorAll('.content-section').forEach(s=>s.classList.remove('active'));
-    document.querySelectorAll('.sidebar-link').forEach(l=>l.classList.remove('active'));
-    document.getElementById(`sec-${name}`).classList.add('active');
-    event.currentTarget.classList.add('active');
-    event.preventDefault();
+    if (event) {
+        event.preventDefault();
+    }
+    
+    // Hide all sections and deactivate links
+    document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+    
+    const targetSection = document.getElementById(`sec-${name}`);
+    if (targetSection) {
+        targetSection.classList.add('active');
+    }
+
+    // Update active state on matching sidebar link
+    const targetLink = document.querySelector(`.sidebar-link[onclick*="'${name}'"]`);
+    if (targetLink) {
+        targetLink.classList.add('active');
+    }
+
+    // Update the URL hash without triggering a full page reload
+    if (window.location.hash !== `#sec-${name}`) {
+        history.pushState(null, null, `#sec-${name}`);
+    }
 }
+
+function handleUrlHash() {
+    const hash = window.location.hash; // e.g., "#sec-settings"
+    if (hash && hash.startsWith('#sec-')) {
+        const sectionName = hash.replace('#sec-', '');
+        const targetSection = document.getElementById(`sec-${sectionName}`);
+        if (targetSection) {
+            showSection(sectionName);
+        }
+    }
+}
+
+// 3. Run on page load and when hash changes
+document.addEventListener('DOMContentLoaded', handleUrlHash);
+window.addEventListener('hashchange', handleUrlHash);
 
 
 function previewPhoto(input) {

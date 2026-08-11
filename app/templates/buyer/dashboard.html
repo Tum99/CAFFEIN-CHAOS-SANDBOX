@@ -29,8 +29,8 @@
     </a>
     <a href="#" class="sidebar-link" onclick="showSection('saved', event)">
       <span class="sidebar-icon">🔖</span>
-      <span class="sidebar-link-text">Saved Items</span>
-      <span class="sidebar-badge">0</span>
+      <span class="sidebar-link-text">Saved Items </span>
+      <span class="sidebar-badge">{{ saved_count }}</span>
     </a>
     <a href="#" class="sidebar-link" onclick="showSection('history', event)">
       <span class="sidebar-icon">🕐</span>
@@ -88,7 +88,7 @@
             </div>
             <div class="stat-card">
                 <div class="stat-label">Saved Items</div>
-                <div class="stat-value">5</div>
+                <div class="stat-value">{{ saved_count }}</div>
                 <div class="stat-sub">2 back in stock</div>
                 <div class="stat-icon">🔖</div>
             </div>
@@ -108,18 +108,55 @@
             </div>
             <div class="panel-body">
                 <table class="orders-table">
-                    <thead><tr><th>Order</th><th>Items</th><th>Total</th><th>Date</th><th>Status</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>Order</th>
+                            <th>Items</th>
+                            <th>Total</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
                     <tbody>
                         {% for tx in recent_transactions %}
                         <tr>
-                            <td>#TX-00{{ tx.id }}</td>
-                            <td>{{ tx.quantity_kg }} kg ({{ tx.listing.varietal }})</td>
-                            <td>KES {{ "{:,.0f}".format(tx.total_amount) }}</td>
+                            <td><strong>#ORD-{{ "%04d"|format(tx.id) }}</strong></td>
+                            <td>
+                                {{ tx.quantity_kg }} kg 
+                                <span style="color: var(--crema);">
+                                    ({{ tx.listing.varietal if tx.listing else 'Coffee Lot' }})
+                                </span>
+                            </td>
+                            <td>
+                                KES {{ "{:,.0f}".format(tx.total_price if tx.total_price is defined else tx.total_amount) }}
+                            </td>
                             <td>{{ tx.created_at.strftime('%d %b %Y') }}</td>
-                            <td><span class="order-status status-{{ tx.status }}">{{ tx.status.title() }}</span></td>
+                            <td>
+                                {% set status_val = tx.status|lower %}
+                                <span class="order-status status-{{ status_val }}" 
+                                    style="padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; text-transform: capitalize; 
+                                    background: {% if status_val == 'pending' or 'inquiry' in status_val %}rgba(200,135,58,0.15); color:#C8873A;
+                                    {% elif status_val == 'confirmed' or status_val == 'completed' %}rgba(122,182,72,0.15); color:#7AB648;
+                                    {% else %}rgba(224,108,117,0.15); color:#E06C75;{% endif %}">
+                                    {{ tx.status.title() }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if tx.seller_id or (tx.listing and tx.listing.grower_id) %}
+                                    <a href="/messages?thread_seller={{ tx.seller_id or tx.listing.grower_id }}" 
+                                    style="color: var(--crema); font-size: 0.8rem; text-decoration: none;">💬 Chat</a>
+                                {% else %}
+                                    <span style="color: rgba(245,236,215,0.2); font-size: 0.8rem;">—</span>
+                                {% endif %}
+                            </td>
                         </tr>
                         {% else %}
-                        <tr><td colspan="5" style="text-align:center; padding:20px; color:#a8a29e;">No marketplace orders found.</td></tr>
+                        <tr>
+                            <td colspan="6" style="font-size: 0.9rem; text-align: center; padding: 25px; color: #a8a29e;">
+                                No marketplace orders found.
+                            </td>
+                        </tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -128,29 +165,84 @@
     </div>
 
     <!-- ── ORDERS ── -->
-    <div class="content-section" id="sec-orders">
-        <div class="dash-header"><div><div class="dash-greeting">Shopping</div><div class="dash-title">My <em>Orders</em></div></div></div>
-        <div class="panel">
-            <div class="panel-head"><div class="panel-title">All Orders</div></div>
-            <div class="panel-body">
-                <table class="orders-table" >
-                    <thead><tr><th>Order ID</th><th>Items</th><th>Total</th><th>Date</th><th>Payment</th><th>Status</th></tr></thead>
-                    <tbody>
-                        {% for tx in transactions %}
-                        <tr>
-                            <td>#TX-00{{ tx.id }}</td>
-                            <td>{{ tx.quantity_kg }}kg x {{ tx.listing.varietal }}</td>
-                            <td>KES {{ "{:,.0f}".format(tx.total_amount) }}</td>
-                            <td>{{ tx.created_at.strftime('%d %b %Y') }}</td>
-                            <td>{{ tx.mpesa_reference or 'Pending Push' }}</td>
-                            <td><span class="order-status status-{{ tx.status }}">{{ tx.status.title() }}</span></td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+    <!-- ── ORDERS ── -->
+<div class="content-section" id="sec-orders">
+    <div class="dash-header">
+        <div>
+            <div class="dash-greeting">Shopping</div>
+            <div class="dash-title">My <em>Orders</em></div>
         </div>
     </div>
+    <div class="panel">
+        <div class="panel-head">
+            <div class="panel-title">All Orders</div>
+        </div>
+        <div class="panel-body">
+            <table class="orders-table">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Items</th>
+                        <th>Total</th>
+                        <th>Date</th>
+                        <th>Payment</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tx in transactions %}
+                    <tr>
+                        <td><strong>#ORD-{{ "%04d"|format(tx.id) }}</strong></td>
+                        <td>
+                            {{ tx.quantity_kg }}kg x 
+                            <span style="color: var(--crema);">
+                                {{ tx.listing.varietal if tx.listing else 'Coffee Lot' }}
+                            </span>
+                        </td>
+                        <td>
+                            KES {{ "{:,.0f}".format(tx.total_price if tx.total_price is defined else tx.total_amount) }}
+                        </td>
+                        <td>{{ tx.created_at.strftime('%d %b %Y') }}</td>
+                        <td>
+                            <span style="font-size: 0.85rem; color: rgba(245,236,215,0.6);">
+                                {{ tx.mpesa_reference if tx.mpesa_reference else 'Direct / Private' }}
+                            </span>
+                        </td>
+                        <td>
+                            {% set status_val = tx.status|lower %}
+                            <span class="order-status status-{{ status_val }}" 
+                                    style="padding: 0.2rem 0.65rem; border-radius: 12px; font-size: 0.75rem; text-transform: capitalize;
+                                    background: {% if 'pending' in status_val or 'inquiry' in status_val %}rgba(200,135,58,0.15); color:#C8873A;
+                                    {% elif 'confirm' in status_val or 'complete' in status_val %}rgba(122,182,72,0.15); color:#7AB648;
+                                    {% else %}rgba(224,108,117,0.15); color:#E06C75;{% endif %}">
+                                {{ tx.status.title() }}
+                            </span>
+                        </td>
+                        <td>
+                            {% set seller_target = tx.seller_id or (tx.listing.grower_id if tx.listing else None) %}
+                            {% if seller_target %}
+                                <a href="/messages?thread_seller={{ seller_target }}" 
+                                    style="color: var(--crema); font-size: 0.82rem; text-decoration: none; font-weight: 500;">
+                                    💬 Chat Seller
+                                </a>
+                            {% else %}
+                                <span style="color: rgba(245,236,215,0.2); font-size: 0.82rem;">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" style="font-size: 0.9rem; text-align: center; padding: 25px; color: #a8a29e;">
+                            You haven't placed any marketplace orders yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
     <!-- ── SAVED ITEMS ── -->
     <div class="content-section" id="sec-saved">
@@ -159,7 +251,7 @@
             <div class="panel-head">
                 <div class="panel-title">Your Wishlist ({{ saved_count }})</div>
                 {% if saved_items %}
-                    <a class="panel-action" href="#">Add all to cart</a>
+                    <!-- <a class="panel-action" href="#">Add all to cart</a> -->
                 {% endif %}
             </div>
             <div class="panel-body">
@@ -288,46 +380,47 @@
     <div class="content-section" id="sec-settings">
         <div class="dash-header"><div><div class="dash-greeting">Account</div><div class="dash-title">Account <em>Settings</em></div></div></div>
         <div class="settings-grid">
+            <form action="{{ url_for('buyer.update_profile') }}"
+                    method="POST"
+                    enctype="multipart/form-data"
+                    class="settings-panel">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                
+                <div class="settings-panel-title">Profile Photo</div>
+                
+                <div class="profile-photo-upload">
+                    <div class="profile-photo-preview" id="photoPreview">
+                    {% if current_user.profile_pic and current_user.profile_pic != 'default_user.jpg' %}
+                        <img src="{{ url_for('static', filename='uploads/' + current_user.profile_pic) }}"
+                            alt="Profile photo"
+                            id="photoPreviewImg"
+                            onerror="this.style.display='none'"/>
+                    {% else %}
+                        <div class="profile-photo-preview-initial" id="photoPreviewInitial">
+                        {{ (current_user.first_name or current_user.email)[0].upper() }}
+                        </div>
+                    {% endif %}
+                    </div>
+                
+                    <div class="profile-photo-upload-btn">
+                    <label class="profile-photo-label" for="profilePhotoInput">
+                        📷 Choose Photo
+                    </label>
+                    <input type="file"
+                            id="profilePhotoInput"
+                            name="profile_photo"
+                            accept="image/*"
+                            style="display:none;"
+                            onchange="previewPhoto(this)"/>
+                    <div class="profile-photo-hint">JPG, PNG or WebP · Max 5MB</div>
+                    </div>
+                </div>
+                
+                <button class="settings-save" type="submit">Save Photo</button>
+            </form>
+
             <form action="{{ url_for('buyer.update_profile') }}" method="POST" class="settings-panel" enctype="multipart/form-data" onsubmit="return confirm('Save updates to profile entries?')">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <form action="{{ url_for('buyer.update_profile') }}"
-                        method="POST"
-                        enctype="multipart/form-data"
-                        class="settings-panel">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    
-                    <div class="settings-panel-title">Profile Photo</div>
-                    
-                    <div class="profile-photo-upload">
-                        <div class="profile-photo-preview" id="photoPreview">
-                        {% if current_user.profile_pic and current_user.profile_pic != 'default_user.jpg' %}
-                            <img src="{{ url_for('static', filename='uploads/' + current_user.profile_pic) }}"
-                                alt="Profile photo"
-                                id="photoPreviewImg"
-                                onerror="this.style.display='none'"/>
-                        {% else %}
-                            <div class="profile-photo-preview-initial" id="photoPreviewInitial">
-                            {{ (current_user.first_name or current_user.email)[0].upper() }}
-                            </div>
-                        {% endif %}
-                        </div>
-                    
-                        <div class="profile-photo-upload-btn">
-                        <label class="profile-photo-label" for="profilePhotoInput">
-                            📷 Choose Photo
-                        </label>
-                        <input type="file"
-                                id="profilePhotoInput"
-                                name="profile_photo"
-                                accept="image/*"
-                                style="display:none;"
-                                onchange="previewPhoto(this)"/>
-                        <div class="profile-photo-hint">JPG, PNG or WebP · Max 5MB</div>
-                        </div>
-                    </div>
-                    
-                    <button class="settings-save" type="submit">Save Photo</button>
-                </form>
                 <div class="settings-panel-title">Personal Information</div>
                 <div class="settings-field"><label>First Name</label><input type="text" name="first_name" value="{{ current_user.first_name or '' }}"/></div>
                 <div class="settings-field"><label>Last Name</label><input type="text" name="last_name" value="{{ current_user.last_name or '' }}"/></div>

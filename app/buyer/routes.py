@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
 from flask_login import login_required, current_user
 from app.models import User, Order, GrowerBuyerTransaction, FarmProductListing, FarmProfile, MessageThread, DirectMessage, BuyerProfile, CartItem, Product, Category
 from app import db
@@ -17,15 +17,17 @@ buyer = Blueprint('buyer', __name__, url_prefix='/buyer')
 @login_required
 @buyer_required
 def dashboard():
-    all_transactions = GrowerBuyerTransaction.query.filter_by(buyer_id=current_user.id)\
-        .order_by(GrowerBuyerTransaction.created_at.desc()).all()
+    all_transactions = Order.query.filter_by(buyer_id=current_user.id)\
+        .order_by(Order.created_at.desc()).all()
 
     recent_transactions = all_transactions[:5]
+
+    recent_orders = Order.query.filter_by(buyer_id=current_user.id).order_by(Order.created_at.desc()).limit(5).all()
 
     total_orders = len(all_transactions)
     in_progress_orders = sum(1 for tx in all_transactions if tx.status in ['pending', 'confirmed', 'paid', 'shipped'])
 
-    total_spent = sum(tx.total_amount for tx in all_transactions if tx.status != 'cancelled')
+    total_spent = sum(tx.total_price for tx in all_transactions if tx.status != 'cancelled')
 
     unread_msg_count = DirectMessage.query.filter_by(receiver_id=current_user.id, is_read=False).count()
 
@@ -55,7 +57,8 @@ def dashboard():
         current_date=datetime.now().strftime("%A, %d %B %Y"),
         saved_items=saved_cart_items,
         saved_count=saved_count,
-        browsing_history=browsing_history[:5]
+        browsing_history=browsing_history[:5],
+        recent_orders=recent_orders
     )
 
 
@@ -63,10 +66,21 @@ def dashboard():
 @login_required
 @buyer_required
 def update_profile():
-    current_user.first_name = request.form.get('first_name', '').strip()
-    current_user.last_name = request.form.get('last_name', '').strip()
-    current_user.email = request.form.get('email', '').strip()
-    current_user.phone = request.form.get('phone', '').strip()
+    first_name = request.form.get('first_name', '').strip()
+    last_name  = request.form.get('last_name', '').strip()
+    email      = request.form.get('email', '').strip()
+    phone_raw  = request.form.get('phone', '').strip()
+
+    if first_name:
+        current_user.first_name = first_name
+    if last_name:
+        current_user.last_name = last_name
+    if email:
+        current_user.email = email
+
+    # Handle integer conversion cleanly
+    if phone_raw:
+        current_user.phone = phone_raw
 
     file = request.files.get('profile_photo')
     if file and file.filename:
@@ -183,6 +197,33 @@ def update_notifications():
         flash('Notification preferences modified locally.', 'success')
         
     return redirect(url_for('buyer.dashboard', _anchor='sec-settings'))
+
+
+@buyer.route('/wishlist/add/<int:product_id>', methods=['POST'])
+@login_required
+@buyer_required
+def add_to_wishlist(product_id):
+    # Verify the product exists
+    product = Product.query.get_or_404(product_id)
+
+    # Check if item is already in wishlist for this user
+    existing_item = CartItem.query.filter_by(user_id=current_user.id, product_id=product.id).first()
+
+    if existing_item:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return {"status": "info", "message": "Item is already in your wishlist!"}, 200
+        flash("Item is already in your wishlist!", "info")
+    else:
+        # Save to CartItem table
+        new_item = CartItem(user_id=current_user.id, product_id=product.id, quantity=1)
+        db.session.add(new_item)
+        db.session.commit()
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return {"status": "success", "message": f"{product.name} added to wishlist!"}, 200
+        flash(f"{product.name} added to your wishlist!", "success")
+
+    return redirect(request.referrer or url_for('buyer.marketplace'))
 
 
 @buyer.route('/wishlist/remove/<int:item_id>', methods=['POST'])

@@ -11,7 +11,7 @@ class User(db.Model, UserMixin):
     first_name  = db.Column(db.String(50))
     last_name   = db.Column(db.String(50))
     password    = db.Column(db.String(200), nullable=False)
-    phone       = db.Column(db.Integer, unique=True, nullable=False)
+    phone       = db.Column(db.String, unique=True, nullable=True)
     role        = db.Column(db.String(20), nullable=False)   # buyer / seller / admin
     profile_pic = db.Column(db.String(255), default='default_user.jpg')
 
@@ -77,12 +77,6 @@ class BuyerProfile(db.Model):
     user_id     = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     preferences = db.Column(db.Text)
 
-    orders = db.relationship(
-        "Order",
-        backref="buyer",
-        lazy=True,
-        cascade="all, delete"
-    )
     bookings = db.relationship(
         "ServiceBooking",
         backref="buyer",
@@ -317,8 +311,12 @@ class DirectMessage(db.Model):
     receiver_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     thread_id   = db.Column(db.Integer, db.ForeignKey("message_thread.id"), nullable=False)
     body        = db.Column(db.Text, nullable=False)
+    msg_type    = db.Column(db.String(20), default='text')
     is_read     = db.Column(db.Boolean, default=False)
     created_at  = db.Column(db.DateTime, default=datetime.utcnow)
+    order_id    = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=True)
+
+    order = db.relationship('Order')
 
 
 class Review(db.Model):
@@ -346,18 +344,19 @@ class Event(db.Model):
 class Order(db.Model):
     __tablename__ = "order"
 
-    id          = db.Column(db.Integer, primary_key=True)
-    buyer_id    = db.Column(db.Integer, db.ForeignKey("buyer_profile.id", ondelete="CASCADE"))
-    title       = db.Column(db.String(255), nullable=False)
-    description = db.Column(db.Text)
-    created_at  = db.Column(db.DateTime, default=datetime.utcnow)
+    id = db.Column(db.Integer, primary_key=True)
+    listing_id = db.Column(db.Integer, db.ForeignKey('farm_product_listing.id'), nullable=False)
+    buyer_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    quantity_kg = db.Column(db.Float, nullable=False)
+    total_price = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String(30), default='In Inquiry / Pending') # Pending, Confirmed, Shipped
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    bids = db.relationship(
-        "Bid",
-        backref="order",
-        lazy=True,
-        cascade="all, delete"
-    )
+    # Relationships
+    listing = db.relationship('FarmProductListing', backref='order')
+    buyer = db.relationship('User', foreign_keys=[buyer_id], backref='buyer_orders')
+    seller = db.relationship('User', foreign_keys=[seller_id], backref='seller_orders')
 
 
 class Bid(db.Model):

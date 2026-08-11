@@ -22,14 +22,14 @@
       <div class="menu-modal-divider"></div>
       <div class="menu-modal-desc-label">About this item</div>
       <div class="menu-modal-desc"    id="menuModalDesc">Description here.</div>
-      <div class="menu-modal-footer">
+      <!-- <div class="menu-modal-footer">
         <button class="menu-modal-add" id="menuModalAddBtn" onclick="addFromModal()">
           + Add to Order
         </button>
         <div class="menu-modal-mpesa">
           <div class="mpesa-dot"></div>Pay via M-Pesa at checkout
         </div>
-      </div>
+      </div> -->
     </div>
   </div>
 </div>
@@ -55,12 +55,12 @@
         {% endfor %}
 
         <!-- Mini cart -->
-        <div class="sidebar-order">
+        <!-- <div class="sidebar-order">
             <div class="sidebar-order-label">Your Order</div>
             <div class="sidebar-order-total">KES <span id="cartTotal">0</span></div>
             <div class="sidebar-order-items"><span id="cartCount">0</span> items selected</div>
             <a href="#" class="sidebar-checkout">Checkout →</a>
-        </div>
+        </div> -->
     </aside>
 
 
@@ -135,4 +135,5 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/menu.js') }}?v={{ config.VERSION }}"></script>
+<script src="{{ url_for('static', filename='js/base.js') }}"></script>
 {% endblock %}

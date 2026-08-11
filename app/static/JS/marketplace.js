@@ -35,6 +35,7 @@ window.addEventListener('scroll', () => {
 let listings = [];
 let filtered = [];
 let currentModal = null;
+let currentProductId = null;
 
 // Contextual fallback checks
 let isLoggedIn = typeof window.USER_IS_AUTHENTICATED !== 'undefined' ? window.USER_IS_AUTHENTICATED : false;
@@ -208,8 +209,26 @@ function sortListings() {
 
 /* ══ CONTEXTUAL IN-VIEW OVERLAY MODAL MANAGER ══ */
 function openModal(l) {
+    // Support being passed either a full listing object or an ID
+    if (typeof l === 'number' || typeof l === 'string') {
+        l = listings.find(item => item.id === parseInt(l));
+    }
+
     if (!l) return;
     currentModal = l;
+    currentProductId = l.product_id || l.id;
+
+    // Reset Wishlist UI state inside modal
+    const wishBtn = document.getElementById('modalWishlistBtn');
+    const wishLabel = document.querySelector('.wish-actions .wishlist');
+    if (wishBtn) {
+        wishBtn.disabled = false;
+        wishBtn.textContent = '+';
+    }
+    if (wishLabel) {
+        wishLabel.textContent = 'Add to wishlist';
+        wishLabel.style.color = '';
+    }
 
     const mFarm = document.getElementById('modalFarmName');
     const mTitle = document.getElementById('modalTitle');
@@ -220,7 +239,6 @@ function openModal(l) {
     const imgPlaceholder = document.getElementById('modalImgPh');
     if (imgPlaceholder) {
         if (l.listing_image) {
-            // Replicates the same clean card-rendering engine framework
             imgPlaceholder.innerHTML = `
                 <img src="/static/${l.listing_image}" 
                      alt="${l.name || 'Listing Image'}" 
@@ -228,7 +246,6 @@ function openModal(l) {
                      onerror="this.style.display='none'">
             `;
         } else {
-            // Standard fallback icon if no image path exists in DB payload
             imgPlaceholder.innerHTML = `☕`; 
         }
     }
@@ -303,7 +320,6 @@ function closeModalOverlay(e) {
 function startMarketplaceEngine() {
     console.log("== Marketplace Core Pipeline Initializing ==");
     
-    // Snatch data structures safely from the window global scope
     const dataSource = window.DATABASE_PAYLOAD || window.listings || [];
     isLoggedIn = window.USER_IS_AUTHENTICATED || false;
     activeUserRole = window.USER_ROLE || 'guest';
@@ -321,29 +337,66 @@ function startMarketplaceEngine() {
     }
 }
 
-// Bulletproof execution trigger regardless of window load speeds
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', startMarketplaceEngine);
 } else {
     startMarketplaceEngine();
 }
 
+/* ══ BUYER WISHLIST ACTION ══ */
+async function addToWishlist() {
+    if (!currentProductId) return;
 
-function handleGrowerMessage() {
-    if (!currentModal) return;
-    // Redirect buyer directly to their messaging conversation route thread with the grower
-    window.location.href = `/messaging/chat?with_user_id=${currentModal.seller_id || ''}`;
+    const btn = document.getElementById('modalWishlistBtn');
+    const label = document.querySelector('.wish-actions .wishlist');
+    const csrfToken = getCsrfToken();
+
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '…';
+    }
+    if (label) label.textContent = 'Saving...';
+
+    try {
+        const response = await fetch(`/buyer/wishlist/add/${currentProductId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            if (btn) btn.textContent = '✓';
+            if (label) {
+                label.textContent = data.message || 'Saved to wishlist';
+                label.style.color = '#7AB648';
+            }
+            showToast(data.message || 'Item added to wishlist!', 'success');
+        } else {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = '+';
+            }
+            if (label) label.textContent = 'Add to wishlist';
+            showToast(data.message || 'Could not save item.', 'error');
+        }
+    } catch (err) {
+        console.error('Wishlist request error:', err);
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '+';
+        }
+        if (label) label.textContent = 'Add to wishlist';
+        showToast('Network error. Could not add to wishlist.', 'error');
+    }
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   MARKETPLACE MPESA ADDITIONS
-   Add these functions to the BOTTOM of your existing marketplace.js
-   They replace handleOrderPlacement() and handleGrowerMessage()
-═══════════════════════════════════════════════════════════════ */
-
-
-/* ── HANDLE ORDER (replaces handleOrderPlacement) ── */
-function handleOrder() {
+/* ══ MARKETPLACE MPESA & MESSAGING ACTIONS ══ */
+async function handleOrder() {
   if (!currentModal) return;
 
   const qtyInput = document.getElementById('modalQty');
@@ -359,14 +412,66 @@ function handleOrder() {
     return;
   }
 
-  // Show phone confirmation modal before initiating payment
-  showPhoneModal((phone) => {
-    initiatePayment(currentModal, qty, phone);
-  });
+  // Calculate total price based on price_per_kg
+  const pricePerKg = parseFloat(currentModal.price_per_kg || 0);
+  const totalPrice = qty * pricePerKg;
+
+  // Ensure seller_id exists on currentModal (fallback to grower_id if used)
+  const sellerId = currentModal.seller_id || currentModal.grower_id;
+
+  if (!sellerId) {
+    showToast('Unable to identify seller for this listing.', 'error');
+    return;
+  }
+
+  const orderBtn = document.querySelector('.modal-order-btn');
+  if (orderBtn) {
+    orderBtn.disabled = true;
+    orderBtn.textContent = 'Sending Order to Seller...';
+  }
+
+  try {
+    const response = await fetch('/order/place-direct-order', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCsrfToken()
+      },
+      body: JSON.stringify({
+        listing_id: currentModal.id,
+        seller_id: sellerId,
+        quantity_kg: qty,
+        total_price: totalPrice
+      })
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      showToast(data.message, 'success');
+      closeModalBtn();
+
+      setTimeout(() => {
+        window.location.href = data.chat_url || '/buyer/dashboard#sec-orders';
+      }, 1200);
+
+    } else {
+      showToast(data.message || data.error || 'Failed to place order', 'error');
+      if (orderBtn) {
+        orderBtn.disabled = false;
+        orderBtn.textContent = 'Order Now';
+      }
+    }
+  } catch (err) {
+    console.error('Order error:', err);
+    showToast('Network error. Please try again.', 'error');
+    if (orderBtn) {
+      orderBtn.disabled = false;
+      orderBtn.textContent = 'Order Now';
+    }
+  }
 }
 
-
-/* ── INITIATE PAYMENT ── */
 function initiatePayment(listing, quantity, phone) {
   const orderBtn = document.querySelector('.modal-order-btn');
   if (orderBtn) {
@@ -390,10 +495,7 @@ function initiatePayment(listing, quantity, phone) {
   .then(data => {
     if (data.success) {
       showToast('M-Pesa request sent! Check your phone and enter your PIN.', 'success');
-
-      // Start polling for payment confirmation
       pollPaymentStatus(data.transaction_id, orderBtn);
-
     } else {
       showToast(data.error || 'Payment failed. Please try again.', 'error');
       if (orderBtn) {
@@ -412,12 +514,9 @@ function initiatePayment(listing, quantity, phone) {
   });
 }
 
-
-/* ── POLL PAYMENT STATUS ── */
-// Checks every 5 seconds for up to 2 minutes
 function pollPaymentStatus(transactionId, orderBtn) {
   let attempts = 0;
-  const maxAttempts = 24; // 24 × 5s = 2 minutes
+  const maxAttempts = 24;
 
   const interval = setInterval(() => {
     attempts++;
@@ -432,7 +531,6 @@ function pollPaymentStatus(transactionId, orderBtn) {
             orderBtn.textContent = '✓ Order Placed';
             orderBtn.style.background = '#7AB648';
           }
-          // Refresh the listing quantity shown in modal
           if (currentModal) {
             currentModal.quantity_kg = Math.max(0, currentModal.quantity_kg - (parseFloat(document.getElementById('modalQty')?.value) || 0));
             document.getElementById('mStock').textContent = currentModal.quantity_kg + ' kg';
@@ -461,15 +559,12 @@ function pollPaymentStatus(transactionId, orderBtn) {
         }
       });
 
-  }, 5000); // poll every 5 seconds
+  }, 5000);
 }
 
-
-/* ── HANDLE MESSAGE (replaces handleGrowerMessage) ── */
 function handleMessage() {
   if (!currentModal) return;
 
-  // Remove any existing message modal
   const existing = document.getElementById('msgModal');
   if (existing) existing.remove();
 
@@ -574,6 +669,10 @@ function handleMessage() {
   });
 }
 
+function closeModal() {
+    const modal = document.getElementById('orderModal'); // or your specific modal ID
+    if (modal) modal.style.display = 'none';
+}
 
 /* ── TOAST NOTIFICATIONS ── */
 function showToast(message, type = 'info') {
@@ -600,7 +699,6 @@ function showToast(message, type = 'info') {
   `;
   toast.textContent = message;
 
-  // Add animation keyframes if not already added
   if (!document.getElementById('toastStyle')) {
     const style = document.createElement('style');
     style.id = 'toastStyle';
@@ -616,7 +714,6 @@ function showToast(message, type = 'info') {
   document.body.appendChild(toast);
   setTimeout(() => { if (toast.parentNode) toast.remove(); }, 5000);
 }
-
 
 /* ── CSRF TOKEN HELPER ── */
 function getCsrfToken() {

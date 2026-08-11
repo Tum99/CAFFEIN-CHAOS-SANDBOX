@@ -77,13 +77,17 @@
                       <span class="modal-total-label">Total</span>
                       <span class="modal-total-price" id="modalTotal">KES 0</span>
                   </div>
-                  <button class="modal-order-btn" onclick="handleOrder()">Pay via M-Pesa →</button>
+                  <button class="modal-order-btn" onclick="handleOrder()">ORDER</button>
                   <button class="modal-msg-btn" onclick="handleMessage()">💬 Message Grower First</button>
+                  <div class="wish-actions">
+                    <button class="modal-wish-btn" id="modalWishlistBtn" onclick="addToWishlist()"> + </button>
+                    <p class="wishlist">Add to wishlist</p>
+                  </div>
               </div>
           {% elif current_user.role == 'seller' %}
               <div class="modal-seller-insight-box" style="background: #1c1917; padding: 1.5rem; border: 1px solid #2e2a24; margin-top: 1.5rem;">
                   <div style="color: #a8a29e; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Market Insight</div>
-                  <p style="font-size: 0.87rem; margin: 0.5rem 0 0 0; color: #f5ecd7;">
+                  <p style="font-size: 1rem; margin: 0.5rem 0 0 0; color: #f5ecd7;">
                       This listing represents live competitor pricing for this varietal. Use this metric to position your own farm lots competitively.
                   </p>
               </div>
@@ -543,4 +547,5 @@
 
 <script src="{{ url_for('static', filename='js/marketplace.js') }}"></script>
 <script src="{{ url_for('static', filename='js/logout_base.js') }}"></script>
+<script src="{{ url_for('static', filename='js/base.js') }}"></script>
 {% endblock %}

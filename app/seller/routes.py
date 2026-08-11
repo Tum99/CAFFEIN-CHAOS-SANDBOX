@@ -1,6 +1,6 @@
-from flask import flash, Blueprint, render_template, request, redirect, url_for, current_app
+from flask import flash, Blueprint, render_template, request, redirect, url_for, current_app, jsonify
 from flask_login import login_required, current_user
-from app.models import SellerProfile, DirectMessage, MessageThread, FarmProfile, Product, FarmProductListing, GrowerBuyerTransaction as transactions
+from app.models import SellerProfile, DirectMessage, MessageThread, FarmProfile, Product, FarmProductListing, GrowerBuyerTransaction 
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.utils.decorators import seller_required
 from datetime import datetime
@@ -124,7 +124,7 @@ def dashboard():
     if not farm or not farm.is_setup_complete:
         return redirect(url_for('seller.seller_setup'))
  
-    orders   = transactions.query.join(FarmProductListing).filter(
+    orders   = GrowerBuyerTransaction.query.join(FarmProductListing).filter(
         FarmProductListing.grower_id == current_user.id
     ).all()
  
@@ -704,3 +704,51 @@ def edit_listing(listing_id):
         flash("Something went wrong. Please try again.", "error")
  
     return redirect(url_for('seller.dashboard'))
+
+
+@seller.route('/api/orders')
+@login_required
+@seller_required
+def get_orders_api():
+    """Returns JSON payload of seller's orders for dynamic AJAX fetching."""
+    
+    # Query GrowerBuyerTransaction directly filtering by grower_id matching the seller
+    orders = GrowerBuyerTransaction.query.filter(
+        (GrowerBuyerTransaction.grower_id == current_user.id)
+    ).order_by(GrowerBuyerTransaction.created_at.desc()).all()
+
+    formatted_orders = []
+    for order in orders:
+        buyer_name = "—"
+        if hasattr(order, 'buyer') and order.buyer:
+            buyer_name = order.buyer.first_name or order.buyer.email.split('@')[0].capitalize()
+
+        coffee_lot = "—"
+        if hasattr(order, 'listing') and order.listing:
+            coffee_lot = order.listing.varietal or 'Coffee Lot'
+            if getattr(order.listing, 'process', None):
+                coffee_lot += f" ({order.listing.process})"
+
+        # Handle total_price safely (falls back to 0 if total_price is None)
+        price_val = getattr(order, 'total_price', None) or getattr(order, 'total_amount', 0.0)
+
+        formatted_orders.append({
+            "id": order.id,
+            "order_code": f"#ORD-{order.id:03d}",
+            "buyer_name": buyer_name,
+            "coffee_lot": coffee_lot,
+            "quantity_kg": order.quantity_kg,
+            "total_amount": f"{price_val:,.0f}",
+            "mpesa_ref": getattr(order, 'mpesa_reference', None) or '—',
+            "status": order.status,
+            "listing_id": order.listing_id
+        })
+
+    pending_count = sum(1 for o in orders if o.status == 'pending')
+
+    return jsonify({
+        "status": "success",
+        "total_orders": len(formatted_orders),
+        "pending_orders": pending_count,
+        "orders": formatted_orders
+    })
