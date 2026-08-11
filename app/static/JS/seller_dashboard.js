@@ -268,6 +268,127 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
+/* ── DYNAMIC ORDERS FETCHING ── */
+function fetchDynamicOrders() {
+    const url = typeof ORDERS_API_URL !== 'undefined' ? ORDERS_API_URL : '/seller/api/orders';
+
+    fetch(url)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                renderOrdersData(data.orders);
+                updateOrderBadges(data.total_orders, data.pending_orders);
+            }
+        })
+        .catch(err => console.error('Error fetching dynamic orders:', err));
+}
+
+function renderOrdersData(orders) {
+    const recentBody = document.getElementById('recentOrdersBody');
+    const allBody = document.getElementById('ordersTableBody');
+    const recentTable = document.getElementById('recentOrdersTable');
+    const recentEmpty = document.getElementById('recentOrdersEmpty');
+    const allTable = document.getElementById('ordersTable');
+    const allEmpty = document.getElementById('allOrdersEmpty');
+
+    if (!orders || orders.length === 0) {
+        if (recentTable) recentTable.style.display = 'none';
+        if (recentEmpty) recentEmpty.style.display = 'block';
+        if (allTable) allTable.style.display = 'none';
+        if (allEmpty) allEmpty.style.display = 'block';
+        return;
+    }
+
+    if (recentTable) recentTable.style.display = 'table';
+    if (recentEmpty) recentEmpty.style.display = 'none';
+    if (allTable) allTable.style.display = 'table';
+    if (allEmpty) allEmpty.style.display = 'none';
+
+    // Render Recent Orders (Top 5)
+    if (recentBody) {
+        recentBody.innerHTML = orders.slice(0, 5).map(o => `
+            <tr>
+                <td>${escapeHtml(o.order_code)}</td>
+                <td>${escapeHtml(o.buyer_name)}</td>
+                <td>${escapeHtml(o.coffee_lot)}</td>
+                <td>${o.quantity_kg} kg</td>
+                <td>KES ${escapeHtml(o.total_amount)}</td>
+                <td>
+                    <span class="order-status status-${o.status.toLowerCase()}">
+                        ${o.status.charAt(0).toUpperCase() + o.status.slice(1)}
+                    </span>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // Render Full Orders Table
+    if (allBody) {
+        allBody.innerHTML = orders.map(o => `
+            <tr data-listing-id="${o.listing_id}">
+                <td>${escapeHtml(o.order_code)}</td>
+                <td>${escapeHtml(o.buyer_name)}</td>
+                <td>${escapeHtml(o.coffee_lot)}</td>
+                <td>${o.quantity_kg} kg</td>
+                <td>${escapeHtml(o.total_amount)}</td>
+                <td style="font-family:monospace;font-size:0.78rem;">${escapeHtml(o.mpesa_ref)}</td>
+                <td>
+                    <span class="order-status status-${o.status.toLowerCase()}">
+                        ${o.status.charAt(0).toUpperCase() + o.status.slice(1)}
+                    </span>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    const count = document.getElementById('ordersShownCount');
+    if (count) count.textContent = orders.length;
+}
+
+function updateOrderBadges(totalOrders, pendingOrders) {
+    const badges = document.querySelectorAll('a[onclick*="orders"] .sidebar-badge');
+    badges.forEach(sidebarBadge => {
+        sidebarBadge.textContent = totalOrders;
+        sidebarBadge.style.display = totalOrders > 0 ? 'inline-block' : 'none';
+    });
+}
+
+function filterOrdersByListing(listingId) {
+    const rows = document.querySelectorAll('#ordersTableBody tr');
+    const bar = document.getElementById('ordersFilterBar');
+    let visible = 0;
+
+    rows.forEach(row => {
+        const match = row.dataset.listingId == listingId;
+        row.style.display = match ? '' : 'none';
+        if (match) visible++;
+    });
+
+    if (bar) bar.style.display = 'flex';
+    const count = document.getElementById('ordersShownCount');
+    if (count) count.textContent = visible;
+}
+
+function clearOrdersFilter() {
+    const rows = document.querySelectorAll('#ordersTableBody tr');
+    rows.forEach(r => r.style.display = '');
+    const bar = document.getElementById('ordersFilterBar');
+    if (bar) bar.style.display = 'none';
+    const count = document.getElementById('ordersShownCount');
+    if (count) count.textContent = rows.length;
+}
+
+// Polling interval
+document.addEventListener('DOMContentLoaded', () => {
+    fetchDynamicOrders();
+    setInterval(fetchDynamicOrders, 15000);
+});
+
 function openLogout() {
   document.getElementById('logoutOverlay').classList.add('open');
 }
