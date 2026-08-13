@@ -105,6 +105,9 @@ def create_app():
             seller_setup_complete=setup_complete
         )
 
+    with app.app_context():
+        db.create_all()
+
 
     return app
 
