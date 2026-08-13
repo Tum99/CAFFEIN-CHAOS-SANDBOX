@@ -1,5 +1,13 @@
 {% extends "base.html" %}
 {% block content %}
+
+{% block extra_css %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='new_seller.css') }}"
+/>
+{% endblock %}
+
 <div class="cursor" id="cursor"></div>
 <div class="cursor-ring" id="cursorRing"></div>
 
@@ -432,7 +440,7 @@
 
 
    <!-- ══ GIFT HAMPERS ══ -->
-  <!-- <section id="gift-hampers">
+  <section id="gift-hampers">
     <div class="sec-head">
       <div>
         <div class="sec-eyebrow">Gifting</div>
@@ -441,21 +449,21 @@
       <p class="sec-desc">Beautifully curated hampers — coffee, branded merch, wrapped and ready. Perfect for corporate gifting or personal occasions.</p>
     </div>
 
-    <div class="hampers-grid"> -->
+    <div class="hampers-grid">
 
       <!-- FEATURED HAMPER -->
-      <!-- <div class="hamper-card featured">
+      <div class="hamper-card featured">
         <div class="hamper-img">
           <img src="" alt="C&C Gift Hamper"
-            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"/> -->
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"/>
           <!-- Image 2 goes here: WhatsApp_Image_2026-04-11_at_18_06_58.jpeg -->
           <!-- src="{{ url_for('static', filename='images/hamper-classic.jpg') }}" -->
-          <!-- <div class="hamper-img-ph" style="display:none">🎁</div>
+          <div class="hamper-img-ph" style="display:none">🎁</div>
           <div class="hamper-img-overlay"></div>
           <span class="hamper-ribbon">🎀 Gift Ready</span>
           <span class="hamper-verified">C&C Curated</span>
-        </div> -->
-        <!-- <div class="hamper-body">
+        </div>
+        <div class="hamper-body">
           <div class="hamper-cat">Signature Hamper</div>
           <div class="hamper-name">The C&C <em>Classic</em> Hamper</div>
           <div class="hamper-contents">Wicker basket, cellophane-wrapped with ribbon. Includes: C&C branded cap, 250g Arabica coffee, branded napkins, assorted chocolates & seasonal treats.</div>
@@ -464,20 +472,20 @@
             <button class="hamper-btn" onclick="addToCart('C&C Classic Hamper', 3500, '🎁')">Add to Cart</button>
           </div>
         </div>
-      </div> -->
+      </div>
 
 
       <!-- HAMPER 2 -->
-      <!-- <div class="hamper-card">
+      <div class="hamper-card">
         <div class="hamper-img">
           <img src="" alt="Premium Hamper"
-            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"/> -->
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"/>
           <!-- Image 3: WhatsApp_Image_2026-04-11_at_21_09_41.jpeg -->
           <!-- src="{{ url_for('static', filename='images/hamper-premium.jpg') }}" -->
-          <!-- <div class="hamper-img-ph" style="display:none">🧺</div>
+          <div class="hamper-img-ph" style="display:none">🧺</div>
           <div class="hamper-img-overlay"></div>
           <span class="hamper-ribbon">🏆 Premium</span>
-        </div>
+        </div> 
         <div class="hamper-body">
           <div class="hamper-cat">Premium Hamper</div>
           <div class="hamper-name">The Gold <em>Hamper</em></div>
@@ -487,11 +495,11 @@
             <button class="hamper-btn" onclick="addToCart('Gold Hamper', 6500, '🧺')">Add to Cart</button>
           </div>
         </div>
-      </div> -->
+      </div>
 
 
       <!-- HAMPER 3 -->
-      <!-- <div class="hamper-card">
+      <div class="hamper-card">
         <div class="hamper-img">
           <div class="hamper-img-ph">💼</div>
           <div class="hamper-img-overlay"></div>
@@ -506,11 +514,11 @@
             <button class="hamper-btn" onclick="addToCart('Corporate Hamper', 8500, '💼')">Add to Cart</button>
           </div>
         </div>
-      </div> -->
+      </div>
 
 
       <!-- HAMPER 4 -->
-      <!-- <div class="hamper-card">
+      <div class="hamper-card">
         <div class="hamper-img">
           <div class="hamper-img-ph">💝</div>
           <div class="hamper-img-overlay"></div>
@@ -528,14 +536,14 @@
       </div>
 
     </div>
-  </section> -->
+  </section>
 
 
   
 
 
   <!-- ══ MERCH ══ -->
-  <!-- <section id="merch">
+  <section id="merch">
     <div class="sec-head">
       <div>
         <div class="sec-eyebrow">Branded Merch</div>
@@ -603,7 +611,7 @@
       </div>
 
     </div>
-  </section> -->
+  </section>
 
 
   
@@ -647,6 +655,7 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/products_services.js') }}?v={{ config.VERSION }}"></script>
 <script src="{{ url_for('static', filename='js/base.js') }}"></script>
+<script src="{{ url_for('static', filename='js/mobile_nav.js') }}"></script>
 {% endblock %}
 
 

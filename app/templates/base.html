@@ -57,6 +57,7 @@
 
     <!-- ══ NAVBAR ══ -->
     <nav id="navbar">
+      <!-- 1. Logo -->
       <a href="{{ url_for('main.home') }}" class="nav-logo">
         <div class="nav-logo-icon">
           <img src="/static/images/Logo1.png" alt="Caffeine & Chaos logo" />
@@ -64,107 +65,17 @@
         <div class="nav-logo-text">Caffeine<br /><span>& Chaos</span></div>
       </a>
 
-      {# Hamburger — visible on mobile only via mobile.css #}
-      <button
-        class="nav-hamburger"
-        id="navHamburger"
-        aria-label="Toggle navigation"
-        aria-expanded="false"
-      >
-        <span></span><span></span><span></span>
-      </button>
-
-      <ul class="nav-links" id="navLinks">
-        <li>
-          <a
-            href="{{ url_for('main.home') }}"
-            class="{{ 'active' if active_page == 'home' }}"
-            >Home</a
-          >
-        </li>
-        <li>
-          <a
-            href="{{ url_for('menu.main_menu') }}"
-            class="{{ 'active' if active_page == 'menu' }}"
-            >Menu</a
-          >
-        </li>
-        <li>
-          <a
-            href="{{ url_for('products.list_products') }}"
-            class="{{ 'active' if active_page == 'products' }}"
-            >Products</a
-          >
-        </li>
-
-        {% if current_user.is_authenticated %} {# Marketplace — hidden for
-        sellers mid-setup #} {% if current_user.role == 'seller' and
-        seller_setup_complete %}
-        <li>
-          <a
-            href="{{ url_for('seller.marketplace') }}"
-            class="{{ 'active' if active_page == 'marketplace' }}"
-          >
-            Marketplace (Seller)</a
-          >
-        </li>
-        {% elif current_user.role == 'buyer' %}
-        <li>
-          <a
-            href="{{ url_for('buyer.marketplace') }}"
-            class="{{ 'active' if active_page == 'marketplace' }}"
-          >
-            Marketplace</a
-          >
-        </li>
-        {% endif %} {# Dashboard #} {% if current_user.role == 'seller' %}
-        <li>
-          <a
-            href="{{ url_for('seller.dashboard') }}"
-            class="{{ 'active' if active_page == 'dashboard' }}"
-            >Dashboard</a
-          >
-        </li>
-        {% elif current_user.role == 'buyer' %}
-        <li>
-          <a
-            href="{{ url_for('buyer.dashboard') }}"
-            class="{{ 'active' if active_page == 'dashboard' }}"
-            >Dashboard</a
-          >
-        </li>
-        {% elif current_user.role == 'admin' %}
-        <li>
-          <a
-            href="{{ url_for('admin.dashboard') }}"
-            class="{{ 'active' if active_page == 'dashboard' }}"
-            >Admin</a
-          >
-        </li>
-        {% endif %} {# Messages — hidden for sellers mid-setup #} {% if
-        current_user.role != 'seller' or seller_setup_complete %}
-        <!-- <li>
-          <a
-            href="{{ url_for('messaging.inbox') }}"
-            class="{{ 'active' if active_page == 'messages' }}"
-          >
-            Messages {% set unread = unread_msg_count | default(0) %} {% if
-            unread > 0 %}
-            <span class="nav-msg-badge">{{ unread }}</span>
-            {% endif %}
-          </a>
-        </li> -->
-        {% endif %} {# ── AVATAR DROPDOWN ── #}
-        <li class="nav-avatar-wrap" id="navAvatarWrap">
+      <!-- 2. Top-Right Controls (Avatar + Hamburger) -->
+      <div class="nav-actions">
+        {% if current_user.is_authenticated %}
+        <div class="nav-avatar-wrap" id="navAvatarWrap">
           <button
             class="nav-avatar-btn"
             id="navAvatarBtn"
             onclick="toggleAvatarDropdown(event)"
             aria-expanded="false"
           >
-            {# Profile photo or initials fallback #} {% if
-            current_user.profile_pic and current_user.profile_pic !=
-            'default_user.jpg' %}
+            {% if current_user.profile_pic and current_user.profile_pic != 'default_user.jpg' %}
             <img
               src="{{ url_for('static', filename='uploads/' + current_user.profile_pic) }}"
               alt="{{ current_user.first_name or 'User' }}"
@@ -184,25 +95,22 @@
             {% endif %}
           </button>
 
-          {# Display name + role tag beside avatar #}
           <button
-            class="nav-avatar-name-btn"
+            class="nav-avatar-name-btn desktop-only"
             onclick="toggleAvatarDropdown(event)"
           >
             <span class="nav-avatar-name">
-              {{ current_user.first_name or current_user.email.split('@')[0] |
-              capitalize }}
+              {{ current_user.first_name or current_user.email.split('@')[0] | capitalize }}
             </span>
             <span class="nav-avatar-chevron" id="avatarChevron">▾</span>
           </button>
 
-          {# Dropdown menu #}
+          <!-- Dropdown -->
           <div class="nav-avatar-dropdown" id="avatarDropdown">
             <div class="avatar-dropdown-header">
               <div class="avatar-dropdown-name">
-                {{ current_user.first_name or current_user.email.split('@')[0] |
-                capitalize }} {% if current_user.last_name %} {{
-                current_user.last_name }}{% endif %}
+                {{ current_user.first_name or current_user.email.split('@')[0] | capitalize }} 
+                {% if current_user.last_name %}{{ current_user.last_name }}{% endif %}
               </div>
               <div class="avatar-dropdown-email">{{ current_user.email }}</div>
               <div class="avatar-dropdown-role">
@@ -219,37 +127,81 @@
               <span>⚙️</span> Account Settings
             </a>
 
-            <a
-              class="avatar-dropdown-item"
-              href="{{ url_for('messaging.inbox') }}"
-            >
-              <span>💬</span> Messages {% if unread_msg_count | default(0) > 0
-              %}
-              <span class="avatar-dropdown-badge">{{ unread_msg_count }}</span>
+            <a class="avatar-dropdown-item" href="{{ url_for('messaging.inbox') }}">
+              <span>💬</span> Messages 
+              {% if unread_msg_count | default(0) > 0 %}
+                <span class="avatar-dropdown-badge">{{ unread_msg_count }}</span>
               {% endif %}
             </a>
 
             <div class="avatar-dropdown-divider"></div>
 
             <button
-              class="avatar-dropdown-item avatar-dropdown-logout"
+              class="avatar-dropdown-item avatar-dropdown-logout mobile-only"
               onclick="openLogout()"
             >
               <span>↩</span> Log Out
             </button>
           </div>
+        </div>
+        {% endif %}
+
+        <button
+          class="nav-hamburger"
+          id="navHamburger"
+          aria-label="Toggle navigation"
+          aria-expanded="false"
+        >
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+
+      <!-- 3. Collapsible Links Drawer -->
+      <ul class="nav-links" id="navLinks">
+        <li>
+          <a href="{{ url_for('main.home') }}" class="{{ 'active' if active_page == 'home' }}">Home</a>
+        </li>
+        <li>
+          <a href="{{ url_for('menu.main_menu') }}" class="{{ 'active' if active_page == 'menu' }}">Menu</a>
+        </li>
+        <li>
+          <a href="{{ url_for('products.list_products') }}" class="{{ 'active' if active_page == 'products' }}">Products</a>
         </li>
 
+        {% if current_user.is_authenticated %}
+          {% if current_user.role == 'seller' and seller_setup_complete %}
+          <li>
+            <a href="{{ url_for('seller.marketplace') }}" class="{{ 'active' if active_page == 'marketplace' }}">Marketplace (Seller)</a>
+          </li>
+          {% elif current_user.role == 'buyer' %}
+          <li>
+            <a href="{{ url_for('buyer.marketplace') }}" class="{{ 'active' if active_page == 'marketplace' }}">Marketplace</a>
+          </li>
+          {% endif %}
+
+          {% if current_user.role == 'seller' %}
+          <li>
+            <a href="{{ url_for('seller.dashboard') }}" class="{{ 'active' if active_page == 'dashboard' }}">Dashboard</a>
+          </li>
+          {% elif current_user.role == 'buyer' %}
+          <li>
+            <a href="{{ url_for('buyer.dashboard') }}" class="{{ 'active' if active_page == 'dashboard' }}">Dashboard</a>
+          </li>
+          {% elif current_user.role == 'admin' %}
+          <li>
+            <a href="{{ url_for('admin.dashboard') }}" class="{{ 'active' if active_page == 'dashboard' }}">Admin</a>
+          </li>
+          {% endif %}
         {% else %}
-        <li>
-          <a href="{{ url_for('auth.login') }}" class="btn-filled">Login</a>
-        </li>
+          <li>
+            <a href="{{ url_for('auth.login') }}" class="btn-filled">Login</a>
+          </li>
         {% endif %}
       </ul>
     </nav>
 
-    {# ── FLASH MESSAGES ── #} {% with messages =
-    get_flashed_messages(with_categories=true) %} {% if messages %}
+    {# ── FLASH MESSAGES ── #} 
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if messages %}
     <div class="flash-container">
       {% for category, message in messages %}
       <div class="flash flash-{{ category }}">

@@ -71,6 +71,13 @@ nav {
   background-color: var(--espresso);
 }
 
+#navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Distributes items cleanly */
+  width: 100%;
+}
+
 nav.scrolled {
   background: rgba(10,6,4,0.88);
   backdrop-filter: blur(18px);
@@ -83,6 +90,7 @@ nav.scrolled {
   gap: 0.8rem;
   text-decoration: none;
   cursor: none;
+  order: 1;
 }
 .nav-logo-icon {
   width: 50px; height: 50px;
@@ -109,9 +117,20 @@ nav.scrolled {
 }
 .nav-logo-text span { color: var(--crema); }
 .nav-links {
-  display: flex;
-  gap: 2.8rem;
   list-style: none;
+  order: 2;
+  display: flex;
+  align-items: center;
+  gap: 2rem; /* Spacing between links */
+  margin-left: auto; /* Pushes links away from logo */
+  margin-right: 2rem;
+}
+
+.nav-actions {
+  order: 3;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .nav-links a {
@@ -778,6 +797,11 @@ footer { background: #050302; padding: 5rem 1rem 2.5rem; border-top: 1px solid r
   animation: flashSlideIn 0.35s cubic-bezier(0.22,1,0.36,1) both;
 }
 
+.nav-hamburger {
+  display: none !important;
+}
+
+
 /* ── COMPREHENSIVE MOBILE VIEW BREAKPOINT ── */
 @media (max-width: 768px) {
   /* Touch device cursor reset */
@@ -800,12 +824,22 @@ footer { background: #050302; padding: 5rem 1rem 2.5rem; border-top: 1px solid r
     min-height: 64px;
   }
 
-  .nav-logo { flex-shrink: 0; }
+  #navbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .nav-logo { 
+    flex-shrink: 0;
+    order: 1;
+  }
 
   /* Hamburger toggle */
   /* ── HAMBURGER BUTTON & ANIMATION ── */
   .nav-hamburger {
-    display: flex;
+    display: flex !important;
     flex-direction: column;
     justify-content: space-between;
     width: 24px;
@@ -850,6 +884,9 @@ footer { background: #050302; padding: 5rem 1rem 2.5rem; border-top: 1px solid r
     border-top: 1px solid rgba(200, 135, 58, 0.1);
     padding-top: 0.8rem;
     list-style: none;
+    order: 3;
+    width: 100%;
+
   }
 
   .nav-links.open {
@@ -1188,9 +1225,28 @@ footer { background: #050302; padding: 5rem 1rem 2.5rem; border-top: 1px solid r
     display: none; 
   }
 
-  .nav-avatar-dropdown { 
-    right: -0.5rem; 
-    min-width: 190px; 
+  .nav-avatar-dropdown {
+    right: 0;
+    left: auto;
+    top: calc(100% + 0.75rem);
+  }
+
+  .nav-actions {
+    order: 2;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    z-index: 1002;
+  }
+
+  .nav-avatar-wrap {
+    display: flex;
+    align-items: center;
+    position: relative;
+  }
+
+  .desktop-only {
+    display: none !important;
   }
 
   .dash-layout {
@@ -1334,7 +1390,9 @@ footer { background: #050302; padding: 5rem 1rem 2.5rem; border-top: 1px solid r
 /* ── Avatar wrapper ── */
 .nav-avatar-wrap {
   position: relative;
-  display: flex; align-items: center; gap: 0.45rem;
+  display: flex; 
+  align-items: center; 
+  gap: 0.45rem;
 }
  
 /* ── Circular avatar button ── */
