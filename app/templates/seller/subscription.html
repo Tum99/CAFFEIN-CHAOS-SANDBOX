@@ -1,0 +1,100 @@
+{% extends "base.html" %} 
+{% block title %}Subscription{% endblock %} 
+{% block content %}
+
+
+<div class="cursor-seller" id="cursor"></div>
+<div class="cursor-seller-ring" id="cursorRing"></div>
+
+<body class="page-subscription">
+    <div class="subscription-container">
+        <div class="subscription-content">
+            <div class="subscription-header">
+                <h2>Marketplace Membership</h2>
+            </div>
+        
+            <div class="plans-grid">
+                <div class="plan-card">
+                    <h3>Monthly Plan</h3>
+                    <p class="price">KES 1,500 / mo</p>
+                    <button class="btn" onclick="openMpesaModal('monthly', 1500)">Subscribe Monthly</button>
+                </div>
+
+                <div class="plan-card featured">
+                    <h3>Yearly Plan</h3>
+                    <p class="price">KES 15,000 / yr</p>
+                    <button class="btn" onclick="openMpesaModal('yearly', 15000)">Subscribe Yearly</button>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- M-Pesa Prompt Modal -->
+    <div id="mpesaModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h3>M-Pesa Payment</h3>
+            <p>Subscribe to <span id="modalPlanTitle"></span> plan for <strong id="modalPlanPrice"></strong></p>
+            
+            <input type="hidden" id="modalPlanType">
+            <div class="form-group">
+                <label>M-Pesa Phone Number:</label>
+                <input type="text" id="mpesaPhone" placeholder="07XXXXXXXX or 2547XXXXXXXX">
+            </div>
+            
+            <button onclick="payWithMpesa()" class="btn-primary" id="payBtn">Pay Now</button>
+            <button onclick="closeModal()" class="btn-secondary">Cancel</button>
+        </div>
+    </div>
+</body>
+{% endblock %}
+
+<script>
+function openMpesaModal(plan, price) {
+    document.getElementById('modalPlanType').value = plan;
+    document.getElementById('modalPlanTitle').innerText = plan.toUpperCase();
+    document.getElementById('modalPlanPrice').innerText = 'KES ' + price.toLocaleString();
+    document.getElementById('mpesaModal').style.display = 'block';
+}
+
+function closeModal() {
+    document.getElementById('mpesaModal').style.display = 'none';
+}
+
+async function payWithMpesa() {
+    const planType = document.getElementById('modalPlanType').value;
+    const phone = document.getElementById('mpesaPhone').value;
+    const payBtn = document.getElementById('payBtn');
+
+    if (!phone) {
+        alert('Please enter a valid phone number.');
+        return;
+    }
+
+    payBtn.disabled = true;
+    payBtn.innerText = 'Sending M-Pesa prompt...';
+
+    try {
+        const response = await fetch('/seller/subscription/stk-push', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ plan_type: planType, phone_number: phone })
+        });
+
+        const data = await response.json();
+        alert(data.message);
+        if (data.success) {
+            closeModal();
+            location.reload();
+        }
+    } catch (err) {
+        alert('An error occurred triggering M-Pesa.');
+    } finally {
+        payBtn.disabled = false;
+        payBtn.innerText = 'Pay Now';
+    }
+}
+</script>

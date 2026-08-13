@@ -171,16 +171,6 @@ font-size: 0.7rem; color: rgba(245,236,215,0.28);
 }
 .mpesa-dot { width: 6px; height: 6px; border-radius: 50%; background: #4CAF50; }
 
-/* Mobile */
-@media (max-width: 600px) {
-.menu-modal-box { max-width: 100%; }
-.menu-modal-img-wrap { height: 190px; }
-.menu-modal-body { padding: 1.2rem 1.3rem 1.8rem; }
-.menu-modal-name { font-size: 1.4rem; }
-.menu-modal-footer { flex-direction: column; align-items: flex-start; }
-.menu-modal-add { width: 100%; text-align: center; }
-}
-
 /* ══════════════════════════════
        PAGE LAYOUT
     ══════════════════════════════ */
@@ -583,6 +573,49 @@ font-size: 0.7rem; color: rgba(245,236,215,0.28);
 
 /* ── MOBILE CATEGORY TOGGLE ── */
 @media (max-width: 768px) {
-    .sidebar { display: none; }
-    .main-content { padding: 2rem 1.5rem 5rem; }
+  .menu-page { flex-direction: column; padding: 64px 0 0; }
+
+  /* Sidebar becomes a horizontal scroll strip at the top */
+  .menu-sidebar {
+    width: 100% !important;
+    height: auto !important;
+    position: relative !important;
+    top: 0 !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    display: flex;
+    flex-direction: row;
+    padding: 0.8rem 1rem;
+    border-right: none;
+    border-bottom: 1px solid rgba(200,135,58,0.1);
+    white-space: nowrap;
+    gap: 0;
+    scrollbar-width: none;
+  }
+  .menu-sidebar::-webkit-scrollbar { display: none; }
+  .menu-sidebar h2 { display: none; }
+  .sidebar-heading { display: none; }
+  .sidebar-search  { display: none; } /* hidden on mobile to save space */
+  .sidebar-divider { display: none; }
+  .sidebar-order   { display: none; }
+
+  .cat-link {
+    display: inline-flex;
+    white-space: nowrap;
+    padding: 0.5rem 1rem;
+    border-left: none;
+    border-bottom: 2px solid transparent;
+    flex-shrink: 0;
+  }
+  .cat-link.active { border-bottom-color: var(--crema); border-left: none; }
+  .cat-count { display: none; }
+
+  .main-content { padding: 1.5rem 1rem 4rem; }
+  .menu-page-hero { flex-direction: column; gap: 0.5rem; margin-bottom: 2rem; }
+  .menu-page-title { font-size: clamp(2rem, 8vw, 3rem) !important; }
+  .item-grid { grid-template-columns: 1fr 1fr !important; gap: 10px; }
+}
+
+@media (max-width: 480px) {
+  .item-grid { grid-template-columns: 1fr !important; }
 }

@@ -270,13 +270,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /* ── DYNAMIC ORDERS FETCHING ── */
 function fetchDynamicOrders() {
-    const url = typeof ORDERS_API_URL !== 'undefined' ? ORDERS_API_URL : '/seller/api/orders';
-
-    fetch(url)
+    fetch('/seller/api/orders')
         .then(response => {
-            if (!response.ok) {
-                throw new Error(`Server returned ${response.status}`);
-            }
+            if (!response.ok) throw new Error('Network response was not ok');
             return response.json();
         })
         .then(data => {
@@ -285,7 +281,7 @@ function fetchDynamicOrders() {
                 updateOrderBadges(data.total_orders, data.pending_orders);
             }
         })
-        .catch(err => console.error('Error fetching dynamic orders:', err));
+        .catch(err => console.error('Error updating dynamic orders:', err));
 }
 
 function renderOrdersData(orders) {
@@ -309,7 +305,7 @@ function renderOrdersData(orders) {
     if (allTable) allTable.style.display = 'table';
     if (allEmpty) allEmpty.style.display = 'none';
 
-    // Render Recent Orders (Top 5)
+    // Render Recent Orders (Top 5) — Uses static status badge
     if (recentBody) {
         recentBody.innerHTML = orders.slice(0, 5).map(o => `
             <tr>
@@ -327,27 +323,77 @@ function renderOrdersData(orders) {
         `).join('');
     }
 
-    // Render Full Orders Table
+    // Render Full Orders Table — Uses interactive status dropdown
     if (allBody) {
-        allBody.innerHTML = orders.map(o => `
-            <tr data-listing-id="${o.listing_id}">
-                <td>${escapeHtml(o.order_code)}</td>
-                <td>${escapeHtml(o.buyer_name)}</td>
-                <td>${escapeHtml(o.coffee_lot)}</td>
-                <td>${o.quantity_kg} kg</td>
-                <td>${escapeHtml(o.total_amount)}</td>
-                <td style="font-family:monospace;font-size:0.78rem;">${escapeHtml(o.mpesa_ref)}</td>
-                <td>
-                    <span class="order-status status-${o.status.toLowerCase()}">
-                        ${o.status.charAt(0).toUpperCase() + o.status.slice(1)}
-                    </span>
-                </td>
-            </tr>
-        `).join('');
+        allBody.innerHTML = orders.map(o => {
+            const currentStatus = (o.status || 'pending').toLowerCase();
+            return `
+                <tr data-listing-id="${o.listing_id}">
+                    <td>${escapeHtml(o.order_code)}</td>
+                    <td>${escapeHtml(o.buyer_name)}</td>
+                    <td>${escapeHtml(o.coffee_lot)}</td>
+                    <td>${o.quantity_kg} kg</td>
+                    <td>${escapeHtml(o.total_amount)}</td>
+                    <td style="font-family:monospace;font-size:0.78rem;">${escapeHtml(o.mpesa_ref)}</td>
+                    <td>
+                        <select class="status-select status-${currentStatus}" onchange="changeOrderStatus(${o.id}, this.value)">
+                            <option value="pending" ${currentStatus === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="confirmed" ${currentStatus === 'confirmed' ? 'selected' : ''}>Confirmed</option>
+                            <option value="paid" ${currentStatus === 'paid' ? 'selected' : ''}>Paid</option>
+                            <option value="shipped" ${currentStatus === 'shipped' ? 'selected' : ''}>Shipped</option>
+                            <option value="delivered" ${currentStatus === 'delivered' || currentStatus === 'completed' ? 'selected' : ''}>Delivered</option>
+                            <option value="cancelled" ${currentStatus === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                        </select>
+                    </td>
+                </tr>
+            `;
+        }).join('');
     }
 
     const count = document.getElementById('ordersShownCount');
     if (count) count.textContent = orders.length;
+}
+
+async function changeOrderStatus(orderId, newStatus) {
+    try {
+        // 1. Fetch CSRF token from meta tag, form input, or global helper
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') 
+                       || document.querySelector('input[name="csrf_token"]')?.value
+                       || (typeof getCsrfToken === 'function' ? getCsrfToken() : '');
+
+        const response = await fetch(`/seller/api/orders/${orderId}/status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrfToken  // 👈 Added CSRF Header
+            },
+            body: JSON.stringify({ status: newStatus })
+        });
+
+        // 2. Safely check content type before parsing JSON
+        const contentType = response.headers.get('content-type');
+        let result;
+        if (contentType && contentType.includes('application/json')) {
+            result = await response.json();
+        } else {
+            const text = await response.text();
+            console.error('Non-JSON response received:', text);
+            alert('Server error. Check terminal logs.');
+            return;
+        }
+
+        if (response.ok && result.success) {
+            if (typeof fetchOrders === 'function') {
+                fetchOrders();
+            }
+        } else {
+            alert('Failed to update status: ' + (result.message || 'Unknown error'));
+        }
+    } catch (err) {
+        console.error('Status update error:', err);
+        alert('Network error while updating status.');
+    }
 }
 
 function updateOrderBadges(totalOrders, pendingOrders) {
@@ -355,6 +401,116 @@ function updateOrderBadges(totalOrders, pendingOrders) {
     badges.forEach(sidebarBadge => {
         sidebarBadge.textContent = totalOrders;
         sidebarBadge.style.display = totalOrders > 0 ? 'inline-block' : 'none';
+    });
+}
+
+async function updateOrderStatus(orderId, newStatus) {
+    try {
+        const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+        const response = await fetch(`/seller/api/orders/${orderId}/status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ status: newStatus })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            // Update status dropdown styling dynamically
+            const selectElem = document.querySelector(`#order-status-td-${orderId} select`);
+            if (selectElem) {
+                selectElem.className = `status-select status-${newStatus}`;
+            }
+
+            // Update UI metrics dynamically
+            if (data.metrics) {
+                updateDashboardUI(data.metrics);
+            }
+        } else {
+            alert(data.message || 'Failed to update order status.');
+        }
+    } catch (err) {
+        console.error('Error updating order status:', err);
+    }
+}
+
+function updateDashboardUI(metrics) {
+    // 1. Update text stats (Gross, Net, Pending Payout, Commission)
+    document.querySelectorAll('.stat-card').forEach(card => {
+        const label = card.querySelector('.stat-label')?.innerText.trim().toLowerCase();
+        const valueElem = card.querySelector('.stat-value');
+        if (!valueElem || !label) return;
+
+        if (label.includes('total earnings') || label.includes('total all time')) {
+            valueElem.innerText = `KES ${metrics.total_gross}`;
+        } else if (label.includes('this month')) {
+            valueElem.innerText = `KES ${metrics.this_month_earnings}`;
+        } else if (label.includes('pending payout')) {
+            valueElem.innerText = `KES ${metrics.pending_payout}`;
+        } else if (label.includes('platform fee') || label.includes('commission')) {
+            valueElem.innerText = `KES ${metrics.commission}`;
+        }
+    });
+
+    // 2. Update Monthly Earnings Bar Chart Dynamic Heights
+    document.querySelectorAll('.bar-chart').forEach(chartContainer => {
+        const barWraps = chartContainer.querySelectorAll('.bar-wrap');
+        metrics.monthly_amounts.forEach((amount, index) => {
+            if (barWraps[index]) {
+                const bar = barWraps[index].querySelector('.bar');
+                const heightPercent = metrics.max_amount > 0 ? Math.max((amount / metrics.max_amount) * 100, 5) : 5;
+                bar.style.height = `${heightPercent}%`;
+                bar.setAttribute('title', `KES ${amount.toLocaleString()}`);
+            }
+        });
+    });
+
+    // 3. Update Product Breakdown List
+    document.querySelectorAll('.earnings-breakdown').forEach(breakdownContainer => {
+        // Clear out existing rows except breakdown container title
+        const titleElem = breakdownContainer.querySelector('.chart-title');
+        breakdownContainer.innerHTML = '';
+        if (titleElem) breakdownContainer.appendChild(titleElem);
+
+        const products = metrics.product_earnings;
+        if (Object.keys(products).length > 0) {
+            for (const [prodName, amountStr] of Object.entries(products)) {
+                const row = document.createElement('div');
+                row.className = 'earning-row';
+                row.innerHTML = `
+                    <span class="earning-label">${prodName}</span>
+                    <span class="earning-val">KES ${amountStr}</span>
+                `;
+                breakdownContainer.appendChild(row);
+            }
+
+            // Append Commission & Net Rows
+            const commissionRow = document.createElement('div');
+            commissionRow.className = 'earning-row';
+            commissionRow.innerHTML = `
+                <span class="earning-label">Platform commission (5%)</span>
+                <span class="earning-val" style="color:#E06C75">−KES ${metrics.commission}</span>
+            `;
+
+            const netRow = document.createElement('div');
+            netRow.className = 'earning-row';
+            netRow.style = 'border-top:1px solid rgba(122,182,72,0.15);padding-top:0.8rem';
+            netRow.innerHTML = `
+                <span class="earning-label" style="color:var(--cream)">Net Earnings</span>
+                <span class="earning-val" style="font-size:1.4rem">KES ${metrics.net_earnings}</span>
+            `;
+
+            breakdownContainer.appendChild(commissionRow);
+            breakdownContainer.appendChild(netRow);
+        } else {
+            breakdownContainer.innerHTML += `
+                <div style="padding:2rem;text-align:center;opacity:0.5;font-size:1rem;">
+                    No sales data yet.
+                </div>
+            `;
+        }
     });
 }
 
