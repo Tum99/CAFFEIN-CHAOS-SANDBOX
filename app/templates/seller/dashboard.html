@@ -153,7 +153,7 @@
                         </div>
                         {% endfor %}
                         <div class="earning-row">
-                            <span class="earning-label">Platform commission (5%)</span>
+                            <span class="earning-label">Platform Fee Due (5%)</span>
                             <span class="earning-val" style="color:#E06C75">−KES {{ commission }}</span>
                         </div>
                         <div class="earning-row" style="border-top:1px solid rgba(122,182,72,0.15);padding-top:0.8rem">
@@ -207,10 +207,16 @@
                                 </td>
                                 <td>{{ order.quantity_kg }} kg</td>
                                 <td>KES {{ "{:,.0f}".format(order.total_amount) }}</td>
-                                <td>
-                                    <span class="order-status status-{{ order.status|lower }}">
-                                        {{ order.status|capitalize }}
-                                    </span>
+                                <td id="order-status-td-{{ order.id }}">
+                                    <select class="status-select status-{{ order.status|lower }}" onchange="updateOrderStatus({{ order.id }}, this.value)">
+                                        <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
+                                        <option value="confirmed" {% if order.status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                                        <option value="confirmed" {% if order.status == 'paid' %}selected{% endif %}>Paid</option>
+                                        <option value="shipped" {% if order.status == 'shipped' %}selected{% endif %}>Shipped</option>
+                                        <option value="completed" {% if order.status == 'completed' %}selected{% endif %}>Completed</option>
+                                        <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                        <option value="confirmed" {% if order.status == 'completed' %}selected{% endif %}>Completed</option>
+                                    </select>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -432,8 +438,8 @@
             </div>
 
             <!-- Filter bar -->
-            <div id="ordersFilterBar" style="display:none;margin-bottom:1rem;padding:0.8rem 1.2rem;background:rgba(122,182,72,0.08);border:1px solid rgba(122,182,72,0.2);align-items:center;gap:1rem;">
-                <span style="font-size:0.72rem;color:var(--green);">🔍 Filtered by listing</span>
+            <div id="ordersFilterBar" style="display:none;margin-bottom:1rem;padding:0.8rem 1.2rem;background:rgba(182, 134, 72, 0.08);border:2px solid rgba(182, 131, 72, 0.2);align-items:center;gap:1rem;">
+                <span style="font-size:0.9rem;color:var(--crema);">Filtered by listing</span>
                 <button onclick="clearOrdersFilter()" style="background:none;border:none;color:rgba(245,236,215,0.4);font-size:0.7rem;cursor:pointer;letter-spacing:0.1em;text-transform:uppercase;">
                     ✕ Show all orders
                 </button>
@@ -481,10 +487,16 @@
                                 <td style="font-family:monospace;font-size:0.78rem;">
                                     {{ order.mpesa_reference or '—' }}
                                 </td>
-                                <td>
-                                    <span class="order-status status-{{ order.status|lower }}">
-                                        {{ order.status|capitalize }}
-                                    </span>
+                                <td id="order-status-td-{{ order.id }}">
+                                    <select class="status-select status-{{ order.status|lower }}" onchange="updateOrderStatus({{ order.id }}, this.value)">
+                                        <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
+                                        <option value="confirmed" {% if order.status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                                        <option value="confirmed" {% if order.status == 'paid' %}selected{% endif %}>Paid</option>
+                                        <option value="shipped" {% if order.status == 'shipped' %}selected{% endif %}>Shipped</option>
+                                        <option value="completed" {% if order.status == 'completed' %}selected{% endif %}>Completed</option>
+                                        <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                        <option value="confirmed" {% if order.status == 'completed' %}selected{% endif %}>Completed</option>
+                                    </select>
                                 </td>
                             </tr>
                             {% endfor %}

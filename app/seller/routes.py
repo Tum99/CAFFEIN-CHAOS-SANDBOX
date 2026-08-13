@@ -1,15 +1,23 @@
 from flask import flash, Blueprint, render_template, request, redirect, url_for, current_app, jsonify
 from flask_login import login_required, current_user
-from app.models import SellerProfile, DirectMessage, MessageThread, FarmProfile, Product, FarmProductListing, GrowerBuyerTransaction 
+from app.models import SellerProfile, Subscription, DirectMessage, MessageThread, FarmProfile, Product, FarmProductListing, GrowerBuyerTransaction 
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.utils.decorators import seller_required
-from datetime import datetime
+from collections import defaultdict
+from datetime import datetime, timedelta
+from app.utils.mpesa import trigger_stk_push
 from app import db
 import json
 from werkzeug.utils import secure_filename
 import os
 
 seller = Blueprint('seller', __name__, url_prefix='/seller')
+
+# Pricing Constants (in KES)
+PRICING = {
+    'monthly': 1500.0,
+    'yearly': 15000.0  # Discounted rate for annual billing
+}
 
 @seller.route('/setup', methods=['GET', 'POST'])
 @login_required
@@ -97,7 +105,7 @@ def seller_setup():
 
        
 
-@seller.route('/skip-onboarding', methods=['GET'])
+@seller.route('/skip-onboarding', methods=['POST'])
 @login_required
 @seller_required
 def skip_onboarding():
@@ -752,3 +760,164 @@ def get_orders_api():
         "pending_orders": pending_count,
         "orders": formatted_orders
     })
+
+
+@seller.route('/api/orders/<int:order_id>/status', methods=['POST'])
+@login_required
+@seller_required
+def update_order_status(order_id):
+    try:
+        data = request.get_json() or {}
+        new_status = data.get('status', '').strip().lower()
+
+        # Allowed statuses matching your GrowerBuyerTransaction model comments
+        allowed_statuses = {'pending', 'confirmed', 'paid', 'shipped', 'completed', 'delivered', 'cancelled'}
+        
+        if new_status not in allowed_statuses:
+            return jsonify({'success': False, 'message': 'Invalid status provided.'}), 400
+
+        # Fetch transaction and ensure the current seller owns it
+        transaction = GrowerBuyerTransaction.query.filter_by(
+            id=order_id, 
+            grower_id=current_user.id
+        ).first_or_404()
+
+        transaction.status = new_status
+        db.session.commit()
+
+        # Recalculate metrics dynamically
+        all_orders = GrowerBuyerTransaction.query.join(FarmProductListing).filter(
+            FarmProductListing.grower_id == current_user.id
+        ).all()
+
+        completed_orders = [o for o in all_orders if o.status in ['paid', 'completed']]
+        pending_orders   = [o for o in all_orders if o.status == 'pending']
+
+        product_earnings = {}
+        this_month_gross = 0.0
+        current_month    = datetime.utcnow().month
+        current_year     = datetime.utcnow().year
+
+        for order in completed_orders:
+            listing = order.listing
+            display_name = f"{listing.varietal} ({listing.process})" if listing else "Unknown Batch"
+            product_earnings[display_name] = product_earnings.get(display_name, 0.0) + order.total_amount
+            if order.created_at.month == current_month and order.created_at.year == current_year:
+                this_month_gross += order.total_amount
+
+        total_gross    = sum(product_earnings.values())
+        pending_payout = sum(o.total_amount for o in pending_orders)
+        commission     = total_gross * 0.05
+        net_earnings   = total_gross - commission
+
+        # Recalculate Monthly Data
+        monthly_data = defaultdict(float)
+        now = datetime.utcnow()
+        for i in range(5, -1, -1):
+            month_dt = now - relativedelta(months=i)
+            monthly_data[month_dt.strftime('%b')] = 0.0
+
+        for o in completed_orders:
+            key = o.created_at.strftime('%b')
+            if key in monthly_data:
+                monthly_data[key] += o.total_amount
+
+        monthly_labels  = list(monthly_data.keys())
+        monthly_amounts = list(monthly_data.values())
+        max_amount      = max(monthly_amounts) if any(monthly_amounts) else 1.0
+
+        return jsonify({
+            'success': True,
+            'message': f'Order status updated to {new_status}.',
+            'order_id': transaction.id,
+            'new_status': transaction.status,
+            'metrics': {
+                'this_month_earnings': f"{this_month_gross:,.0f}",
+                'total_gross': f"{total_gross:,.0f}",
+                'pending_payout': f"{pending_payout:,.0f}",
+                'commission': f"{commission:,.0f}",
+                'net_earnings': f"{net_earnings:,.0f}",
+                'product_earnings': {k: f"{v:,.0f}" for k, v in product_earnings.items()},
+                'monthly_labels': monthly_labels,
+                'monthly_amounts': monthly_amounts,
+                'max_amount': max_amount
+            }
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@seller.route('/subscription', methods=['GET'])
+@login_required
+@seller_required
+def subscription():
+    sub = Subscription.query.filter_by(user_id=current_user.id).first()
+    return render_template('seller/subscription.html', subscription=sub, pricing=PRICING)
+
+@seller.route('/subscription/stk-push', methods=['POST'])
+@login_required
+def initiate_subscription_payment():
+    data = request.get_json() or {}
+    plan_type = data.get('plan_type', 'monthly').lower()
+    phone_number = data.get('phone_number', '').strip()
+
+    if plan_type not in PRICING:
+        return jsonify({'success': False, 'message': 'Invalid subscription plan.'}), 400
+
+    if not phone_number:
+        return jsonify({'success': False, 'message': 'Phone number is required.'}), 400
+
+    amount = PRICING[plan_type]
+    account_ref = f"SUB-{current_user.id}-{plan_type.upper()}"
+
+    res = trigger_stk_push(phone_number, amount, account_ref)
+
+    if res['success']:
+        # Create or update subscription record as pending
+        sub = Subscription.query.filter_by(user_id=current_user.id).first()
+        if not sub:
+            sub = Subscription(user_id=current_user.id)
+            db.session.add(sub)
+
+        sub.plan_type = plan_type
+        sub.amount = amount
+        sub.status = 'pending'
+        sub.checkout_request_id = res['checkout_request_id']
+        db.session.commit()
+
+        return jsonify({'success': True, 'message': 'Check your phone to enter your M-Pesa PIN.'})
+    
+    return jsonify({'success': False, 'message': res['message']}), 500
+
+
+@seller.route('/api/mpesa/callback', methods=['POST'])
+def mpesa_callback():
+    """Webhook called asynchronously by Safaricom upon payment completion."""
+    data = request.get_json() or {}
+    stk_callback = data.get('Body', {}).get('stkCallback', {})
+    
+    result_code = stk_callback.get('ResultCode')
+    checkout_request_id = stk_callback.get('CheckoutRequestID')
+
+    sub = Subscription.query.filter_by(checkout_request_id=checkout_request_id).first()
+    if not sub:
+        return jsonify({'ResultCode': 0, 'ResultDesc': 'Accepted'}), 200
+
+    if result_code == 0:  # Payment successful
+        # Extract transaction code from callback items
+        items = stk_callback.get('CallbackMetadata', {}).get('Item', [])
+        mpesa_code = next((item.get('Value') for item in items if item.get('Name') == 'MpesaReceiptNumber'), None)
+
+        sub.status = 'active'
+        sub.payment_reference = mpesa_code
+        sub.started_at = datetime.utcnow()
+        
+        days_to_add = 365 if sub.plan_type == 'yearly' else 30
+        sub.expires_at = sub.started_at + timedelta(days=days_to_add)
+    else:
+        sub.status = 'failed'
+
+    db.session.commit()
+    return jsonify({'ResultCode': 0, 'ResultDesc': 'Accepted'}), 200

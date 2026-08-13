@@ -17,8 +17,8 @@ buyer = Blueprint('buyer', __name__, url_prefix='/buyer')
 @login_required
 @buyer_required
 def dashboard():
-    all_transactions = Order.query.filter_by(buyer_id=current_user.id)\
-        .order_by(Order.created_at.desc()).all()
+    all_transactions = GrowerBuyerTransaction.query.filter_by(buyer_id=current_user.id)\
+        .order_by(GrowerBuyerTransaction.created_at.desc()).all()
 
     recent_transactions = all_transactions[:5]
 
@@ -27,7 +27,7 @@ def dashboard():
     total_orders = len(all_transactions)
     in_progress_orders = sum(1 for tx in all_transactions if tx.status in ['pending', 'confirmed', 'paid', 'shipped'])
 
-    total_spent = sum(tx.total_price for tx in all_transactions if tx.status != 'cancelled')
+    total_spent = sum(tx.total_amount for tx in all_transactions if tx.status != 'cancelled')
 
     unread_msg_count = DirectMessage.query.filter_by(receiver_id=current_user.id, is_read=False).count()
 

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_login import UserMixin
 from app import db
 
@@ -378,3 +378,27 @@ class Recipe(db.Model):
     ingredients = db.Column(db.Text)
     steps       = db.Column(db.Text)
     category    = db.Column(db.String(50))   # latte / espresso / cold brew
+
+
+class Subscription(db.Model):
+    __tablename__ = 'subscriptions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, unique=True)
+    
+    plan_type = db.Column(db.String(20), default='monthly')  # 'monthly' or 'yearly'
+    status = db.Column(db.String(20), default='inactive')    # 'active', 'pending_approval', 'expired', 'inactive'
+    
+    amount = db.Column(db.Float, nullable=False)
+    payment_reference = db.Column(db.String(100), nullable=True) # e.g. M-Pesa transaction code
+    
+    started_at = db.Column(db.DateTime, nullable=True)
+    expires_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('subscription', uselist=False))
+
+    def is_active(self):
+        if self.status == 'active' and self.expires_at:
+            return datetime.utcnow() <= self.expires_at
+        return False

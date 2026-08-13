@@ -22,6 +22,8 @@ def place_direct_order():
 
         listing = FarmProductListing.query.get_or_404(listing_id)
 
+        price_per_kg = total_price / quantity_kg if quantity_kg > 0 else 0.0
+
         # 1. Create the new Order record
         new_order = Order(
             listing_id=listing.id,
@@ -41,7 +43,7 @@ def place_direct_order():
             grower_id=listing.grower_id,
             quantity_kg=quantity_kg,
             agreed_price_per_kg=price_per_kg,
-            total_price=total_amount,
+            total_amount=total_price,
             status='pending'
         )
         db.session.add(new_transaction)

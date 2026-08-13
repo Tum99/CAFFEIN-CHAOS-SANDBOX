@@ -38,3 +38,14 @@ def admin_required(f):
             return redirect(url_for('main.home'))
         return f(*args, **kwargs)
     return decorated_function
+    
+
+def subscription_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        sub = getattr(current_user, 'subscription', None)
+        if not sub or not sub.is_active():
+            flash('An active seller subscription is required to perform this action.', 'warning')
+            return redirect(url_for('seller.subscription_page'))
+        return f(*args, **kwargs)
+    return decorated_function

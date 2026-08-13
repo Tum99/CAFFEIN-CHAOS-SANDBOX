@@ -1,21 +1,29 @@
-{# app/templates/messaging/messages.html
-   Shared standalone messages page — includes order inquiry cards inside chat streams.
-#}
 {% extends "base.html" %}
 {% block title %}Messages — Caffeine & Chaos{% endblock %}
 
 {% block content %}
 <div class="messages-page">
 
-  <div class="messages-layout">
+  <div class="messages-layout" id="messagesLayout">
 
     <!-- ── THREAD SIDEBAR ── -->
-    <aside class="thread-sidebar">
+    <aside class="thread-sidebar" id="threadSidebar">
       <div class="thread-sidebar-head">
         <div class="ts-title">Inbox</div>
         {% if threads %}
           <div class="ts-count">{{ threads|length }} conversation{{ 's' if threads|length != 1 }}</div>
         {% endif %}
+      </div>
+
+      <!-- Live Search Bar -->
+      <div class="thread-search-container">
+        <input 
+          type="text" 
+          id="threadSearchInput" 
+          class="thread-search-input" 
+          placeholder="Search conversations..." 
+          onkeyup="filterThreads()"
+        />
       </div>
 
       <div class="thread-list" id="threadList">
@@ -26,37 +34,39 @@
 
           <div class="thread-item {% if loop.first %}thread-active{% endif %}"
                data-thread-id="{{ thread.id }}"
-               onclick="loadThread({{ thread.id }}, '{{ other.first_name or other.email.split('@')[0] }}', '{{ (other.first_name or other.email)[0].upper() }}')">
+               data-thread-seller="{{ other.id }}"
+               onclick="loadThread({{ thread.id }}, '{{ (other.first_name or other.email.split('@')[0]) | capitalize }}', '{{ (other.first_name or other.email)[0].upper() }}')">
 
             <div class="thread-avatar">
               {{ (other.first_name or other.email)[0].upper() }}
             </div>
 
             <div class="thread-info">
-              <div class="thread-name">
-                {{ (other.first_name or other.email.split('@')[0]) | capitalize }}
-                {% if other.role == 'seller' %}
-                  <span class="thread-role-tag">Grower</span>
+              <div class="thread-header-row">
+                <div class="thread-name">
+                  {{ (other.first_name or other.email.split('@')[0]) | capitalize }}
+                  {% if other.role == 'seller' %}
+                    <span class="thread-role-tag">Grower</span>
+                  {% endif %}
+                </div>
+                {% if last_msg %}
+                  <div class="thread-time">{{ last_msg.created_at.strftime('%H:%M') }}</div>
                 {% endif %}
               </div>
-              <div class="thread-preview">
-                {% if last_msg and last_msg.msg_type == 'order_card' %}
-                  📦 [Order Inquiry] {{ last_msg.body[:35] }}
-                {% elif last_msg %}
-                  {{ last_msg.body[:55] ~ '...' if last_msg.body|length > 55 else last_msg.body }}
-                {% else %}
-                  No messages yet
+              <div class="thread-sub-row">
+                <div class="thread-preview">
+                  {% if last_msg and last_msg.msg_type == 'order_card' %}
+                    📦 [Order Inquiry] {{ last_msg.body[:35] }}
+                  {% elif last_msg %}
+                    {{ last_msg.body[:55] ~ '...' if last_msg.body|length > 55 else last_msg.body }}
+                  {% else %}
+                    No messages yet
+                  {% endif %}
+                </div>
+                {% if unread > 0 %}
+                  <div class="thread-unread">{{ unread }}</div>
                 {% endif %}
               </div>
-            </div>
-
-            <div class="thread-meta">
-              {% if last_msg %}
-                <div class="thread-time">{{ last_msg.created_at.strftime('%H:%M') }}</div>
-              {% endif %}
-              {% if unread > 0 %}
-                <div class="thread-unread">{{ unread }}</div>
-              {% endif %}
             </div>
           </div>
 
@@ -87,8 +97,9 @@
 
       <div class="chat-inner" id="chatInner" style="display:none;">
         <div class="chat-head">
+          <button class="chat-action-btn mobile-back-btn" id="backToThreads" onclick="closeMobileChat()">←</button>
           <div class="chat-head-avatar" id="chatHeadAvatar">--</div>
-          <div>
+          <div class="chat-head-info">
             <div class="chat-head-name" id="chatHeadName">Loading...</div>
             <div class="chat-head-status">● Active</div>
           </div>
@@ -103,7 +114,7 @@
             placeholder="Type a message or discuss order details..."
             autocomplete="off"
           />
-          <button class="chat-send" id="chatSendBtn" onclick="sendMessage()">Send</button>
+          <button class="chat-send" id="chatSendBtn" onclick="sendMessage()">➤</button>
         </div>
       </div>
 
@@ -113,88 +124,290 @@
 </div>
 
 <style>
-  .messages-page { padding-top: 90px; min-height: 100vh; background: var(--espresso); }
-  .messages-layout { display: grid; grid-template-columns: 300px 1fr; height: calc(100vh - 90px); }
+  /* ══ WHATSAPP THEME & CORE LAYOUT ══ */
+  .messages-page { 
+    padding-top: 80px; 
+    height: 100vh; 
+    background: var(--espresso); 
+    color: var(--cream);
+    font-family: 'Jost', sans-serif;
+    overflow: hidden;
+  }
+  .messages-layout { 
+    display: flex; 
+    height: calc(98vh - 80px); 
+    width: 100%;
+    max-width: 100%;
+    margin: 1rem auto;
+    border-top: 1px solid rgba(200,135,58,0.1);
+  }
 
-  .thread-sidebar { background: var(--roast); border-right: 1px solid rgba(200,135,58,0.1); display: flex; flex-direction: column; overflow: hidden; }
-  .thread-sidebar-head { padding: 1.2rem 1.4rem; border-bottom: 1px solid rgba(200,135,58,0.08); display: flex; align-items: center; justify-content: space-between; }
-  .ts-title { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; color: var(--white); }
-  .ts-count { font-size: 0.8rem; letter-spacing: 0.12em; color: rgba(245,236,215,0.3); }
-  .thread-list { flex: 1; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(200,135,58,0.1) transparent; }
-  .thread-item { padding: 0.9rem 1.2rem; border-bottom: 1px solid rgba(200,135,58,0.05); cursor: pointer; transition: background 0.2s; display: flex; gap: 0.75rem; align-items: center; }
-  .thread-item:hover { background: rgba(200,135,58,0.05); }
-  .thread-item.thread-active { background: rgba(200,135,58,0.1); border-left: 2px solid var(--crema); }
-  .thread-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--crema); color: var(--espresso); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0; }
-  .thread-info { flex: 1; min-width: 0; }
-  .thread-name { font-size: 1.2rem; color: var(--cream); margin-bottom: 0.15rem; display: flex; align-items: center; gap: 0.4rem; }
-  .thread-role-tag { font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; background: rgba(122,182,72,0.15); color: #7AB648; padding: 0.08rem 0.35rem; }
-  .thread-preview { font-size: 0.9rem; color: rgba(245,236,215,0.35); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .thread-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; flex-shrink: 0; }
-  .thread-time { font-size: 0.7rem; color: rgba(245,236,215,0.22); }
-  .thread-unread { width: 18px; height: 18px; border-radius: 50%; background: var(--crema); color: var(--espresso); font-size: 0.6rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
-  .thread-empty { padding: 3rem 1.5rem; text-align: center; }
-  .thread-empty-icon { font-size: 2.5rem; opacity: 0.15; margin-bottom: 0.8rem; }
-  .thread-empty-text { font-size: 0.88rem; color: rgba(245,236,215,0.35); margin-bottom: 0.4rem; }
-  .thread-empty-sub { font-size: 0.74rem; color: rgba(245,236,215,0.2); line-height: 1.6; }
-
-  .chat-window { background: var(--espresso); display: flex; flex-direction: column; overflow: hidden; }
-  .chat-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 3rem; }
-  .chat-empty-icon { font-size: 3rem; opacity: 0.1; margin-bottom: 1rem; }
-  .chat-empty-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; color: rgba(245,236,215,0.35); margin-bottom: 0.4rem; }
-  .chat-empty-sub { font-size: 0.78rem; color: rgba(245,236,215,0.2); }
-  .chat-inner { display: flex; flex-direction: column; height: 100%; }
-  .chat-head { padding: 1rem 1.4rem; border-bottom: 1px solid rgba(200,135,58,0.08); display: flex; align-items: center; gap: 0.8rem; flex-shrink: 0; }
-  .chat-head-avatar { width: 46px; height: 46px; border-radius: 50%; background: var(--crema); color: var(--espresso); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; }
-  .chat-head-name { font-size: 1.3rem; color: var(--cream); }
-  .chat-head-status { font-size: 0.62rem; color: #7AB648; }
-  .chat-messages { flex: 1; overflow-y: auto; padding: 1.2rem; display: flex; flex-direction: column; gap: 1rem; scrollbar-width: thin; scrollbar-color: rgba(200,135,58,0.08) transparent; position: relative; z-index: 1; }
-  .chat-messages::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('/static/images/ms-bg3.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; z-index: -1; opacity: 0.3; }
+  /* ── THREADS SIDEBAR (Left Panel) ── */
+  .thread-sidebar { 
+    width: 380px;
+    flex-shrink: 0;
+    background: var(--roast); 
+    border-right: 1px solid rgba(200,135,58,0.12); 
+    display: flex; 
+    flex-direction: column; 
+  }
+  .thread-sidebar-head { 
+    padding: 0.9rem 1.2rem; 
+    background: #150B06;
+    border-bottom: 1px solid rgba(200,135,58,0.08); 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    flex-shrink: 0;
+  }
+  .ts-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; color: var(--white); font-weight: 500; }
+  .ts-count { font-size: 0.75rem; letter-spacing: 0.1em; color: var(--crema); opacity: 0.8; }
   
-  .msg { max-width: 75%; }
+  /* WhatsApp Search Bar */
+  .thread-search-container {
+    padding: 0.5rem 0.8rem;
+    background: var(--roast);
+    border-bottom: 1px solid rgba(200,135,58,0.06);
+  }
+  .thread-search-input {
+    width: 100%;
+    padding: 0.45rem 0.9rem;
+    background: rgba(200,135,58,0.06);
+    border: 1px solid rgba(200,135,58,0.12);
+    border-radius: 8px;
+    color: var(--cream);
+    font-family: 'Jost', sans-serif;
+    font-size: 0.8rem;
+    outline: none;
+  }
+  .thread-search-input::placeholder { color: rgba(245,236,215,0.3); }
+
+  .thread-list { 
+    flex: 1; 
+    overflow-y: auto; 
+    scrollbar-width: thin; 
+    scrollbar-color: rgba(200,135,58,0.15) transparent; 
+  }
+  .thread-item { 
+    padding: 0.75rem 1rem; 
+    border-bottom: 1px solid rgba(200,135,58,0.04); 
+    transition: background 0.15s ease; 
+    display: flex; 
+    gap: 0.8rem; 
+    align-items: center; 
+    cursor: pointer;
+  }
+  .thread-item:hover { background: rgba(200,135,58,0.06); }
+  .thread-item.thread-active { background: rgba(200,135,58,0.12); position: relative; }
+  .thread-item.thread-active::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--crema);
+  }
+  .thread-avatar { 
+    width: 48px; 
+    height: 48px; 
+    border-radius: 50%; 
+    background: var(--bark); 
+    border: 1px solid rgba(200,135,58,0.2);
+    color: var(--crema); 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 0.9rem; 
+    font-weight: 600; 
+    flex-shrink: 0; 
+  }
+  .thread-info { flex: 1; min-width: 0; }
+  .thread-header-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.2rem; }
+  .thread-name { font-size: 0.95rem; color: var(--cream); font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; }
+  .thread-role-tag { font-size: 0.5rem; letter-spacing: 0.08em; text-transform: uppercase; background: rgba(122,182,72,0.15); color: #7AB648; padding: 0.05rem 0.3rem; border-radius: 3px; margin-left: 0.3rem; }
+  .thread-time { font-size: 0.68rem; color: rgba(245,236,215,0.35); flex-shrink: 0; }
+  .thread-sub-row { display: flex; justify-content: space-between; align-items: center; }
+  .thread-preview { font-size: 0.8rem; color: rgba(245,236,215,0.4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .thread-unread { width: 18px; height: 18px; border-radius: 50%; background: var(--crema); color: var(--espresso); font-size: 0.62rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: 0.5rem; }
+
+  .thread-empty { padding: 3rem 1.5rem; text-align: center; }
+  .thread-empty-icon { font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.6; }
+  .thread-empty-text { font-size: 0.95rem; color: var(--cream); margin-bottom: 0.3rem; }
+  .thread-empty-sub { font-size: 0.78rem; color: rgba(245,236,215,0.4); line-height: 1.4; }
+
+  /* ── CHAT WINDOW (Right Panel) ── */
+  .chat-window { 
+    flex: 1; 
+    background: var(--espresso); 
+    display: flex; 
+    flex-direction: column; 
+    height: 100%; 
+    position: relative; 
+  }
+  
+  .chat-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    color: rgba(245,236,215,0.4);
+  }
+  .chat-empty-icon { font-size: 3rem; margin-bottom: 0.5rem; opacity: 0.5; }
+  .chat-empty-title { font-size: 1.1rem; color: var(--cream); margin-bottom: 0.2rem; }
+  .chat-empty-sub { font-size: 0.8rem; opacity: 0.7; }
+
+  .chat-inner { display: flex; flex-direction: column; height: 100%; width: 100%; }
+
+  /* WhatsApp Header */
+  .chat-head { 
+    padding: 0.65rem 1.2rem; 
+    background: #150B06;
+    border-bottom: 1px solid rgba(200,135,58,0.08); 
+    display: flex; 
+    align-items: center; 
+    gap: 0.8rem; 
+    flex-shrink: 0; 
+  }
+  .mobile-back-btn { display: none; font-size: 1.2rem; }
+  .chat-head-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--crema); color: var(--espresso); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
+  .chat-head-info { flex: 1; }
+  .chat-head-name { font-size: 1rem; color: var(--cream); font-weight: 400; }
+  .chat-head-status { font-size: 0.68rem; color: #7AB648; }
+
+  /* WhatsApp Wallpaper Background & Scroll Area */
+  .chat-messages { 
+    flex: 1; 
+    overflow-y: auto; 
+    padding: 1.2rem 2rem; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 0.4rem; 
+    scrollbar-width: thin; 
+    scrollbar-color: rgba(200,135,58,0.1) transparent; 
+    position: relative; 
+  }
+
+  /* ── WHATSAPP MESSAGE BUBBLES ── */
+  .msg { 
+    max-width: 65%; 
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
   .msg.sent { align-self: flex-end; }
   .msg.received { align-self: flex-start; }
-  .msg-bubble { padding: 0.75rem 1rem; font-size: 0.95rem; line-height: 1.55; border-radius: 18px; }
-  .msg.sent .msg-bubble { background: var(--crema); color: var(--espresso); }
-  .msg.received .msg-bubble { background: var(--roast); color: var(--cream); }
-  .msg-time { font-size: 0.72rem; color: rgba(245,236,215,0.3); margin-top: 0.25rem; }
-  .msg.sent .msg-time { text-align: right; }
+
+  .msg-bubble { 
+    padding: 0.5rem 0.75rem 0.4rem 0.75rem; 
+    font-size: 0.88rem; 
+    line-height: 1.45; 
+    border-radius: 7.5px; 
+    word-break: break-word;
+    position: relative;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+  .msg.sent .msg-bubble { 
+    background: #2E1A0E; 
+    color: var(--cream); 
+    border-top-right-radius: 0;
+    border: 1px solid rgba(200,135,58,0.2);
+  }
+  .msg.received .msg-bubble { 
+    background: #1C0F08; 
+    color: var(--cream); 
+    border-top-left-radius: 0;
+    border: 1px solid rgba(200,135,58,0.08);
+  }
+
+  .msg-time { font-size: 0.6rem; color: rgba(245,236,215,0.4); margin-top: 0.2rem; align-self: flex-end; }
 
   /* ── SPECIAL ORDER INQUIRY CARD COMPONENT ── */
   .order-card-wrapper {
-    background: #1C0F08;
-    border: 1px solid rgba(200,135,58,0.3);
-    border-radius: 12px;
-    padding: 1.2rem;
-    width: 320px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-    margin: 0.4rem 0;
+    background: var(--roast);
+    border: 1px solid rgba(200,135,58,0.25);
+    border-radius: 8px;
+    padding: 1rem;
+    width: 290px;
+    margin: 0.2rem 0;
   }
   .order-card-header {
-    display: flex; justify-space-between; align-items: center;
-    border-bottom: 1px solid rgba(200,135,58,0.12);
-    padding-bottom: 0.6rem; margin-bottom: 0.8rem;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid rgba(200,135,58,0.1);
+    padding-bottom: 0.4rem; margin-bottom: 0.6rem;
   }
-  .order-card-title { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--crema); font-weight: 600; }
-  .order-card-id { font-size: 0.7rem; color: rgba(245,236,215,0.4); }
-  .order-card-row { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.4rem; color: var(--cream); }
+  .order-card-title { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--crema); font-weight: 600; }
+  .order-card-id { font-size: 0.65rem; color: rgba(245,236,215,0.4); }
+  .order-card-row { display: flex; justify-content: space-between; font-size: 0.78rem; margin-bottom: 0.3rem; color: var(--cream); }
   .order-card-lbl { color: rgba(245,236,215,0.4); }
-  .order-card-note { font-style: italic; font-size: 0.8rem; color: rgba(245,236,215,0.6); background: rgba(200,135,58,0.06); padding: 0.5rem; border-left: 2px solid var(--crema); margin-top: 0.6rem; border-radius: 2px; }
-  .order-card-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
-  .btn-card-action { flex: 1; padding: 0.5rem; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; border: none; border-radius: 4px; cursor: pointer; }
+  .order-card-note { font-style: italic; font-size: 0.75rem; color: rgba(245,236,215,0.6); background: rgba(200,135,58,0.06); padding: 0.4rem; border-left: 2px solid var(--crema); margin-top: 0.5rem; }
+  .order-card-actions { display: flex; gap: 0.4rem; margin-top: 0.8rem; }
+  .btn-card-action { flex: 1; padding: 0.4rem; font-size: 0.65rem; font-weight: 600; text-transform: uppercase; border: none; border-radius: 4px; cursor: pointer; }
   .btn-accept { background: #7AB648; color: #0A0604; }
   .btn-decline { background: rgba(224,108,117,0.2); color: #E06C75; border: 1px solid rgba(224,108,117,0.3); }
 
-  .chat-input-row { padding: 1rem 1.2rem; border-top: 1px solid rgba(200,135,58,0.08); display: flex; gap: 0.8rem; flex-shrink: 0; }
-  .chat-input { flex: 1; padding: 0.7rem 1rem; background: rgba(200,135,58,0.06); border: 1px solid rgba(200,135,58,0.12); color: var(--cream); font-family: 'Jost', sans-serif; font-size: 0.82rem; outline: none; transition: border-color 0.3s; border-radius: 200px; }
-  .chat-input:focus { border-color: rgba(200,135,58,0.35); }
-  .chat-input::placeholder { color: rgba(245,236,215,0.2); }
-  .chat-send { padding: 0.7rem 1.4rem; background: var(--crema); color: var(--espresso); font-family: 'Jost', sans-serif; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 500; border: none; cursor: pointer; transition: background 0.2s; border-radius: 200px; }
+  /* ── WHATSAPP FOOTER INPUT BAR ── */
+  .chat-input-row { 
+    padding: 0.6rem 1rem; 
+    background: #150B06;
+    border-top: 1px solid rgba(200,135,58,0.08); 
+    display: flex; 
+    align-items: center;
+    gap: 0.6rem; 
+    flex-shrink: 0; 
+  }
+  .chat-action-btn {
+    background: none;
+    border: none;
+    color: rgba(245,236,215,0.4);
+    cursor: pointer;
+    padding: 0.2rem;
+    transition: color 0.2s;
+  }
+  .chat-action-btn:hover { color: var(--crema); }
+  
+  .chat-input { 
+    flex: 1; 
+    padding: 0.6rem 1rem; 
+    background: rgba(200,135,58,0.06); 
+    border: 1px solid rgba(200,135,58,0.12); 
+    color: var(--cream); 
+    font-family: 'Jost', sans-serif; 
+    font-size: 0.85rem; 
+    outline: none; 
+    border-radius: 8px; 
+  }
+  .chat-input:focus { border-color: rgba(200,135,58,0.3); }
+  .chat-input::placeholder { color: rgba(245,236,215,0.25); }
+
+  .chat-send { 
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--crema); 
+    color: var(--espresso); 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none; 
+    cursor: pointer; 
+    transition: background 0.2s; 
+    flex-shrink: 0; 
+  }
   .chat-send:hover { background: var(--gold); }
 
-  @media (max-width: 700px) {
-    .messages-layout { grid-template-columns: 1fr; }
-    .thread-sidebar { height: 40vh; border-right: none; border-bottom: 1px solid rgba(200,135,58,0.1); }
-    .chat-window { height: 60vh; }
+  /* ══ WHATSAPP RESPONSIVE BEHAVIOR (SWITCHING PANELS) ══ */
+  @media (max-width: 768px) {
+    .messages-page { padding-top: 60px; height: 100vh; }
+    .messages-layout { height: 100%; border-top: none; }
+
+    /* Show threads by default, hide chat */
+    .thread-sidebar { width: 100%; border-right: none; }
+    .chat-window { display: none; height: 100%; }
+
+    /* When mobile-chat-open active on wrapper, toggle panels */
+    .messages-layout.mobile-chat-open .thread-sidebar { display: none; }
+    .messages-layout.mobile-chat-open .chat-window { display: flex; width: 100%; height: calc(100vh - 80px)}
+
+    .mobile-back-btn { display: inline-block; }
+    .msg { max-width: 82%; }
+    .chat-messages { padding: 0.8rem 1rem; }
   }
 </style>
 {% endblock %}
@@ -202,7 +415,6 @@
 {% block scripts %}
 <script>
   let activeThreadId = null;
-  const currentUserId = {{ current_user.id }};
 
   document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -213,16 +425,23 @@
       if (match) { match.click(); return; }
     }
     
-    const first = document.querySelector('.thread-item');
-    if (first) first.click();
+    // Auto-select first thread on desktop view
+    if (window.innerWidth > 768) {
+      const first = document.querySelector('.thread-item');
+      if (first) first.click();
+    }
   });
 
   function loadThread(threadId, name, initial) {
     activeThreadId = threadId;
 
+    // Toggle active state in thread list
     document.querySelectorAll('.thread-item').forEach(el => {
       el.classList.toggle('thread-active', parseInt(el.dataset.threadId) === threadId);
     });
+
+    // Mobile Panel Switching
+    document.getElementById('messagesLayout').classList.add('mobile-chat-open');
 
     document.getElementById('chatEmpty').style.display = 'none';
     document.getElementById('chatInner').style.display = 'flex';
@@ -237,17 +456,31 @@
       .then(r => r.json())
       .then(data => {
         renderMessages(data.messages);
-        const item = document.querySelector(`[data-thread-id="${threadId}"] .thread-unread`);
-        if (item) item.remove();
+        const unreadBadge = document.querySelector(`[data-thread-id="${threadId}"] .thread-unread`);
+        if (unreadBadge) unreadBadge.remove();
       })
       .catch(() => {
-        container.innerHTML = '<div style="color:#E06C75;padding:1rem;font-size:0.8rem;">Failed to load messages.</div>';
+        container.innerHTML = '<div style="color:#E06C75;padding:1rem;font-size:0.8rem;text-align:center;">Failed to load messages.</div>';
       });
+  }
+
+  function closeMobileChat() {
+    document.getElementById('messagesLayout').classList.remove('mobile-chat-open');
+  }
+
+  function filterThreads() {
+    const query = document.getElementById('threadSearchInput').value.toLowerCase();
+    const items = document.querySelectorAll('.thread-item');
+
+    items.forEach(item => {
+      const text = item.textContent.toLowerCase();
+      item.style.display = text.includes(query) ? 'flex' : 'none';
+    });
   }
 
   function renderMessages(messages) {
     const container = document.getElementById('chatMessages');
-    if (!messages.length) {
+    if (!messages || !messages.length) {
       container.innerHTML = '<div style="text-align:center;padding:2rem;font-size:0.78rem;color:rgba(245,236,215,0.25);">No messages yet. Send a message to start arranging private transaction details!</div>';
       return;
     }

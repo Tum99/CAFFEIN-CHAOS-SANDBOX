@@ -135,6 +135,17 @@
 
 
 <!-- ══ MAIN LAYOUT ══ -->
+ <!-- Mobile Filter Bar Trigger (Shown on screens <= 1024px) -->
+<div class="mobile-filter-trigger">
+    <button class="mobile-filter-btn" onclick="document.querySelector('.filter-sidebar').classList.toggle('open')">
+        <i class="fas fa-sliders-h"></i> Filters
+    </button>
+    <div class="mobile-search-quick-input">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" placeholder="Quick search coffees..." onkeyup="syncSearch(this.value)">
+    </div>
+</div>
+
 <div class="page-wrap-mkt">
   <!-- ══ FILTER SIDEBAR ══ -->
   <aside class="filter-sidebar">
