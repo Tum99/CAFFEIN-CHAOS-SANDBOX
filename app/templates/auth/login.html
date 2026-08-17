@@ -231,15 +231,15 @@
       Already have an account?
       <a href="{{ url_for('auth.login') }}" onclick="switchTab('login')">Login</a>
     </div>
-    <!-- </div> -->
 
     <div class="back-to-site"><a href="#">← Back to Caffeine & Chaos</a></div>
   </div>
 </div>
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/auth.js') }}?v={{ config.VERSION }}"></script>
-<script src="{{ url_for('static', filename='js/mobile_nav.js') }}?v={{ config.VERSION }}"></script>
+  {{ super() }}
+  <script src="{{ url_for('static', filename='js/auth.js') }}?v={{ config.VERSION }}"></script>
+  <script src="{{ url_for('static', filename='js/mobile_nav.js') }}?v={{ config.VERSION }}"></script>
 {% endblock %}
 
 {% endblock %} 
