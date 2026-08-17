@@ -386,7 +386,6 @@ section { padding: 7rem 4rem; background-color: var(--espresso);}
   gap: 0.8rem;
 }
 
-.section-label::before { content: ''; display: block; width: 28px; height: 1px; background: var(--crema); }
 .section-title {
   font-family: 'Cormorant Garamond', serif;
   font-size: clamp(2.5rem, 4.5vw, 5.5rem);
@@ -759,7 +758,8 @@ section { padding: 7rem 4rem; background-color: var(--espresso);}
 
 /* ── FOOTER ── */
 footer { background: #050302; padding: 5rem 1rem 2.5rem; border-top: 1px solid rgba(200,135,58,0.1); }
-.footer-top { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 4rem; max-width: 1300px; margin: 0 auto 4rem; }
+.footer-top { display: grid; grid-template-columns: 1.5fr 1fr; gap: 4rem; max-width: 1300px; margin: 0 auto 4rem; }
+.footer-categories {display: grid; grid-template-columns: repeat(3, 1fr); gap: 5rem;}
 .footer-brand-name { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 300; color: var(--white); margin-bottom: 1rem; line-height: 1.1; }
 .footer-brand-name span { color: var(--crema); font-style: italic; }
 .footer-tagline { font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(245,236,215,0.3); margin-bottom: 1.5rem; }

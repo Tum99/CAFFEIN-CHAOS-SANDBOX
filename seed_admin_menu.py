@@ -210,13 +210,13 @@ print("✅ Menu products added")
 # ══════════════════════════════════════════════════════
 apparel_products = [
     {
-        "name": "Take a Step Tee — Brown",
+        "name": "Take a Step Tee : Brown",
         "price": 2500,
         "description": "100% cotton oversized tee. 'Take a Step' footprint print on back. C&C logo on chest.",
         "stock": 50
     },
     {
-        "name": "Take a Step Tee — Olive Green",
+        "name": "Take a Step Tee : Olive Green",
         "price": 2500,
         "description": "Same signature design in forest green. Cream footprint print.",
         "stock": 50

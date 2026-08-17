@@ -568,34 +568,46 @@ def toggle_live():
 @seller_required
 def update_profile():
     try:
-        current_user.first_name = request.form.get('first_name').strip()
-        current_user.last_name = request.form.get('last_name').strip()
-        current_user.email = request.form.get('email').strip()
-        current_user.phone = request.form.get('phone').strip()
+        # Safely extract text inputs only if present in request.form
+        first_name = request.form.get('first_name')
+        last_name  = request.form.get('last_name')
+        email      = request.form.get('email')
+        phone      = request.form.get('phone')
 
+        if first_name is not None:
+            current_user.first_name = first_name.strip()
+        if last_name is not None:
+            current_user.last_name = last_name.strip()
+        if email is not None:
+            current_user.email = email.strip()
+        if phone is not None:
+            current_user.phone = phone.strip()
+
+        # Handle photo upload
         file = request.files.get('profile_photo')
         if file and file.filename:
             allowed = {'jpg', 'jpeg', 'png', 'webp'}
-            ext = file.filename.rsplit('.', 1)[-1].lower()
+            ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+            
             if ext in allowed:
-                filename    = secure_filename(f"avatar_{current_user.id}.{ext}")
+                filename = secure_filename(f"avatar_{current_user.id}.{ext}")
                 upload_path = os.path.join(current_app.root_path, 'static', 'uploads')
                 os.makedirs(upload_path, exist_ok=True)
                 file.save(os.path.join(upload_path, filename))
                 current_user.profile_pic = filename
             else:
                 flash('Please upload a JPG, PNG or WebP image.', 'error')
-                return redirect(url_for('seller.dashboard'))
+                return redirect(url_for('seller.dashboard', _anchor='sec-settings'))
         
         db.session.commit()
         flash('Personal information updated successfully!', 'success')
     
     except Exception as e:
         db.session.rollback()
+        current_app.logger.error(f"Profile update error: {str(e)}")
         flash('An unexpected error occurred while saving your details.', 'error')
 
     return redirect(url_for('seller.dashboard', _anchor='sec-settings'))
-
 
 @seller.route('/settings/payout', methods=['POST'])
 @login_required
