@@ -619,7 +619,7 @@
                     
                     <div class="profile-photo-upload">
                         <div class="profile-photo-preview" id="photoPreview">
-                        {% if current_user.profile_pic and current_user.profile_pic != 'logo1.png' %}
+                        {% if current_user.profile_pic and current_user.profile_pic != 'default_user.jpg' %}
                             <img src="{{ url_for('static', filename='uploads/' + current_user.profile_pic) }}"
                                 alt="Profile photo"
                                 id="photoPreviewImg"
@@ -657,7 +657,7 @@
                     <button class="settings-save" type="submit">Save Changes</button>
                 </form>
 
-                <form action="{{ url_for('seller.update_payout') }}" method="POST" class="settings-panel">
+                <!-- <form action="{{ url_for('seller.update_payout') }}" method="POST" class="settings-panel">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="settings-panel-title">Payout Settings</div>
                     <div class="settings-field">
@@ -673,7 +673,7 @@
                         </select>
                     </div>
                     <button type="submit" class="settings-save">Save Payout Settings</button>
-                </form>
+                </form> -->
 
                 <form action="{{ url_for('seller.update_password') }}" method="POST" class="settings-panel">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

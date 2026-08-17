@@ -4,37 +4,8 @@
 <!-- ── LEFT PANEL ── -->
 <div class="left-panel">
   <div class="left-panel-bg"> </div>
-  <div class="left-panel-img">
-    <img src="{{ url_for('static', filename='images/auth1.png') }}" alt="Auth Banner">
-  </div>
+  <div class="left-panel-img"></div>
   <div class="left-panel-overlay"></div>
-
-  <!-- <div class="left-content">
-    <div class="left-eyebrow">Welcome back</div>
-    <h1 class="left-title">Connect.<br />Brew. <em>Grow.</em></h1>
-    <p class="left-desc">
-      Join the Caffeine & Chaos platform. Whether you're a coffee buyer or a
-      grower from the highlands of Kenya — your dashboard is waiting.
-    </p>
-    <div class="left-features">
-      <div class="left-feature">
-        <div class="left-feature-dot"></div>
-        Direct grower-to-buyer marketplace
-      </div>
-      <div class="left-feature">
-        <div class="left-feature-dot"></div>
-        Real-time messaging between buyers & sellers
-      </div>
-      <div class="left-feature">
-        <div class="left-feature-dot"></div>
-        Secure M-Pesa payments
-      </div>
-      <div class="left-feature">
-        <div class="left-feature-dot"></div>
-        Farm listings & order management
-      </div>
-    </div>
-  </div> -->
 </div>
 
 <!-- ── RIGHT PANEL ── -->
@@ -51,7 +22,7 @@
       Login to access your dashboard. Your role is detected automatically.
     </div>
 
-    <button class="google-btn">
+    <!-- <button class="google-btn">
       <svg class="google-icon" viewBox="0 0 24 24">
         <path
           fill="#4285F4"
@@ -71,13 +42,13 @@
         />
       </svg>
       Continue with Google
-    </button>
+    </button> -->
 
-    <div class="divider">
+    <!-- <div class="divider">
       <div class="divider-line"></div>
       <div class="divider-text">or</div>
       <div class="divider-line"></div>
-    </div>
+    </div> -->
 
     <form method="POST" action="{{ url_for('auth.login') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -106,19 +77,15 @@
     </form>
 
     <div class="redirect-info">
-      <div class="redirect-info-title">How redirecting works</div>
+      <div class="redirect-info-title">Where you'll go from here</div>
       <div class="redirect-rows">
         <div class="redirect-row">
-          <span class="redirect-arrow">→</span> Buyer account redirects to Buyer
+          <span class="redirect-arrow">→</span> Registered buyers are redirected to Buyer
           Dashboard
         </div>
         <div class="redirect-row">
-          <span class="redirect-arrow">→</span> Seller/Grower account redirects
+          <span class="redirect-arrow">→</span> Registered sellers are redirected
           to Seller Dashboard
-        </div>
-        <div class="redirect-row">
-          <span class="redirect-arrow">→</span> Admin account redirects to Admin
-          Panel
         </div>
       </div>
     </div>
@@ -133,11 +100,10 @@
   <div class="auth-form" id="form-signup">
     <div class="form-title">Join <em>C&C</em></div>
     <div class="form-subtitle">
-      Create your account and choose your role. You can be a buyer, a seller, or
-      both.
+      Create your account and choose your role. You can be a buyer or a seller
     </div>
 
-    <button class="google-btn">
+    <!-- <button class="google-btn">
       <svg class="google-icon" viewBox="0 0 24 24">
         <path
           fill="#4285F4"
@@ -157,13 +123,13 @@
         />
       </svg>
       Sign up with Google
-    </button>
+    </button> -->
 
-    <div class="divider">
+    <!-- <div class="divider">
       <div class="divider-line"></div>
       <div class="divider-text">or</div>
       <div class="divider-line"></div>
-    </div>
+    </div> -->
 
     <form action="{{ url_for('auth.register') }}" method="POST">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -213,13 +179,6 @@
               Grower
             </label>
           </div>
-          <div class="role-opt">
-            <input type="radio" name="role" id="role-both" value="both" />
-            <label for="role-both">
-              <span class="role-opt-icon">⚡</span>
-              Both
-            </label>
-          </div>
         </div>
       </div>
 
@@ -232,13 +191,13 @@
       <a href="{{ url_for('auth.login') }}" onclick="switchTab('login')">Login</a>
     </div>
 
-    <div class="back-to-site"><a href="#">← Back to Caffeine & Chaos</a></div>
+    <div class="back-to-site"><a href="{{ url_for('main.home')}}">← Back to Caffeine & Chaos</a></div>
   </div>
 </div>
+
+{% endblock %} 
 
 {% block scripts %}
   <script src="{{ url_for('static', filename='js/auth.js') }}?v={{ config.VERSION }}"></script>
   <script src="{{ url_for('static', filename='js/mobile_nav.js') }}?v={{ config.VERSION }}"></script>
 {% endblock %}
-
-{% endblock %} 

@@ -187,8 +187,6 @@ body::before {
     color: var(--crema); margin-bottom: 0.7rem;
     display: flex; align-items: center; gap: 0.7rem;
 }
-
-.sec-eyebrow::before { content: ''; display: block; width: 18px; height: 1px; background: var(--crema); }
 .sec-title {
     font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem, 3.5vw, 3.6rem);
     font-weight: 300; color: var(--white); line-height: 1;
@@ -410,8 +408,8 @@ body::before {
        GIFT HAMPERS SECTION
     ══════════════════════════════════════════════ */
 .hampers-grid {
-    display: grid; grid-template-columns: 1.4fr 1fr 1fr;
-    gap: 1.5px;
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
 }
 
 .hamper-card {
@@ -639,9 +637,7 @@ body::before {
 }
 
 .prod-modal-footer {
-    border-top: 1px solid rgba(200,135,58,0.08);
-    padding-top: 1.2rem;
-    display: flex; flex-direction: column; gap: 0.7rem;
+    display: none;
 }
 .prod-modal-add {
     padding: 0.82rem;
@@ -766,6 +762,7 @@ body::before {
         text-align: center;
         align-items: center;
         gap: 0;
+        margin-top: 2rem;
     }
 
     .hero-eyebrow {
@@ -774,6 +771,8 @@ body::before {
         margin-bottom: 1.5rem;
         max-width: 100%;
     }
+
+    .hero-left .hero-eyebrow {display: none;}
 
     .hero-title {
         font-size: 2.8rem;
@@ -824,7 +823,7 @@ body::before {
     .cat-nav-btn {
         flex: 0 0 auto;
         padding: 1rem 1.5rem;
-        font-size: 1.1rem;
+        font-size: 0.9rem;
     }
 
     .sec-head {
@@ -837,7 +836,7 @@ body::before {
         justify-content: center;
         margin-bottom: 1rem;
     }
-    .sec-eyebrow::before { width: 12px; }
+   
     .sec-title {
         margin-bottom: 1rem;
         font-size: 2.2rem;
