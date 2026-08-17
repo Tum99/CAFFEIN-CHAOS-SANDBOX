@@ -1,4 +1,5 @@
-{% extends "base.html" %} {% block content %}
+{% extends "base.html" %} 
+{% block content %}
 
 <div class="cursor" id="cursor"></div>
 <div class="cursor-ring" id="cursorRing"></div>
@@ -237,8 +238,9 @@
 
     <div class="back-to-site"><a href="#">← Back to Caffeine & Chaos</a></div>
   </div>
-
-  {% endblock %} {% block scripts %}
-  <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
-  {% endblock %}
 </div>
+{% endblock %} 
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+{% endblock %}
