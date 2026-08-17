@@ -237,7 +237,6 @@
 </div>
 
 {% block scripts %}
-  {{ super() }}
   <script src="{{ url_for('static', filename='js/auth.js') }}?v={{ config.VERSION }}"></script>
   <script src="{{ url_for('static', filename='js/mobile_nav.js') }}?v={{ config.VERSION }}"></script>
 {% endblock %}
