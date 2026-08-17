@@ -1,14 +1,11 @@
 {% extends "base.html" %} 
 {% block content %}
 
-<div class="cursor" id="cursor"></div>
-<div class="cursor-ring" id="cursorRing"></div>
-
 <!-- ── LEFT PANEL ── -->
 <div class="left-panel">
   <div class="left-panel-bg"> </div>
   <div class="left-panel-img">
-    <img src="/app/static/images/auth1.png" alt="">
+    <img src="{{ url_for('static', filename='images/auth1.png') }}" alt="Auth Banner">
   </div>
   <div class="left-panel-overlay"></div>
 
@@ -241,7 +238,8 @@
 </div>
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+<script src="{{ url_for('static', filename='js/auth.js') }}?v={{ config.VERSION }}"></script>
+<script src="{{ url_for('static', filename='js/mobile_nav.js') }}?v={{ config.VERSION }}"></script>
 {% endblock %}
 
 {% endblock %} 

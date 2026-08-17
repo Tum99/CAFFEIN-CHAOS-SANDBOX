@@ -60,7 +60,7 @@
       <!-- 1. Logo -->
       <a href="{{ url_for('main.home') }}" class="nav-logo">
         <div class="nav-logo-icon">
-          <img src="/static/images/Logo1.png" alt="Caffeine & Chaos logo" />
+          <img src="{{ url_for('static', filename='images/Logo1.png') }}" alt="Caffeine & Chaos logo" />
         </div>
         <div class="nav-logo-text">Caffeine<br /><span>& Chaos</span></div>
       </a>
@@ -239,7 +239,11 @@
         </div>
       </div>
     </div>
-    {% endif %} {% block content %}{% endblock %} {% block scripts %}
+    {% endif %} 
+    
+    {% block content %}{% endblock %} 
+    
+    {% block scripts %}
     <script src="{{ url_for('static', filename='js/base.js') }}?v={{ config.VERSION }}"></script>
     <script src="{{ url_for('static', filename='js/mobile_nav.js') }}?v={{ config.VERSION }}"></script>
     {% endblock %}
