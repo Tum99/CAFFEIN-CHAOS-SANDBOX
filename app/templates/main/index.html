@@ -329,7 +329,9 @@
       <label class="method-option">
         <input type="radio" name="comm_method" value="email" checked onchange="toggleContactMethod('email')">
         <span class="method-box">
-          <span class="method-icon">✉️</span>
+          <span class="method-icon">
+            <img src="{{ url_for('static', filename='images/email2.svg') }}" alt="" class="icon-svg">
+          </span>
           <span class="method-label">Send Email</span>
         </span>
       </label>
@@ -337,8 +339,10 @@
       <label class="method-option">
         <input type="radio" name="comm_method" value="whatsapp" onchange="toggleContactMethod('whatsapp')">
         <span class="method-box">
-          <span class="method-icon">💬</span>
-          <span class="method-label">WhatsApp Us</span>
+          <span class="method-icon">
+            <img src="{{ url_for('static', filename='images/whatsapp.svg') }}" alt="" class="icon-svg">
+          </span>
+          <span class="method-label">WhatsApp</span>
         </span>
       </label>
     </div>
