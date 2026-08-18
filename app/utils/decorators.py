@@ -1,7 +1,8 @@
 # app/utils/decorators.py — correct version
 from functools import wraps
-from flask import redirect, url_for, flash
+from flask import redirect, url_for, flash, current_app
 from flask_login import current_user
+from itsdangerous import URLSafeTimedSerializer
 
 def seller_required(f):
     @wraps(f)
@@ -49,3 +50,21 @@ def subscription_required(f):
             return redirect(url_for('seller.subscription_page'))
         return f(*args, **kwargs)
     return decorated_function
+
+
+def generate_reset_token(user_email):
+    serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+    # Serializes the email address into an encrypted token
+    return serializer.dumps(user_email, salt='password-reset-salt')
+
+def verify_reset_token(token, expiration=1800):  # 1800 seconds = 30 minutes
+    serializer = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+    try:
+        email = serializer.loads(
+            token,
+            salt='password-reset-salt',
+            max_age=expiration
+        )
+        return email
+    except Exception:
+        return None

@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, flash, redirect, jsonify, request,
 from flask_login import login_required, current_user
 from app.auth.routes import redirect_by_role
 from app.models import FarmProductListing, FarmProfile, db
+from flask_mail import Message
 import json
 
 main = Blueprint('main', __name__)
@@ -109,3 +110,49 @@ def marketplace():
         json_payload=json.dumps(formatted_listings),
         stats=stats
     )
+
+@main.route('/contact', methods=['POST'])
+def send_contact_email():
+    name = request.form.get('name', '').strip()
+    sender_email = request.form.get('email', '').strip()
+    phone = request.form.get('phone', '').strip()
+    subject = request.form.get('subject', '').strip() or 'New Website Inquiry'
+    message_body = request.form.get('message', '').strip()
+
+    if not name or not sender_email or not message_body:
+        flash('Please fill in all required fields.', 'error')
+        return redirect(url_for('main.contact'))  # Adjust to your contact page route
+
+    try:
+        # Construct the email sent to your business email
+        msg = Message(
+            subject=f"[C&C Inquiry] {subject}",
+            recipients=['faithtum92@gmail.com'],  # Your destination inbox
+            reply_to=sender_email  # Hit 'Reply' in your inbox to email the user directly
+        )
+
+        msg.body = f"""
+        You received a new message from the Caffeine & Chaos contact form:
+
+        --------------------------------------------------
+        Name:    {name}
+        Email:   {sender_email}
+        Phone:   {phone if phone else 'Not provided'}
+        Subject: {subject}
+        --------------------------------------------------
+
+        Message:
+        {message_body}
+        """
+
+        # Access mail instance attached to app context
+        mail = current_app.extensions.get('mail')
+        mail.send(msg)
+
+        flash('Your message has been sent successfully! We will get back to you soon.', 'success')
+
+    except Exception as e:
+        current_app.logger.error(f"Failed to send contact email: {str(e)}")
+        flash('An error occurred while sending your message. Please try again or WhatsApp us.', 'error')
+
+    return redirect(url_for('main.contact'))  # Adjust to your contact page route

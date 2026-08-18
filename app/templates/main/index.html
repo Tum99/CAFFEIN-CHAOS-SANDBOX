@@ -313,6 +313,76 @@
   </div>
 </section>
 
+
+<section class="contact-section">
+  <div class="contact-container">
+    <div class="contact-header">
+      <div>
+        <div class="section-label">Get In Touch</div>
+        <h2 class="section-title">Contact <em>Us</em></h2>
+        <p class="contact-sub">Have an order, question, or feedback? Connect with us below.</p>
+      </div>
+    </div>
+
+    <!-- Communication Method Selector -->
+    <div class="contact-method-selector">
+      <label class="method-option">
+        <input type="radio" name="comm_method" value="email" checked onchange="toggleContactMethod('email')">
+        <span class="method-box">
+          <span class="method-icon">✉️</span>
+          <span class="method-label">Send Email</span>
+        </span>
+      </label>
+
+      <label class="method-option">
+        <input type="radio" name="comm_method" value="whatsapp" onchange="toggleContactMethod('whatsapp')">
+        <span class="method-box">
+          <span class="method-icon">💬</span>
+          <span class="method-label">WhatsApp Us</span>
+        </span>
+      </label>
+    </div>
+
+    <!-- Contact Form -->
+    <form id="contactForm" action="mailto:faithtum92@gmail.com" method="POST" enctype="text/plain" onsubmit="handleContactSubmit(event)">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="contactName">Full Name</label>
+          <input type="text" id="contactName" name="name" placeholder="Jane Doe" required />
+        </div>
+
+        <div class="form-group">
+          <label for="contactEmail">Email Address</label>
+          <input type="email" id="contactEmail" name="email" placeholder="you@example.com" required />
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="contactPhone">Phone Number</label>
+          <input type="tel" id="contactPhone" name="phone" placeholder="+254 700 000 000" />
+        </div>
+
+        <div class="form-group" id="subjectGroup">
+          <label for="contactSubject">Subject</label>
+          <input type="text" id="contactSubject" name="subject" placeholder="Inquiry about specialty beans" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="contactMessage">Your Message</label>
+        <textarea id="contactMessage" name="message" rows="5" required></textarea>
+      </div>
+
+      <button type="submit" class="btn-submit" id="submitBtn">Send Email →</button>
+
+    </form>
+    
+  </div>
+</section>
+
 <!-- ── FOOTER ── -->
 <footer>
   <div class="footer-top">
@@ -402,6 +472,48 @@
     el.style.transition = 'opacity 0.8s ease, transform 0.8s cubic-bezier(0.22,1,0.36,1)';
     observer.observe(el);
   });
+
+
+  //contact section functionalities
+  
+  let currentMethod = 'email';
+  const whatsappNumber = '254716366301'; // Business WhatsApp number without '+'
+
+  function toggleContactMethod(method) {
+    currentMethod = method;
+    const submitBtn = document.getElementById('submitBtn');
+    const subjectGroup = document.getElementById('subjectGroup');
+
+    if (method === 'whatsapp') {
+      submitBtn.textContent = 'Continue to WhatsApp →';
+      subjectGroup.style.display = 'none';
+    } else {
+      submitBtn.textContent = 'Send Email →';
+      subjectGroup.style.display = 'block';
+    }
+  }
+
+  function handleContactSubmit(event) {
+    if (currentMethod === 'whatsapp') {
+      event.preventDefault(); // Stop default form submit
+      
+      const name = document.getElementById('contactName').value.trim();
+      const phone = document.getElementById('contactPhone').value.trim();
+      const message = document.getElementById('contactMessage').value.trim();
+
+      let text = `Hello! My name is *${name}*.`;
+      if (phone) text += `\nMy Phone: ${phone}`;
+      text += `\n\n*Message:*\n${message}`;
+
+      const encodedText = encodeURIComponent(text);
+      const waUrl = `https://wa.me/${whatsappNumber}?text=${encodedText}`;
+
+      window.open(waUrl, '_blank');
+    }
+    // If 'email', form natively submits using the action URL / handler
+  }
+
+
 </script>
 
 </main>
