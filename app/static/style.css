@@ -105,6 +105,7 @@ nav.scrolled {
 
 .nav-logo-icon img{
   width: 60px; height: 60px;
+  border-radius: 50%;
 }
 
 .nav-logo-text {
@@ -154,6 +155,7 @@ nav.scrolled {
 
 .nav-links a:hover { color: var(--cream); cursor: none;}
 .nav-links a:hover::after { width: 100%; }
+.nav-links a.active {background-color: #a372373b; border-bottom:2px solid #C8873A; padding: 10px 26px;}
 .nav-cta { display: flex; gap: 0.8rem; align-items: center; }
 .btn-ghost {
   padding: 0.5rem 1.4rem;
@@ -819,6 +821,12 @@ section { padding: 7rem 4rem; background-color: var(--espresso);}
 }
 .method-icon {
   font-size: 1.1rem;
+}
+.method-icon .icon-svg {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  vertical-align: middle;
 }
 .method-label {
   font-size: 1rem;
