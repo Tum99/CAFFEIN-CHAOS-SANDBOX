@@ -4,16 +4,18 @@ from flask_login import LoginManager, current_user
 from flask_bcrypt import Bcrypt
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
+from dotenv import load_dotenv
 import time
+from flask_mail import Mail
 
 import os
-
 
 # Initialize extensions
 db = SQLAlchemy()
 login_manager = LoginManager()
 bcrypt = Bcrypt()
 migrate = Migrate()
+mail = Mail()
 
 
 # Redirect unauthorized users to login page
@@ -22,6 +24,7 @@ login_manager.login_message_category = "info"
 
 
 def create_app():
+    load_dotenv()
     app = Flask(__name__)
 
     # This check allows you to use SQLite locally but PostgreSQL on Render
@@ -42,6 +45,13 @@ def create_app():
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config["WTF_CSRF_ENABLED"] = True
     app.config['VERSION'] = str(int(time.time()))
+    # Flask-Mail Settings (Example using Gmail SMTP)
+    app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+    app.config['MAIL_PORT'] = 587
+    app.config['MAIL_USE_TLS'] = True
+    app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')  # Use an App Password here
+    app.config['MAIL_DEFAULT_SENDER'] = app.config['MAIL_USERNAME']
 
     csrf = CSRFProtect(app)
 
@@ -50,6 +60,7 @@ def create_app():
     migrate.init_app(app, db)
     login_manager.init_app(app)
     bcrypt.init_app(app)
+    mail.init_app(app)
     
 
     from app import models
