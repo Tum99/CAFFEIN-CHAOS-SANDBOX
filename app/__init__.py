@@ -27,7 +27,6 @@ def create_app():
     load_dotenv()
     app = Flask(__name__)
 
-    # This check allows you to use SQLite locally but PostgreSQL on Render
     database_url = os.environ.get("DATABASE_URL") or os.environ.get("SQLALCHEMY_DATABASE_URI", "sqlite:///instance/app.db")
     if not database_url:
         # Fallback to local SQLite if no environment variable exists

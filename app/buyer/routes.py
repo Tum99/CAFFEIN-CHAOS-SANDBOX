@@ -305,24 +305,6 @@ def marketplace():
         "total_counties": len({f.county for f in live_farms if f.county})
     }
 
-    return render_template(
-        'marketplace/marketplace.html',
-        products=farm_products,
-        listings=farm_products,
-        json_payload=json.dumps(formatted_listings),
-        categories=categories,
-        stats=stats,
-        search_query=search_query,
-        current_category=category_id
-    )
-
-    # 3. Calculate dynamic live data stats to fix your top dashboard numbers display
-    live_farms = FarmProfile.query.filter_by(is_live=True, is_setup_complete=True).all()
-    stats = {
-        "total_listings": len(farm_products),
-        "total_farms": len(live_farms),
-        "total_counties": len({f.county for f in live_farms if f.county})
-    }
     
     # 4. Return variables explicitly into your template view context scope
     return render_template(
